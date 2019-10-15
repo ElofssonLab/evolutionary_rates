@@ -75,4 +75,3 @@ output_dir = args.output_dir[0]
 #Get pdb ids to filter on
 filter_ids = read_newline(filter_file)
 fasta_dict = read_fasta(fasta_file , filter_ids, output_dir) #Get fasta sequences - filter on filter_ids
-pdb.set_trace()
