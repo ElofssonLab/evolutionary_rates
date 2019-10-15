@@ -22,10 +22,8 @@ FAILED_PDB_FILTER='failed_pdb_filter_2.6Å.txt'
 
 
 
-
-
-
-
+#The next step of aligning sequences and structures as well as getting
+#pdb files is to be done in parallel for each H-group
 
 #Align and get pdb files
 $FILE_NAME="H-group"
@@ -34,15 +32,16 @@ $FILE_NAME="H-group"
 cd $RESULTS_DIR
 #Program input paths
 CATH_API=www.cathdb.info/version/v4_2_0/api/rest/id/
-HHBLITS=/home/p/pbryant/pfs/hh-suite/build/bin/hhblits
-HHALIGN=/home/p/pbryant/pfs/hh-suite/build/bin/hhalign
-UNIPROT=/home/p/pbryant/pfs/uniprot20_2016_02/data/uniprot20_2016_02
+HHBLITS=/hh-suite/build/bin/hhblits #Path to hhblits
+HHALIGN=/hh-suite/build/bin/hhalign #Path to hhalign
+UNIPROT=/uniprot20_2016_02/data/uniprot20_2016_02 #Path to uniprot. Here version 20 was used.
 
-PUZZLE=/home/p/pbryant/pfs/tree-puzzle-5.3.rc16-linux/src/puzzle
-TMALIGN=/home/p/pbryant/pfs/TMalign
-TMSCORE=/home/p/pbryant/pfs/TMscore
+PUZZLE=/tree-puzzle-5.3.rc16-linux/src/puzzle #Path to tree-puzzle
+TMALIGN=/TMalign #Path to TMalign Version 20170708
+TMSCORE=/TMscore #Path to TMscore
+LDDT_IMAGE=/home/singularity/ost.img #VERSION 1.9.0
 #Get ids and run hhalign
-/home/p/pbryant/pfs/evolution/CATH/get_data.py /home/p/pbryant/pfs/data/CATH/mmseqs2/h_grouped/below95_2.6Å_above2_grouped/$FILE_NAME/ $RESULTS_DIR/ $HHBLITS $HHALIGN $UNIPROT 15 $CATH_API
+./get_data.py $RESULTS_DIR/$FILE_NAME/ $RESULTS_DIR/ $HHBLITS $HHALIGN $UNIPROT 15 $CATH_API
 
 #Run dssp
 DSSP=/home/p/pbryant/pfs/dssp
@@ -52,7 +51,7 @@ wait
 #Run dssp for pdbs
 for file in $RESULTS_DIR/*.pdb
 do
-if [[ $file != *aln* ]] && [[ $file != *rf_* ]];  #If no aln or rf in name
+if [[ $file != *aln* ]] && [[ $file != *rf_* ]];  #If no aln or rf_ in name
 then
 $DSSP $file > $file'.dssp'
 fi
@@ -66,13 +65,13 @@ wait
 mkdir $RESULTS_DIR/TMalign/
 wait
 #Run TMalign and tree-puzzle
-singularity exec /pfs/nobackup/home/p/pbryant/singularity/bio.sif /pfs/nobackup/home/p/pbryant/evolution/CATH/run_tmalign_treepuzzle_ind.py $RESULTS_DIR/ $RESULTS_DIR/TMalign/ /home/p/pbryant/pfs/data/CATH/below95_2.6Å_above2_grouped/$FILE_NAME/ $FILE_NAME $PUZZLE $TMALIGN
+./run_tmalign_treepuzzle_ind.py $RESULTS_DIR/ $RESULTS_DIR/TMalign/ $RESULTS_DIR/$FILE_NAME/ $FILE_NAME $PUZZLE $TMALIGN
 
 #Go to where the files are
 cd $RESULTS_DIR/TMalign/
 wait
 #Run lddt for pdbs
-/home/p/pbryant/pfs/evolution/CATH/run_lddt.py $RESULTS_DIR/TMalign/ $RESULTS_DIR/TMalign/ guide
+./run_lddt.py $RESULTS_DIR/TMalign/ $RESULTS_DIR/TMalign/ guide $LDDT_IMAGE
 
 wait
 #Make TMScore dir
@@ -80,8 +79,11 @@ mkdir $RESULTS_DIR/TMscore/
 cd $RESULTS_DIR
 wait
 #Run TMscore and tree-puzzle
-singularity exec /pfs/nobackup/home/p/pbryant/singularity/bio.sif /pfs/nobackup/home/p/pbryant/evolution/CATH/run_tmscore_treepuzzle.py $RESULTS_DIR/ $RESULTS_DIR/TMscore/ /home/p/pbryant/pfs/data/CATH/below95_2.6Å_above2_grouped/$FILE_NAME/ $FILE_NAME $PUZZLE $TMSCORE
+./run_tmscore_treepuzzle.py $RESULTS_DIR/ $RESULTS_DIR/TMscore/ $RESULTS_DIR/$FILE_NAME/ $FILE_NAME $PUZZLE $TMSCORE
 
 wait
 #Run lddt for aligned pdbs
-/home/p/pbryant/pfs/evolution/CATH/run_lddt.py $RESULTS_DIR/ $RESULTS_DIR/TMscore/ guide
+./run_lddt.py $RESULTS_DIR/ $RESULTS_DIR/TMscore/ guide $LDDT_IMAGE
+
+
+#Get all results into a unified df
