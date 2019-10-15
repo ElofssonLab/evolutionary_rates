@@ -251,11 +251,30 @@ def create_df(results_path, t, dssp):
         outp = subprocess.check_output(command, shell = True)#run dssp
 
     #Consolidate dssp dfs
-    all_files = glob.glob(results_path+'/dssp/*.csv')   
+    all_files = glob.glob(results_path+'/dssp/*.csv')
     df_from_each_file = [pd.read_csv(f) for f in all_files]
     complete_dssp_df = pd.concat(df_from_each_file, ignore_index=True)
-    complete_dssp_df.to_csv(results_pat+'/complete_dssp_df.csv')
+    complete_dssp_df = complete_dssp_df.dropna() #Drop NANs
+    complete_dssp_df.to_csv(results_path+'/complete_dssp_df.csv')
 
+
+    #Calculate contacts - better done in parallel
+    hgroups = [*Counter(complete_dssp_df['H_group']).keys()]
+    os.mkdir(results_path+'/contacts/') #Make contact dir
+    for hgroup in hgroups:
+        command = '/contact_calculations.py '+results_path+' '+results_path+'/contacts/ '+fastadir+' '+results_path+'/complete_dssp_df.csv'+' '+group
+        outp = subprocess.check_output(command, shell = True)#run dssp
+
+    #Consolidate contact dfs
+    all_files = glob.glob(results_path+'/contacts/*.csv')
+    df_from_each_file = [pd.read_csv(f) for f in all_files]
+    complete_dssp_contact_df = pd.concat(df_from_each_file, ignore_index=True)
+    complete_dssp_contact_df = complete_dssp_contact_df.dropna() #Drop NANs
+    complete_dssp_contact_df.to_csv(results_path+'/complete_dssp_df.csv')
+
+
+    #Reduce cardinalities
+    return None
 
 #####MAIN#####
 args = parser.parse_args()

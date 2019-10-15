@@ -87,3 +87,4 @@ wait
 
 
 #Get all results into a unified df
+./merge_results.py
