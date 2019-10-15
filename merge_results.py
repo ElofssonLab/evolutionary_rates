@@ -163,7 +163,20 @@ def get_lddt(globpath, dfname):
 
     return lddt_df
 
-def create_df(results_path):
+def percent_aligned(df):
+    '''Calculate percent of shortest sequence in each pair that has been aligned
+    '''
+
+    percent_aligned = []
+    for index, row in df.iterrows():
+        min_len = min(row['l1'], row['l2'])
+        percent_aligned.append(row['aln_len']/min_len)
+
+    complete_seq_df['percent_aligned'] = percent_aligned
+
+    return df
+
+def create_df(results_path, t):
     '''Gets results and parses them into a unified dataframe
     '''
 
@@ -172,7 +185,7 @@ def create_df(results_path):
     seq_df_name = results_path+'/from_seq_df.csv'
     from_seq_df = tsv_to_df(globpath, seq_df_name)
 
-    #Get results from sequence alignments into df
+    #Get results from structure alignments into df
     globpath = results_path+'*/TMalign/*str.tsv'
     str_df_name = results_path+'/from_str_df.csv'
     from_str_df = tsv_to_df(globpath, str_df_name)
@@ -184,13 +197,35 @@ def create_df(results_path):
 
     #get sequence alignments from structure alignments
     globpath = results_path+'*/TMalign/*.aln'
-    seq_aln_name = results_path+'/seq_aln_df.csv'
-    str_aln_df = get_structure_alignments(globpath, seq_aln_name)
+    str_aln_name = results_path+'/str_aln_df.csv'
+    str_aln_df = get_structure_alignments(globpath, str_aln_name)
 
     #Get lddt results for sequence alignments
-    globpath = results_path+'*/TMalign/*.aln'
-    seq_aln_name = results_path+'/seq_aln_df.csv'
-    str_aln_df = get_structure_alignments(globpath, seq_aln_name)
+    globpath = results_path+'*/TMscore/*.lddt'
+    seq_lddt_name = results_path+'/seq_lddt_df.csv'
+    seq_lddt_df = get_lddt(globpath, seq_aln_name)
+
+    #Get lddt results for structure alignments
+    globpath = results_path+'*/TMalign/*.lddt'
+    str_lddt_name = results_path+'/str_lddt_df.csv'
+    str_lddt_df = get_lddt(globpath, str_aln_name)
+
+    #Merge seq aln dfs
+    complete_seq_df = pd.merge(from_seq_df, seq_aln_df, on=['uid1', 'uid2'], how='left')
+    complete_seq_df = pd.merge(seq_lddt_df, complete_seq_df, on=['uid1', 'uid2'], how='left')
+    complete_seq_df = complete_seq_df.dropna() #Drop NANs
+    complete_seq_df = percent_aligned(complete_seq_df) #Calculate percent aligned
+    complete_seq_df.to_csv(results_path+'/complete_seq_df.csv')
+
+    #Merge str aln dfs
+    complete_str_df = pd.merge(from_str_df, str_aln_df, on=['uid1', 'uid2'], how='left')
+    complete_str_df = pd.merge(str_lddt_df, complete_str_df, on=['uid1', 'uid2'], how='left')
+    complete_str_df = complete_str_df.dropna() #Drop NANs
+    complete_str_df = percent_aligned(complete_str_df) #Calculate percent aligned
+    complete_str_df.to_csv(results_path+'/complete_str_df.csv')
+
+    #Select entries from complete seq df based on percent aligned
+    complete_seq_df_t = complete_seq_df[complete_seq_df['percent_aligned']>=0.6]
 
 #####MAIN#####
 args = parser.parse_args()
