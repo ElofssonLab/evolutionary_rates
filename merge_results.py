@@ -6,6 +6,8 @@ import argparse
 import sys
 import pandas as pd
 import glob
+import subprocess
+from collections import Counter
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that collects results and merges them
                                                 into a unified datframe. A selection on how much of
@@ -18,6 +20,8 @@ parser.add_argument('threshold', nargs=1, type= float,
                   default=sys.stdin, help = 'Threshold for percent aligned of the shortest sequence in each pair.')
 parser.add_argument('outdir', nargs=1, type= str,
                   default=sys.stdin, help = 'path output directory.')
+parser.add_argument('dssp_path', nargs=1, type= str,
+                  default=sys.stdin, help = '''path to dssp.''')
 
 
 def tsv_to_df(globpath, dfname):
@@ -176,7 +180,7 @@ def percent_aligned(df):
 
     return df
 
-def create_df(results_path, t):
+def create_df(results_path, t, dssp):
     '''Gets results and parses them into a unified dataframe
     '''
 
@@ -225,7 +229,33 @@ def create_df(results_path, t):
     complete_str_df.to_csv(results_path+'/complete_str_df.csv')
 
     #Select entries from complete seq df based on percent aligned
-    complete_seq_df_t = complete_seq_df[complete_seq_df['percent_aligned']>=0.6]
+    complete_seq_df_t = complete_seq_df[complete_seq_df['percent_aligned']>=t]
+
+    #Merge sequence and str dataframes after percent aligned selection
+    complete_df = pd.merge(complete_seq_df_t, complete_str_df, on=['uid1', 'uid2'], how='left')
+    complete_df = complete_df.dropna() #Drop NANs
+    complete_df.to_csv(results_path+'/complete_df.csv')
+
+    #Rename x with seqaln and y with straln
+    cols = ['lddt_scores', 'MLAAdist', 'RMSD', 'aln_len', 'identity', 'seq1', 'seq2', 'l1', 'l2', 'percent_aligned', ]
+    for col in cols:
+        complete_df = complete_df.rename(columns={col+'_x': col+'_seqaln', col+'_y': col+'_straln'})
+
+
+    #Run DSSP - better done in parallel
+    hgroups = [*Counter(complete_df['H_group']).keys()]
+    fastadir = results_path+'/fasta/'
+    os.mkdir(results_path+'/dssp/') #Make dssp dir
+    for hgroup in hgroups:
+        command = '/match_dssp.py '+results_path+' '+results_path+'/dssp/ '+fastadir+' '+group+' '+results_path+'/complete_df.csv'
+        outp = subprocess.check_output(command, shell = True)#run dssp
+
+    #Consolidate dssp dfs
+    all_files = glob.glob(results_path+'/dssp/*.csv')   
+    df_from_each_file = [pd.read_csv(f) for f in all_files]
+    complete_dssp_df = pd.concat(df_from_each_file, ignore_index=True)
+    complete_dssp_df.to_csv(results_pat+'/complete_dssp_df.csv')
+
 
 #####MAIN#####
 args = parser.parse_args()
@@ -233,3 +263,4 @@ args = parser.parse_args()
 indir = args.indir[0]
 t = args.threshold[0]
 outdir = args.outdir[0]
+dssp = args.dssp[0]

@@ -41,7 +41,7 @@ TMALIGN=/TMalign #Path to TMalign Version 20170708
 TMSCORE=/TMscore #Path to TMscore Version 2016/03/23
 LDDT_IMAGE=/home/singularity/ost.img #VERSION 1.9.0
 #Get ids and run hhalign
-./get_data.py $RESULTS_DIR/$FILE_NAME/ $RESULTS_DIR/ $HHBLITS $HHALIGN $UNIPROT 15 $CATH_API
+./get_data.py $RESULTS_DIR/fasta/$FILE_NAME/ $RESULTS_DIR/ $HHBLITS $HHALIGN $UNIPROT 15 $CATH_API
 
 #Run dssp
 DSSP=/home/p/pbryant/pfs/dssp

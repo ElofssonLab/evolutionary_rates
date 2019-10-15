@@ -114,7 +114,7 @@ def overx(passed_uids_grouped, outdir, sequences):
 
     #write passed_uids_grouped_over_x to fasta
     for group in passed_uids_grouped_over_x:
-        group_dir = outdir+group
+        group_dir = outdir+'/fasta/'+group
         os.mkdir(group_dir)
         uids = passed_uids_grouped_over_x[group]
         for uid in uids:
