@@ -11,12 +11,13 @@
 #structural determination and X-ray resolution
 CLUSTERED_SEQUENCES='cath-domain-seqs-0.2_rep_seq.fasta' #Clustered sequences
 RESULTS_DIR='.' #RESULTS DIRECTORY
-pdb_filter.py $CLUSTERED_SEQUENCES Xray_res2.6Å.txt ./home/pbryant/data/CATH/mmseqs2/ $RESULTS_DIR/
+./pdb_filter.py $CLUSTERED_SEQUENCES Xray_res2.6Å.txt ./home/pbryant/data/CATH/mmseqs2/ $RESULTS_DIR/
 
 #Select H-groups with at least two sequences and group them according to their H-group
-$HGROUPS='H_group.tsv'
-
-
+HGROUPS='H_group.tsv'
+SEQUENCES='clustering/cath-domain-seqs-0.2_rep_seq.fasta'
+FAILED_PDB_FILTER='failed_pdb_filter_2.6Å.txt'
+./above2.py $HGROUPS $SEQUENCES $FAILED_PDB_FILTER $RESULTS_DIR/
 
 
 
