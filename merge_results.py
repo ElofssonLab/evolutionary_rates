@@ -5,7 +5,7 @@
 import argparse
 import sys
 import pandas as pd
-
+import glob
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that collects results and merges them
                                                 into a unified datframe. A selection on how much of
@@ -20,37 +20,177 @@ parser.add_argument('outdir', nargs=1, type= str,
                   default=sys.stdin, help = 'path output directory.')
 
 
-def tsv_to_df(folder_path):
-    '''Get results from tsv files into 
+def tsv_to_df(globpath, dfname):
+    '''Get results from tsv files into
     '''
-    #Get results from sequence alignments
-    all_files = glob.glob(results_path+'*/TMscore/*seq.tsv')     # advisable to use os.path.join as this makes concatenation OS independent
+    #Get results from structure alignments
+    all_files = glob.glob(globpath)     # advisable to use os.path.join as this makes concatenation OS independent
     df_from_each_file = [pd.read_csv(f, sep='\t') for f in all_files]
     for dataframe, filename in zip(df_from_each_file, all_files):
     hgroup = filename.split('/')[-3]
     dataframe['H_group'] = hgroup
     dataframe['C.'] = hgroup.split('.')[0]+'.'
     dataframe['C.A.'] = hgroup.split('.')[0]+'.'+hgroup.split('.')[1]
-    from_seq_df = pd.concat(df_from_each_file, ignore_index=True)
-    from_seq_df.to_csv(results_path+'/from_seq_df.csv')
+    df = pd.concat(df_from_each_file, ignore_index=True)
+    df.to_csv(dfname)
+
+    return df
+
+def get_sequence_alignments(globpath, dfname):
+    '''Get all sequence alignments
+    '''
+
+    #Save all alignements and their metrics for the hhalign sequence alignments
+    all_files = glob.glob(globpath)
+
+    uid1 = []
+    uid2 = []
+    l1 = []
+    s1 = []
+    e1 = []
+    l2 = []
+    s2 = []
+    e2 = []
+    aln_len = []
+    identities = []
+    e_values = []
+    probabilities = []
+    seq1 = []
+    seq2 = []
+    groups = []
+    for name in all_files:
+        groups.append(name.split('/')[-2])
+        with open(name, 'r') as file:
+            for line in file:
+                line = line.rstrip() #remove \n
+                if '>' in line:
+                    uid = line[1:8]
+                    line = line.split('|') #Split
+                    if len(uid1)>len(uid2): #append to uid lists
+                        uid2.append(uid)
+                        l2.append(int(line[1].split('=')[1]))
+                        s2.append(int(line[2].split('=')[1]))
+                        e2.append(int(line[3].split('=')[1]))
+                    else:
+                        uid1.append(uid)
+                        l1.append(int(line[1].split('=')[1]))
+                        s1.append(int(line[2].split('=')[1]))
+                        e1.append(int(line[3].split('=')[1]))
+                        aln_len.append(int(line[4].split('=')[1]))
+                        identities.append(float(line[5].split('=')[1]))
+                        e_values.append(float(line[6].split('=')[1]))
+                        probabilities.append(float(line[7].split('=')[1]))
+                else:
+                    sequence = line
+                    if len(seq1)>len(seq2):
+                        seq2.append(sequence)
+                    else:
+                        seq1.append(sequence)
+
+
+    seq_aln_df = pd.DataFrame(list(zip(uid1, uid2, aln_len, identities, e_values, probabilities, seq1, seq2, l1, l2, s1, s2, e1, e2)), columns = ['uid1','uid2','aln_len','identity', 'e_value', 'probability', 'seq1', 'seq2', 'l1', 'l2', 's1', 's2', 'e1', 'e2'])
+    seq_aln_df.to_csv(dfname)
+
+    return seq_aln_df
+
+
+def get_structure_alignments(globpath, dfname):
+    '''Get all sequence alignments
+    '''
+
+    #Save all alignements and their metrics for the TMalign sequence alignments
+    all_files = glob.glob(globpath)
+    uid1 = []
+    uid2 = []
+    l1 = []
+    l2 = []
+    aln_len = []
+    identities = []
+    seq1 = []
+    seq2 = []
+    groups = []
+    for name in all_files:
+        groups.append(name.split('/')[-3])
+        with open(name, 'r') as file:
+            for line in file:
+                line = line.rstrip() #remove \n
+                if '>' in line:
+                    uid = line[1:8]
+                    line = line.split('|') #Split
+                    if len(uid1)>len(uid2): #append to uid lists
+                        uid2.append(uid)
+                        l2.append(int(line[1].split('=')[1]))
+
+                    else:
+                        uid1.append(uid)
+                        l1.append(int(line[1].split('=')[1]))
+                        aln_len.append(int(line[2].split('=')[1]))
+                        identities.append(float(line[3].split('=')[1]))
+                else:
+                    sequence = line
+                    if len(seq1)>len(seq2):
+                        seq2.append(sequence)
+                    else:
+                        seq1.append(sequence)
+
+
+    str_aln_df = pd.DataFrame(list(zip(uid1, uid2, aln_len, identities,seq1, seq2, l1, l2)), columns = ['uid1','uid2','aln_len','identity', 'seq1', 'seq2', 'l1', 'l2'])
+    str_aln_df.to_csv(dfname)
+
+    return str_aln_df
+
+def get_lddt(globpath, dfname):
+    '''Get all lddt results into a df
+    '''
+    all_files = glob.glob(globpath)
+
+    uid1 = []
+    uid2 = []
+    for name in all_files:
+        with open(name, 'r') as file:
+            uids = name.split('/')[-1].split('.')[0].split('_')
+            uid1.append(uids[0])
+            uid2.append(uids[1])
+            for row in file:
+                if 'Global LDDT score:' in row:
+                    row = row.split()
+                    score = float(row[-1])
+                    lddt_scores.append(score)
+                    break
+
+    lddt_df = pd.DataFrame(list(zip(uid1, uid2, lddt_scores)), columns = ['uid1','uid2','lddt_scores'])
+    lddt_df.to_csv(dfname)
+
+    return lddt_df
 
 def create_df(results_path):
     '''Gets results and parses them into a unified dataframe
     '''
 
-    #Get results from sequence alignments
-    all_files = glob.glob(results_path+'*/TMscore/*seq.tsv')     # advisable to use os.path.join as this makes concatenation OS independent
-    df_from_each_file = [pd.read_csv(f, sep='\t') for f in all_files]
-    for dataframe, filename in zip(df_from_each_file, all_files):
-    hgroup = filename.split('/')[-3]
-    dataframe['H_group'] = hgroup
-    dataframe['C.'] = hgroup.split('.')[0]+'.'
-    dataframe['C.A.'] = hgroup.split('.')[0]+'.'+hgroup.split('.')[1]
-    from_seq_df = pd.concat(df_from_each_file, ignore_index=True)
-    from_seq_df.to_csv(results_path+'/from_seq_df.csv')
+    #Get results from sequence alignments into df
+    globpath = results_path+'*/TMscore/*seq.tsv'
+    seq_df_name = results_path+'/from_seq_df.csv'
+    from_seq_df = tsv_to_df(globpath, seq_df_name)
 
+    #Get results from sequence alignments into df
+    globpath = results_path+'*/TMalign/*str.tsv'
+    str_df_name = results_path+'/from_str_df.csv'
+    from_str_df = tsv_to_df(globpath, str_df_name)
 
+    #get sequence alignments
+    globpath = results_path+'*/*.aln'
+    seq_aln_name = results_path+'/seq_aln_df.csv'
+    seq_aln_df = get_sequence_alignments(globpath, seq_aln_name)
 
+    #get sequence alignments from structure alignments
+    globpath = results_path+'*/TMalign/*.aln'
+    seq_aln_name = results_path+'/seq_aln_df.csv'
+    str_aln_df = get_structure_alignments(globpath, seq_aln_name)
+
+    #Get lddt results for sequence alignments
+    globpath = results_path+'*/TMalign/*.aln'
+    seq_aln_name = results_path+'/seq_aln_df.csv'
+    str_aln_df = get_structure_alignments(globpath, seq_aln_name)
 
 #####MAIN#####
 args = parser.parse_args()

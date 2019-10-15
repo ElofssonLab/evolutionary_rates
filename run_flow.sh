@@ -32,13 +32,13 @@ $FILE_NAME="H-group"
 cd $RESULTS_DIR
 #Program input paths
 CATH_API=www.cathdb.info/version/v4_2_0/api/rest/id/
-HHBLITS=/hh-suite/build/bin/hhblits #Path to hhblits
-HHALIGN=/hh-suite/build/bin/hhalign #Path to hhalign
+HHBLITS=/hh-suite/build/bin/hhblits #Path to hhblits version 3.1.0
+HHALIGN=/hh-suite/build/bin/hhalign #Path to hhalign version 3.1.0
 UNIPROT=/uniprot20_2016_02/data/uniprot20_2016_02 #Path to uniprot. Here version 20 was used.
 
 PUZZLE=/tree-puzzle-5.3.rc16-linux/src/puzzle #Path to tree-puzzle
 TMALIGN=/TMalign #Path to TMalign Version 20170708
-TMSCORE=/TMscore #Path to TMscore
+TMSCORE=/TMscore #Path to TMscore Version 2016/03/23
 LDDT_IMAGE=/home/singularity/ost.img #VERSION 1.9.0
 #Get ids and run hhalign
 ./get_data.py $RESULTS_DIR/$FILE_NAME/ $RESULTS_DIR/ $HHBLITS $HHALIGN $UNIPROT 15 $CATH_API
