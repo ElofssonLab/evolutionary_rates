@@ -10,6 +10,8 @@
 #pdb files is to be done in parallel for each H-group
 #The array on the cluster used has a maximum of 1000 entries per job submission
 
+#Path to where to move the temporary directory
+RESULTS_DIR=/home/p/pbryant/pfs/results/CATH/20191017 #RESULTS DIRECTORY
 #Path to git directory
 GITDIR=/home/p/pbryant/pfs/evolutionary_rates
 #Path to fasta files
@@ -73,12 +75,17 @@ wait
 #Make sequence alignment dir
 mkdir $TEMPDIR/sequence/
 #Move all phylip files from sequence alignment to sequnce directory
-mv $TEMPDIR/*.phy $RESULTS_DIR/sequence
-cd $RESULTS_DIR/sequence
+mv $TEMPDIR/*.phy $TEMPDIR/sequence
+cd $TEMPDIR/sequence
 wait
 #Run TMscore and tree-puzzle
-./run_tmscore_treepuzzle.py $RESULTS_DIR/ $RESULTS_DIR/sequence/ $RESULTS_DIR/$FILE_NAME/ $FILE_NAME $PUZZLE $TMSCORE
+$GITDIR/run_tmscore_treepuzzle.py --indir $TEMPDIR/ --outdir $TEMPDIR/sequence/ --fastadir $FASTADIR/$FILE_NAME/ --hgroup $FILE_NAME --puzzle $PUZZLE --TMscore $TMSCORE
 
 wait
 #Run lddt for aligned pdbs
-./run_lddt.py $RESULTS_DIR/ $RESULTS_DIR/sequence/ guide $LDDT_IMAGE
+$GITDIR/run_lddt.py --indir $TEMPDIR/sequence/ --outdir $TEMPDIR/sequence/ --mode guide --lddt_image $LDDT_IMAGE
+
+
+#Tar everything from /scratch and move it to the results directory
+tar zcf $TEMPDIR.tar.gz $TEMPDIR
+mv $TEMPDIR.tar.gz $RESULTS_DIR
