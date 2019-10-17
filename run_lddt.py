@@ -13,16 +13,16 @@ import pdb
 parser = argparse.ArgumentParser(description = '''A program that renumbers the entrties in pdb files
 						and then runs lddt on the pdb files.''')
 
-parser.add_argument('indir', nargs=1, type= str,
+parser.add_argument('--indir', nargs=1, type= str,
 default=sys.stdin, help = 'path to directory with pdb files.')
 
-parser.add_argument('outdir', nargs=1, type= str,
+parser.add_argument('--outdir', nargs=1, type= str,
 default=sys.stdin, help = 'path to output directory.')
 
-parser.add_argument('mode', nargs=1, type= str,
+parser.add_argument('--mode', nargs=1, type= str,
 default=sys.stdin, help = 'mode to run lddt in. If mode = "guide", run using aligned pdb files.')
 
-parser.add_argument('lddt_image', nargs=1, type= str,
+parser.add_argument('--lddt_image', nargs=1, type= str,
 default=sys.stdin, help = 'lddt singularity image.')
 
 def run_lddt(indir, outdir, mode, lddt_image):

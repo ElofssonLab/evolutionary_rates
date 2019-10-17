@@ -111,6 +111,8 @@ def overx(passed_uids_grouped, outdir, sequences):
         if num_uids >= x:
             passed_uids_grouped_over_x[key]=passed_uids_grouped[key]
 
+    #Write all passed H-groups to newline separated
+    #text files in partitions of 1000
 
     #write passed_uids_grouped_over_x to fasta
     for group in passed_uids_grouped_over_x:
