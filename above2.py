@@ -11,13 +11,13 @@ parser = argparse.ArgumentParser(description = '''A program that filters entries
         according to a filter file containing PDB ids. All groups with above two entries
         are then selected and written to individual folders.''')
 
-parser.add_argument('H_groups', nargs=1, type= str,
+parser.add_argument('--H_groups', nargs=1, type= str,
                   default=sys.stdin, help = 'path to H_groups.')
-parser.add_argument('sequences', nargs=1, type= str,
+parser.add_argument('--sequences', nargs=1, type= str,
                   default=sys.stdin, help = 'path to clustered sequences.')
-parser.add_argument('failed_pdb_filter', nargs=1, type= str,
+parser.add_argument('--failed_pdb_filter', nargs=1, type= str,
                   default=sys.stdin, help = 'path to uids that failed the pdb filter.')
-parser.add_argument('outdir', nargs=1, type= str,
+parser.add_argument('--outdir', nargs=1, type= str,
                   default=sys.stdin, help = 'path output directory.')
 
 

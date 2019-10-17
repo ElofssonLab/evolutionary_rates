@@ -20,19 +20,19 @@ parser = argparse.ArgumentParser(description = '''A program that converts fasta 
 						All pairs of x randomly selected entries are then aligned with hhalign.
 						''')
 
-parser.add_argument('input_dir', nargs=1, type= str,
+parser.add_argument('--input_dir', nargs=1, type= str,
                   default=sys.stdin, help = 'path to directory with .fa files.')
-parser.add_argument('output_dir', nargs=1, type= str,
+parser.add_argument('--output_dir', nargs=1, type= str,
                   default=sys.stdin, help = 'output directory.')
-parser.add_argument('hhblits', nargs=1, type= str,
+parser.add_argument('--hhblits', nargs=1, type= str,
                   default=sys.stdin, help = 'path to hhblits.')
-parser.add_argument('hhalign', nargs=1, type= str,
+parser.add_argument('--hhalign', nargs=1, type= str,
                   default=sys.stdin, help = 'path to hhalign.')
-parser.add_argument('uniprot', nargs=1, type= str,
+parser.add_argument('--uniprot', nargs=1, type= str,
                   default=sys.stdin, help = 'path to uniprot database.')
-parser.add_argument('get_max', nargs=1, type= int,
+parser.add_argument('--get_max', nargs=1, type= int,
                   default=sys.stdin, help = 'Maximum number of structures to use.')
-parser.add_argument('address', nargs=1, type= str,
+parser.add_argument('--address', nargs=1, type= str,
                   default=sys.stdin, help = 'Web adress to download from.') #www.cathdb.info/version/v4_2_0/api/rest/id/
 
 #FUNCTIONS
