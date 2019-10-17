@@ -61,29 +61,31 @@ wait
 mv $RESULTS_DIR/*.dssp $RESULTS_DIR/dssp/
 
 wait
-#Make TMalign dir
-mkdir $RESULTS_DIR/TMalign/
+#Make structure alignment dir
+mkdir $RESULTS_DIR/structure/
 wait
 #Run TMalign and tree-puzzle
-./run_tmalign_treepuzzle_ind.py $RESULTS_DIR/ $RESULTS_DIR/TMalign/ $RESULTS_DIR/$FILE_NAME/ $FILE_NAME $PUZZLE $TMALIGN
+./run_tmalign_treepuzzle_ind.py $RESULTS_DIR/ $RESULTS_DIR/structure/ $RESULTS_DIR/$FILE_NAME/ $FILE_NAME $PUZZLE $TMALIGN
 
 #Go to where the files are
-cd $RESULTS_DIR/TMalign/
+cd $RESULTS_DIR/structure/
 wait
 #Run lddt for pdbs
-./run_lddt.py $RESULTS_DIR/TMalign/ $RESULTS_DIR/TMalign/ guide $LDDT_IMAGE
+./run_lddt.py $RESULTS_DIR/structure/ $RESULTS_DIR/structure/ guide $LDDT_IMAGE
 
 wait
-#Make TMScore dir
-mkdir $RESULTS_DIR/TMscore/
-cd $RESULTS_DIR
+#Make sequence alignment dir
+mkdir $RESULTS_DIR/sequence/
+#Move all phylip files from sequence alignment to sequnce directory
+mv $RESULTS_DIR/*.phy $RESULTS_DIR/sequence
+cd $RESULTS_DIR/sequence
 wait
 #Run TMscore and tree-puzzle
-./run_tmscore_treepuzzle.py $RESULTS_DIR/ $RESULTS_DIR/TMscore/ $RESULTS_DIR/$FILE_NAME/ $FILE_NAME $PUZZLE $TMSCORE
+./run_tmscore_treepuzzle.py $RESULTS_DIR/ $RESULTS_DIR/sequence/ $RESULTS_DIR/$FILE_NAME/ $FILE_NAME $PUZZLE $TMSCORE
 
 wait
 #Run lddt for aligned pdbs
-./run_lddt.py $RESULTS_DIR/ $RESULTS_DIR/TMscore/ guide $LDDT_IMAGE
+./run_lddt.py $RESULTS_DIR/ $RESULTS_DIR/sequence/ guide $LDDT_IMAGE
 
 
 #Get all results into a unified df

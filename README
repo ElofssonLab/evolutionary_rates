@@ -1,0 +1,4 @@
+This file describes how to run the workflow described in this folder.
+
+1. Run the scripts in the clustering folder
+2. Run the script run_flow.sh

@@ -73,7 +73,7 @@ def loop_through_ids(fasta_dict, uids, H_group,  input_dir, output_dir, hhblits,
 	status = False #Set original status
 	identities = {} #Save identities from hhalign
 
-	#Get as many as possible, bu maximum get_max
+	#Get as many as possible, but maximum get_max
 	get_max = min(get_max, len(uids))
 	selected_uids = uids[0:get_max]
 	for i in range(len(selected_uids)):
@@ -93,7 +93,7 @@ def loop_through_ids(fasta_dict, uids, H_group,  input_dir, output_dir, hhblits,
 		for key in identities:
 			f.write(key+'\t'+str(identities[key])+'\n')
 
-	
+
 	return None
 
 def align(selected_uids, output_dir, H_group, hhalign, identities):
@@ -128,7 +128,7 @@ def align(selected_uids, output_dir, H_group, hhalign, identities):
 			if key not in identities.keys():
 				identities[key] = identity
 
-			#Add to write			
+			#Add to write
 			parsed_output[str(selected_uids[i]+'_'+selected_uids[j])] = [query_aln, template_aln, chain_lens, aligned_len, identity, start_pos, end_pos, e_value, probability] #Add info to parsed output
 
 
@@ -149,7 +149,7 @@ def write_to_file(output_dir, H_group, parsed_output):
 		#Write alignment and info to file
 		with open(output_dir+key+'.aln', 'w') as f:
 			#f.write('#'+'query:' + 'l=' + str(chain_lens[0]) + ' s=' + str(start_pos[0]) + ' e=' + str(end_pos[0]) + '|template: ' + 'l=' + str(chain_lens[1]) + ' s=' + str(start_pos[1]) + ' e=' + str(end_pos[1]) +  '|aligned_len: ' + str(aligned_len) + '|Identity: ' + str(identity) + '\n')
-			f.write('>'+uids[0]+'|l='+str(chain_lens[0]) + '|s=' + str(start_pos[0]) + '|e=' + str(end_pos[0])+'|aligned_len=' + str(aligned_len) + '|Identity=' + str(identity) + 
+			f.write('>'+uids[0]+'|l='+str(chain_lens[0]) + '|s=' + str(start_pos[0]) + '|e=' + str(end_pos[0])+'|aligned_len=' + str(aligned_len) + '|Identity=' + str(identity) +
 			'|e-value='+ str(e_value) + '|probability=' + str(probability) + '\n')
 			f.write(query_aln+'\n') #write sequences
 			f.write('>'+uids[1]+'|l=' + str(chain_lens[1]) + '|s=' + str(start_pos[1]) + '|e=' + str(end_pos[1])+'\n')
@@ -176,4 +176,3 @@ H_group = input_dir.split('/')[-1] #Get H-group (last part of path)
 fasta_dict = read_fasta(input_dir, output_dir) #Get fasta sequences - filter on filter_ids
 uids = [*fasta_dict.keys()] #Get uids
 loop_through_ids(fasta_dict, uids, H_group, input_dir,  output_dir, hhblits, hhalign, uniprot, get_max, address)
-
