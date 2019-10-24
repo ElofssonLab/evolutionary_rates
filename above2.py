@@ -5,6 +5,7 @@
 import argparse
 import sys
 import pandas as pd
+import os
 
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that filters entries in CATH

@@ -56,7 +56,7 @@ def read_fasta(fasta_file , filter_ids, output_dir):
 				else:
     					failed_pdb_filter.append(uid)
 
-	with open(output_dir+'failed_pdb_filter', 'w') as f:
+	with open(output_dir+'failed_pdb_filter.txt', 'w') as f:
 	               for i in failed_pdb_filter:
 	                       f.write(str(i)+'\n')
 

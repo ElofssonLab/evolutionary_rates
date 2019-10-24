@@ -31,12 +31,12 @@ def tsv_to_df(globpath, dfname):
     all_files = glob.glob(globpath)     # advisable to use os.path.join as this makes concatenation OS independent
     df_from_each_file = [pd.read_csv(f, sep='\t') for f in all_files]
     for dataframe, filename in zip(df_from_each_file, all_files):
-    hgroup = filename.split('/')[-3]
-    dataframe['H_group'] = hgroup
-    dataframe['C.'] = hgroup.split('.')[0]+'.'
-    dataframe['C.A.'] = hgroup.split('.')[0]+'.'+hgroup.split('.')[1]
-    df = pd.concat(df_from_each_file, ignore_index=True)
-    df.to_csv(dfname)
+    	hgroup = filename.split('/')[-3]
+    	dataframe['H_group'] = hgroup
+    	dataframe['C.'] = hgroup.split('.')[0]+'.'
+    	dataframe['C.A.'] = hgroup.split('.')[0]+'.'+hgroup.split('.')[1]
+    	df = pd.concat(df_from_each_file, ignore_index=True)
+    	df.to_csv(dfname)
 
     return df
 
@@ -283,3 +283,5 @@ indir = args.indir[0]
 t = args.threshold[0]
 outdir = args.outdir[0]
 dssp = args.dssp[0]
+
+create_df(indir, t, dssp)

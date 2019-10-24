@@ -76,6 +76,8 @@ def loop_through_ids(fasta_dict, uids, H_group,  input_dir, output_dir, hhblits,
 	#Get as many as possible, but maximum get_max
 	get_max = min(get_max, len(uids))
 	selected_uids = uids[0:get_max]
+	#Open a file to write the selected uids to
+	uid_file = open('selected_uids.txt', 'w')
 	for i in range(len(selected_uids)):
 		#Check if .hhm exists
 		if not os.path.isfile(output_dir+selected_uids[i]+'.hhm'):
@@ -83,11 +85,13 @@ def loop_through_ids(fasta_dict, uids, H_group,  input_dir, output_dir, hhblits,
 			run_hhblits(selected_uids[i], input_dir, hhblits, uniprot)
 		#Check if .pdb exists
 		if not os.path.isfile(output_dir+selected_uids[i]+'.pdb'):
-			#Get pdb file
-			subprocess.call(["wget",address+selected_uids[i]+'.pdb'])
+			#Write to selected uid file
+			uid_file.write(selected_uids[i]+'\n')
 	#Align
 	(latest_pos, identities) = align(selected_uids, output_dir, H_group, hhalign, identities)
 
+	#Close uid_file
+	uid_file.close()
 	#Write identities to file
 	with open(output_dir+'identities', 'w') as f:
 		for key in identities:
