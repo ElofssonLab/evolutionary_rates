@@ -240,7 +240,6 @@ def create_df(results_path, t, dssp, fastadir, gitdir):
     #Merge sequence and str dataframes after percent aligned selection
     complete_df = pd.merge(complete_seq_df_t, complete_str_df, on=['uid1', 'uid2'], how='left')
     complete_df = complete_df.dropna() #Drop NANs
-    complete_df.to_csv(results_path+'/complete_df.csv')
 
     #Rename x with seqaln and y with straln
     cols = ['lddt_scores', 'MLAAdist', 'RMSD', 'aln_len', 'identity', 'seq1', 'seq2', 'l1', 'l2', 'percent_aligned', ]
@@ -249,28 +248,30 @@ def create_df(results_path, t, dssp, fastadir, gitdir):
 
     #rename H_group_x to H_group
     complete_df = complete_df.rename(columns={'H_group_x': 'H_group'})
+    #Save df
+    complete_df.to_csv(results_path+'/complete_df.csv')
     #Run DSSP - better done in parallel
     hgroups = [*Counter(complete_df['H_group']).keys()]
-    os.mkdir(results_path+'/dssp/') #Make dssp dir
-    for group in hgroups:
-        command = gitdir+'match_dssp.py '+results_path+' '+results_path+'/dssp/ '+fastadir+' '+group+' '+results_path+'/complete_df.csv'
-        outp = subprocess.check_output(command, shell = True)#run dssp
-    pdb.set_trace()
 
+    os.mkdir(results_path+'/dssp_dfs/') #Make dssp dir
+    for group in hgroups:
+        command = gitdir+'match_dssp.py '+results_path+' '+results_path+'/dssp_dfs/ '+fastadir+' '+group+' '+results_path+'/complete_df.csv'
+        outp = subprocess.check_output(command, shell = True)#run dssp
 
     #Consolidate dssp dfs
-    all_files = glob.glob(results_path+'/dssp/*.csv')
+    all_files = glob.glob(results_path+'/dssp_dfs/*.csv')
     df_from_each_file = [pd.read_csv(f) for f in all_files]
     complete_dssp_df = pd.concat(df_from_each_file, ignore_index=True)
     complete_dssp_df = complete_dssp_df.dropna() #Drop NANs
-    complete_dssp_df.to_csv(results_path+'/complete_dssp_df.csv')
+    complete_dssp_df.to_csv(results_path+'/complete_df.csv')
 
 
     #Calculate contacts - better done in parallel
     hgroups = [*Counter(complete_dssp_df['H_group']).keys()]
     os.mkdir(results_path+'/contacts/') #Make contact dir
-    for hgroup in hgroups:
-        command = '/contact_calculations.py '+results_path+' '+results_path+'/contacts/ '+fastadir+' '+results_path+'/complete_dssp_df.csv'+' '+group
+
+    for ggroup in hgroups:
+        command = gitdir+'contact_calculations.py '+results_path+' '+results_path+'/contacts/ '+fastadir+' '+results_path+'/complete_dssp_df.csv'+' '+group
         outp = subprocess.check_output(command, shell = True)#run dssp
 
     #Consolidate contact dfs
@@ -278,7 +279,7 @@ def create_df(results_path, t, dssp, fastadir, gitdir):
     df_from_each_file = [pd.read_csv(f) for f in all_files]
     complete_dssp_contact_df = pd.concat(df_from_each_file, ignore_index=True)
     complete_dssp_contact_df = complete_dssp_contact_df.dropna() #Drop NANs
-    complete_dssp_contact_df.to_csv(results_path+'/complete_dssp_df.csv')
+    complete_dssp_contact_df.to_csv(results_path+'/complete_df.csv')
 
 
     #Reduce cardinalities

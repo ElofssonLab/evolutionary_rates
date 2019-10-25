@@ -64,7 +64,7 @@ def match_contacts(df, indir, outdir, fastadir):
 
 
 	for index, row in df.iterrows():
-		hgroup = row['H_group_x']
+		hgroup = row['H_group']
 		uid1 = row['uid1']
 		uid2 = row['uid2']
 
