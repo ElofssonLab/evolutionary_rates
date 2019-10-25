@@ -270,7 +270,7 @@ def create_df(results_path, t, dssp, fastadir, gitdir):
     hgroups = [*Counter(complete_dssp_df['H_group']).keys()]
     os.mkdir(results_path+'/contacts/') #Make contact dir
 
-    for ggroup in hgroups:
+    for group in hgroups:
         command = gitdir+'contact_calculations.py '+results_path+' '+results_path+'/contacts/ '+fastadir+' '+results_path+'/complete_dssp_df.csv'+' '+group
         outp = subprocess.check_output(command, shell = True)#run dssp
 
