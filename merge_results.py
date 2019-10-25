@@ -8,6 +8,8 @@ import pandas as pd
 import glob
 import subprocess
 from collections import Counter
+import os
+import pdb
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that collects results and merges them
                                                 into a unified datframe. A selection on how much of
@@ -22,6 +24,10 @@ parser.add_argument('outdir', nargs=1, type= str,
                   default=sys.stdin, help = 'path output directory.')
 parser.add_argument('dssp_path', nargs=1, type= str,
                   default=sys.stdin, help = '''path to dssp.''')
+parser.add_argument('fastadir', nargs=1, type= str,
+                default=sys.stdin, help = '''path to fastadir.''')
+parser.add_argument('gitdir', nargs=1, type= str,
+                default=sys.stdin, help = '''path to gitdir.''')
 
 
 def tsv_to_df(globpath, dfname):
@@ -37,7 +43,6 @@ def tsv_to_df(globpath, dfname):
     	dataframe['C.A.'] = hgroup.split('.')[0]+'.'+hgroup.split('.')[1]
     	df = pd.concat(df_from_each_file, ignore_index=True)
     	df.to_csv(dfname)
-
     return df
 
 def get_sequence_alignments(globpath, dfname):
@@ -150,6 +155,7 @@ def get_lddt(globpath, dfname):
 
     uid1 = []
     uid2 = []
+    lddt_scores = []
     for name in all_files:
         with open(name, 'r') as file:
             uids = name.split('/')[-1].split('.')[0].split('_')
@@ -176,11 +182,11 @@ def percent_aligned(df):
         min_len = min(row['l1'], row['l2'])
         percent_aligned.append(row['aln_len']/min_len)
 
-    complete_seq_df['percent_aligned'] = percent_aligned
+    df['percent_aligned'] = percent_aligned
 
     return df
 
-def create_df(results_path, t, dssp):
+def create_df(results_path, t, dssp, fastadir, gitdir):
     '''Gets results and parses them into a unified dataframe
     '''
 
@@ -241,14 +247,16 @@ def create_df(results_path, t, dssp):
     for col in cols:
         complete_df = complete_df.rename(columns={col+'_x': col+'_seqaln', col+'_y': col+'_straln'})
 
-
+    #rename H_group_x to H_group
+    complete_df = complete_df.rename(columns={'H_group_x': 'H_group'})
     #Run DSSP - better done in parallel
     hgroups = [*Counter(complete_df['H_group']).keys()]
-    fastadir = results_path+'/fasta/'
     os.mkdir(results_path+'/dssp/') #Make dssp dir
-    for hgroup in hgroups:
-        command = '/match_dssp.py '+results_path+' '+results_path+'/dssp/ '+fastadir+' '+group+' '+results_path+'/complete_df.csv'
+    for group in hgroups:
+        command = gitdir+'match_dssp.py '+results_path+' '+results_path+'/dssp/ '+fastadir+' '+group+' '+results_path+'/complete_df.csv'
         outp = subprocess.check_output(command, shell = True)#run dssp
+    pdb.set_trace()
+
 
     #Consolidate dssp dfs
     all_files = glob.glob(results_path+'/dssp/*.csv')
@@ -282,6 +290,7 @@ args = parser.parse_args()
 indir = args.indir[0]
 t = args.threshold[0]
 outdir = args.outdir[0]
-dssp = args.dssp[0]
-
-create_df(indir, t, dssp)
+dssp = args.dssp_path[0]
+fastadir = args.fastadir[0]
+gitdir = args.gitdir[0]
+create_df(indir, t, dssp, fastadir, gitdir)

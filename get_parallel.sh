@@ -33,7 +33,7 @@ HHBLITS=/home/p/pbryant/pfs/hh-suite/build/bin/hhblits #Path to hhblits version 
 HHALIGN=/home/p/pbryant/pfs/hh-suite/build/bin/hhalign #Path to hhalign version 3.1.0
 UNIPROT=/home/p/pbryant/pfs/uniprot20_2016_02/data/uniprot20_2016_02 #Path to uniprot. Here version 20 was used.
 
-PUZZLE=/home/p/pbryant/pfs/tree-puzzle-5.3.rc16-linux/src/puzzle #Path to tree-puzzle
+PUZZLE=/home/p/pbryant/pfs/tree-puzzle-5.3.rc16-linux/src/puzzle #Path to tree-puzzle. Run using the automatically selected model of substitution.
 TMALIGN=/home/p/pbryant/pfs/TMalign #Path to TMalign Version 20170708
 TMSCORE=/home/p/pbryant/pfs/TMscore #Path to TMscore Version 2016/03/23
 LDDT_IMAGE=/home/p/pbryant/pfs/singularity/ost.img #VERSION 1.9.0
