@@ -3,21 +3,22 @@
 #SBATCH -c 1
 #SBATCH -t 1:00:00
 #SBATCH --array=1
-#SBATCH --error=/home/p/pbryant/pfs/runs/CATH/test/20191024/error/%A_%a.error
-#SBATCH --output=/home/p/pbryant/pfs/runs/CATH/test/20191024/out/%A_%a.out
+#SBATCH --error=/home/p/pbryant/pfs/results/CATH/20191026/error/%A_%a.error
+#SBATCH --output=/home/p/pbryant/pfs/results/CATH/20191026/out/%A_%a.out
 
 #The next step of aligning sequences and structures as well as getting
 #pdb files is to be done in parallel for each H-group
 #The array on the cluster used has a maximum of 1000 entries per job submission
 
 #Path to where to move the temporary directory
-RESULTS_DIR=/home/p/pbryant/pfs/runs/CATH/test/20191024  #RESULTS DIRECTORY
+RESULTS_DIR=/home/p/pbryant/pfs/results/CATH/20191026 #RESULTS DIRECTORY
+RUN_DIR=/home/p/pbryant/pfs/runs/CATH/20191026 #RUN DIRECTORY
 #Path to git directory
 GITDIR=/home/p/pbryant/pfs/evolutionary_rates
 #Path to fasta files
 FASTADIR=/home/p/pbryant/pfs/data/CATH/complete_flow/distant/fasta
 #Get filename from line index
-HGROUPS=/home/p/pbryant/pfs/runs/CATH/test/20191024/groups.txt #This file has to contain the selected newline separated H-groups
+HGROUPS=$RUN_DIR/groups.txt #This file has to contain the selected newline separated H-groups
 FILE_NAME=$(sed -n $SLURM_ARRAY_TASK_ID'p' $HGROUPS)
 echo $FILE_NAME
 
