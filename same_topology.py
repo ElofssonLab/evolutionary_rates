@@ -117,11 +117,13 @@ def overx(passed_uids_grouped, outdir, sequences):
     x=2 #At least two entries per topology for a pair
     #write passed_uids_grouped_over_x to fasta
     for group in passed_uids_grouped:
-        group_dir = outdir+'/fasta/'+group
+        group_dir = outdir+'fasta/'+group
         uids = passed_uids_grouped[group]
         if len(uids)<2:
             continue
         os.mkdir(group_dir)
+	#shuffle uids to make sure the groupings are random
+	random.Random(2).shuffle(uids)
         for i in range(0,len(uids),200):
             uids_200 = uids[i:i+200]
             subgroup_dir = group_dir+'/'+str(i)
