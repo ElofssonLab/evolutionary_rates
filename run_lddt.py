@@ -98,7 +98,7 @@ def move_res_number(pdb_name):
 	'''Reformat pdb file so the residue number in column 23-26 is right ordered.
 	'''
 
-	command = 'python /home/p/pbryant/pfs/evolution/CATH/parse_pdb_resid.py ' + pdb_name
+	command = 'singularity exec /pfs/nobackup/home/p/pbryant/singularity/bio.sif python /home/p/pbryant/pfs/evolution/CATH/parse_pdb_resid.py ' + pdb_name
 	out = subprocess.check_output(command, shell = True)#Save parsed pdb
 	out = out.decode() #Returns byte
 	out = out.split('\n')
