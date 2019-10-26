@@ -107,32 +107,35 @@ def get_passed_uids(failed_pdb_filter, sequences, topologies):
     return passed_uids_grouped
 
 def overx(passed_uids_grouped, outdir, sequences):
-    '''Get all H-groups with at least two passed uids and write them in fasta format
+    '''Write all uids to their respective topology in fasta format
     '''
-    pdb.set_trace()
-    x = 2
-    passed_uids_grouped_over_x = {}
-    for key in passed_uids_grouped:
-        num_uids = len(passed_uids_grouped[key])
-        if num_uids >= x:
-            passed_uids_grouped_over_x[key]=passed_uids_grouped[key]
 
-    #Write all passed H-groups to newline separated
+    #Write all passed groups to newline separated
     #text files in partitions of 1000
+    topology_groupings = open('topology_groupings.txt', 'w')
 
+    x=2 #At least two entries per topology for a pair
     #write passed_uids_grouped_over_x to fasta
-    for group in passed_uids_grouped_over_x:
+    for group in passed_uids_grouped:
         group_dir = outdir+'/fasta/'+group
+        uids = passed_uids_grouped[group]
+        if len(uids)<2:
+            continue
         os.mkdir(group_dir)
-        uids = passed_uids_grouped_over_x[group]
-        for uid in uids:
-            sequence = sequences[uid]
-            with open(group_dir+'/'+uid+'.fa', "w") as file:
-                file.write('>'+uid+'\n')
-                i = 0 #index
-                while i<len(sequence):
-                    file.write(sequence[i:i+60]+'\n')
-                    i+=60
+        for i in range(0,len(uids),200):
+            uids_200 = uids[i:i+200]
+            subgroup_dir = group_dir+'/'+str(i)
+            os.mkdir(subgroup_dir)
+            topology_groupings.write(subgroup_dir+'\n')		
+            for uid in uids_200:
+                sequence = sequences[uid]
+                with open(subgroup_dir+'/'+uid+'.fa', "w") as file:
+                    file.write('>'+uid+'\n')
+                    j = 0 #index
+                    while j<len(sequence):
+                        file.write(sequence[j:j+60]+'\n')
+                        j+=60
+    topology_groupings.close()
 
     return None
 
