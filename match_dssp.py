@@ -26,8 +26,6 @@ parser.add_argument('hgroup', nargs=1, type= str,
                   default=sys.stdin, help = '''H-group.''')
 parser.add_argument('df_path', nargs=1, type= str,
                   default=sys.stdin, help = '''path to df.''')
-parser.add_argument('dssp_path', nargs=1, type= str,
-                  default=sys.stdin, help = '''path to dssp.''')
 
 #Max acc surface areas for each amino acid according to empirical measurements in:
 #Tien, Matthew Z et al. “Maximum allowed solvent accessibilites of residues in proteins.”
@@ -77,7 +75,7 @@ def read_fasta(filepath):
 def run_dssp(indir,hgroup, uid):
 	'''Run dssp
 	'''
-	DSSP = '/home/p/pbryant/pfs/dssp'
+	DSSP = '/home/pbryant/dssp'
 	command = DSSP +' '+indir+hgroup+'/'+uid+'.pdb'
 	outp = subprocess.check_output(command, shell = True)#run dssp
 	outp = outp.decode()
