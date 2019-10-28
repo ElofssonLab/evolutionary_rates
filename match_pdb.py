@@ -54,7 +54,7 @@ def seq_to_pdb(uids, query_aln, template_aln, q_fa, t_fa, outdir):
 	t_pdb = uids[1] + '.pdb'
 
 	#Get query CAs
-	q_command = 'python ./parse_pdb_resid.py ' + q_pdb
+	q_command = 'python /pfs/nobackup/home/p/pbryant/evolutionary_rates/parse_pdb_resid.py ' + q_pdb
 	q_out = subprocess.check_output(q_command, shell = True)#Save parsed pdb
 	q_out = q_out.decode() #Returns byte
 	q_out = q_out.split('\n')
@@ -64,7 +64,7 @@ def seq_to_pdb(uids, query_aln, template_aln, q_fa, t_fa, outdir):
 	if len(q_seq) != len(q_ca):
 		print(q_pdb)
 	#Get template CAs
-	t_command = 'python ./parse_pdb_resid.py ' + t_pdb
+	t_command = 'python  /pfs/nobackup/home/p/pbryant/evolutionary_rates/parse_pdb_resid.py ' + t_pdb
 	t_out = subprocess.check_output(t_command, shell = True)#Save parsed pdb
 	t_out = t_out.decode()
 	t_out = t_out.split('\n')
