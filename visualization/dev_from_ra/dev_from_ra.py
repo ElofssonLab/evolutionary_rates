@@ -150,6 +150,9 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
     #Set step
     step = 0.1
 
+    #Create new subplot
+    plt.subplot(plot_num) #set plot_num
+
     #True values = 0, no deviation from total average
     truevals = np.zeros(105) #Maximum 105 pairs per H-group
     all_x = []
@@ -191,7 +194,7 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
         all_x.extend(js)
         all_y.extend(avdevs)
 
-    plt.subplot(plot_num) #set plot_num
+
     plt.title(aln_type[1:])
     plt.ylabel('Average deviation from total average')
     plt.xlim([0,6])
@@ -235,8 +238,8 @@ score = 'RMSD'
 ras = ra_different(df, aln_types, score, cardinality, calc)
 #Calculate deviations from total ra and plot
 plot_num = 331
+fig = plt.figure(figsize=(10,10)) #set figsize
 for key in ras:
-    fig = plt.figure(figsize=(10,10)) #set figsize
     tra = ras[key]
     aln_type = key
     all_x, all_y, pvals = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num)
