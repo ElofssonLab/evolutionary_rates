@@ -164,7 +164,7 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
         avdevs = [] #save average deviations from line for each step
 
         #Only get the values where the H-group has points
-        end = max(hgroup_df['MLAAdist'+cardinality+aln_type])
+        end = min(max(hgroup_df['MLAAdist'+cardinality+aln_type]), 6)
 
         for j in np.arange(min(mldists)+step, end+step, step):
             below_df = hgroup_df[hgroup_df['MLAAdist'+cardinality+aln_type]<j] #below j
@@ -187,11 +187,11 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
         statistic, pvalue = stats.ttest_ind(avdevs, truevals, equal_var = False)
         pvals.append(pvalue)
         #Do a scatter plot of the deviation for each evdist
+        plt.scatter(js, avdevs, s= 1)
         all_x.extend(js)
         all_y.extend(avdevs)
 
     plt.subplot(plot_num) #set plot_num
-    sns.kdeplot(all_x, all_y, shade = True)
     plt.title(aln_type[1:])
     plt.ylabel('Average deviation from total average')
     plt.xlim([0,6])
@@ -201,7 +201,7 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
     #New plot_num
     plot_num += 3
     plt.subplot(plot_num) #set plot_num
-    plt.scatter(all_x, all_y, s= 1)
+    sns.kdeplot(all_x, all_y, shade = True)
     plt.ylabel('Average deviation from total average')
     plt.xlabel('ML AA20')
     plt.xlim([0,6])
@@ -210,7 +210,7 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
     #New plot_num
     plot_num += 3
     plt.subplot(plot_num) #set plot_num
-    plt.hist(pvals, bins = 20)
+    plt.hist(pvals, bins = 30, log = True)
     plt.ylabel('Count')
     plt.xlabel('P-value')
 
@@ -247,5 +247,5 @@ for key in ras:
     np.save(outdir+aln_type+'_pvals.npy', pvals)
     plot_num += 2
 
-fig.savefig(outdir+score+'_'+calc+'_average_deviation.svg', format = 'svg')
+fig.savefig(outdir+score[1:]+'_'+calc+'_average_deviation.svg', format = 'svg')
 pdb.set_trace()
