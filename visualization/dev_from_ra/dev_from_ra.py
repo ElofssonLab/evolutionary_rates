@@ -139,7 +139,7 @@ def ra_different(df, aln_types, score, cardinality, calc):
 
     return ras
 
-def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
+def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes):
     '''Calculate the difference from the total running average for each H-group
     '''
     #Get unique groups
@@ -158,8 +158,10 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
     all_x = []
     all_y = []
     pvals = []
+    group_sizes = [] #save group_sizes
     mldists = [*tra.keys()] #Define thresholds as collected in ras
     for group in H_groups:
+        group_sizes.append(H_group_sizes[group])
         hgroup_df = df[df['H_group']==group]
         scores = np.asarray(hgroup_df[score+aln_type])
 
@@ -198,26 +200,30 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
     plt.title(aln_type[1:])
     plt.ylabel('Average deviation from total average')
     plt.xlim([0,6])
+    plt.xlabel('ML AA20')
     plt.xticks([0,1,2,3,4,5,6])
 
-
+    #Do a KDE plot
     #New plot_num
     plot_num += 3
     plt.subplot(plot_num) #set plot_num
     sns.kdeplot(all_x, all_y, shade = True)
-    plt.ylabel('Average deviation from total average')
+    plt.ylabel('Average deviation from total running average')
     plt.xlabel('ML AA20')
     plt.xlim([0,6])
+    plt.ylim([-1.5, 2.5])
     plt.xticks([0,1,2,3,4,5,6])
 
+    #Plot the p-values
     #New plot_num
     plot_num += 3
     plt.subplot(plot_num) #set plot_num
-    plt.hist(pvals, bins = 30, log = True)
-    plt.ylabel('Count')
-    plt.xlabel('P-value')
+    plt.scatter(group_sizes, pvals, s = 1)
+    plt.xscale('log')
+    plt.xlabel('Original group size')
+    plt.ylabel('P-value')
 
-    return all_x, all_y, pvals
+    return all_x, all_y, pvals, group_sizes
 
 #####MAIN#####
 args = parser.parse_args()
@@ -230,11 +236,16 @@ sequences = read_fasta(args.sequences[0]) #Read the clustered sequences
 original_seqlens = original_length(sequences) #Get the original sequence lengths for the domains
 grouped_sequences = get_groups(H_groups, sequences) #Group sequences
 
+#Look into how the deviation varies with the size of the H-group
+H_group_sizes = Counter(H_groups.values())
+
+#Look into how the deviation varies with the average length of the entries in the group
 
 #Calculate total running averages
 cardinality = '_AA20'
 aln_types = ['_seqaln', '_straln']
 score = 'RMSD'
+pdf = PdfPages(outdir+score+'_'+calc+'_average_deviation.pdf')
 ras = ra_different(df, aln_types, score, cardinality, calc)
 #Calculate deviations from total ra and plot
 plot_num = 331
@@ -242,13 +253,16 @@ fig = plt.figure(figsize=(10,10)) #set figsize
 for key in ras:
     tra = ras[key]
     aln_type = key
-    all_x, all_y, pvals = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num)
+    all_x, all_y, pvals, group_sizes = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes)
 
     #Save calculated values
-    np.save(outdir+aln_type+'_all_x.npy', all_x)
-    np.save(outdir+aln_type+'_all_y.npy', all_y)
-    np.save(outdir+aln_type+'_pvals.npy', pvals)
+    np.save(outdir+aln_type[1:]+'_all_x.npy', all_x)
+    np.save(outdir+aln_type[1:]+'_all_y.npy', all_y)
+    np.save(outdir+aln_type[1:]+'_pvals.npy', pvals)
+    np.save(outdir+aln_type[1:]+'_hgroup_sizes.npy', group_sizes)
     plot_num += 2
 
-fig.savefig(outdir+score[1:]+'_'+calc+'_average_deviation.svg', format = 'svg')
+fig.savefig(outdir+score+'_'+calc+'_average_deviation.svg', format = 'svg')
+pdf.savefig(fig)
+pdf.close()
 pdb.set_trace()
