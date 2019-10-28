@@ -64,6 +64,7 @@ def kde(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, ylim):
     plt.ylabel(score)
     plt.ylim(ylim)
     plt.xlim([0,6])
+    plt.xticks([0,1,2,3,4,5,6])
     plt.title(title)
 
 
@@ -84,6 +85,7 @@ def kde(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, ylim):
         plt.ylabel(score)
         plt.ylim(ylim)
         plt.xlim([0,6])
+        plt.xticks([0,1,2,3,4,5,6])
         plt.title(labels[i])
         if i == 1:
             plt.xlabel(xlabel)

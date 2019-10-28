@@ -16,11 +16,8 @@ import pdb
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that plots running averages.''')
 
-parser.add_argument('--df95', nargs=1, type= str,
-default=sys.stdin, help = 'path to directory with the 95 % reduction.')
-
-parser.add_argument('--df20', nargs=1, type= str,
-default=sys.stdin, help = 'path to directory with the 20 % reduction.')
+parser.add_argument('--df', nargs=1, type= str,
+default=sys.stdin, help = 'path to directory with pdb files.')
 
 parser.add_argument('--outdir', nargs=1, type= str,
 default=sys.stdin, help = 'path to output directory.')
@@ -28,24 +25,26 @@ default=sys.stdin, help = 'path to output directory.')
 parser.add_argument('--calc', nargs=1, type= str,
 default=sys.stdin, help = 'either mean or average.')
 
-#FUNCTIONS
-def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, ylim, title):
+parser.add_argument('--plot_gradients', nargs=1, type= bool,
+default=sys.stdin, help = 'Wether to plot gradients or not.')
+
+
+def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, ylim):
     '''Produce running average plots for df
     '''
 
     colors = {0: 'b', 1: 'darkred'}
-    labels = {0:'95% reduction', 1: '20% reduction'}
+    labels = {0:'All pairs', 1: 'One pair per H-group'}
     titles = {'seqaln': 'Sequence alignments', 'straln': 'Structure alignments'}
-    plt.rc('axes', titlesize=10) #set title and label text sizes
+    plt.rc('axes', titlesize=10, labelsize=10) #set title and label text sizes
     plt.subplot(plot_num) #set plot_num
     sizes = {} #Save percentage of points in each step
     xlabel = 'ML '+cardinality[1:]+' distance'
     title = titles[aln_type[1:]]
     gradients = {}
+
     for i in range(2):
         df = dfs[i]
-        #Plot total average for cardinality
-        color = colors[i]
         if cardinality == '_AA20':
             cardinality = ''
         avs = [] #Save average score
@@ -55,6 +54,7 @@ def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, yl
         step = 0.1
         mldists = np.asarray(df['MLAAdist'+cardinality+aln_type])
         scores = np.asarray(df[score+aln_type])
+
 
         for j in np.arange(min(mldists)+step,max(mldists)+step,step):
             below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
@@ -72,17 +72,15 @@ def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, yl
         #Include derivatives
         grads = np.gradient(avs)
         gradients[i] = grads
-        #Plot RA
-        plt.plot(js, avs, label = labels[i], linewidth = 1, color = colors[i])
+
+        plt.plot(js, avs, label =  labels[i], linewidth = 1, color = colors[i])
         sizes[i] = [js, perc_points]
 
-        #plt.scatter(mldists, scores, color = color, s= 1)
-    plt.legend(loc = 'best')
-    #plt.xlabel('MLAAdist'+aln_type)
     plt.ylabel(score)
     plt.ylim(ylim)
     plt.xlim([0,6])
     plt.xticks([0,1,2,3,4,5,6])
+    plt.legend(loc = 'best')
     plt.title(title)
 
     #Plot gradients
@@ -112,28 +110,35 @@ def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, yl
 
 #####MAIN#####
 args = parser.parse_args()
-df95 = pd.read_csv(args.df95[0])
-df20 = pd.read_csv(args.df20[0])
+df = pd.read_csv(args.df[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
-score ='RMSD'
+plot_gradients = args.plot_gradients[0]
+
+groups = [*Counter(df['H_group']).keys()]
+one_pair_df = pd.DataFrame(columns = df.columns)
+for g in groups:
+    partial_df = df[df['H_group']==g]
+    i = np.random.randint(len(partial_df), size = 1)
+    start =  partial_df.index[0]
+    selection = partial_df.loc[start+i]
+    one_pair_df = one_pair_df.append(selection)
+
 cardinality = '_AA20'
-pdf = PdfPages(outdir+score+'_'+calc+'_95_vs_20.pdf')
+score ='RMSD'
+pdf = PdfPages(outdir+score+'_'+calc+'_one_pair_vs_all.pdf')
 fig = plt.figure(figsize=(10,10)) #set figsize
-
+plot_nums = [331, 333] #rows,columns,number
 aln_types = ['_seqaln', '_straln']
-title = 'Sequence vs Structure alignments'
-ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.5, 1.0]}
+ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6]}
+dfs = [df, one_pair_df]
+for i in range(2):
+    aln_type = aln_types[i]
+    plot_num = plot_nums[i]
+    ylim = ylims[score]
+    pdf, fig = ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, ylim)
 
-
-
-plot_num = 331
-ylim = ylims[score]
-dfs = [df95, df20]
-for aln_type in aln_types:
-    pdf, fig = ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, ylim, title)
-    plot_num +=2
 
 pdf.savefig(fig)
-fig.savefig(outdir+score+'_'+calc+cardinality+'_95_vs_20.svg', format = 'svg')
+fig.savefig(outdir+score+'_'+calc+'_one_pair_vs_all.svg', format = 'svg')
 pdf.close()
