@@ -10,6 +10,7 @@ import numpy as np
 import seaborn as sns
 import sys
 import argparse
+from scipy import stats
 
 import pdb
 
@@ -138,7 +139,7 @@ def ra_different(df, aln_types, score, cardinality, calc):
 
     return ras
 
-def distance_from_av(df, aln_type, score, cardinality, calc, tra, plotnum):
+def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num):
     '''Calculate the difference from the total running average for each H-group
     '''
     #Get unique groups
@@ -149,11 +150,12 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plotnum):
     #Set step
     step = 0.1
 
+    #True values = 0, no deviation from total average
+    truevals = np.zeros(105) #Maximum 105 pairs per H-group
     all_x = []
     all_y = []
-
+    pvals = []
     mldists = [*tra.keys()] #Define thresholds as collected in ras
-    pdb.set_trace()
     for group in H_groups:
         hgroup_df = df[df['H_group']==group]
         scores = np.asarray(hgroup_df[score+aln_type])
@@ -162,8 +164,7 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plotnum):
         avdevs = [] #save average deviations from line for each step
 
         #Only get the values where the H-group has points
-        if max(mldists) > max(hgroup_df['MLAAdist'+cardinality+aln_type]):
-            end =  max(hgroup_df['MLAAdist'+cardinality+aln_type])
+        end = max(hgroup_df['MLAAdist'+cardinality+aln_type])
 
         for j in np.arange(min(mldists)+step, end+step, step):
             below_df = hgroup_df[hgroup_df['MLAAdist'+cardinality+aln_type]<j] #below j
@@ -181,6 +182,10 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plotnum):
             js.append(j-step/2)
             avdevs.append(av-tav)
 
+        #Do a t-test to calculate if the deviation is significant for each H-group
+        #The variances will be unequal, as each H-group only encompasses very feq points
+        statistic, pvalue = stats.ttest_ind(avdevs, truevals, equal_var = False)
+        pvals.append(pvalue)
         #Do a scatter plot of the deviation for each evdist
         all_x.extend(js)
         all_y.extend(avdevs)
@@ -192,15 +197,24 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plotnum):
     plt.xlim([0,6])
     plt.xticks([0,1,2,3,4,5,6])
 
-    plt.subplot(plot_num+3) #set plot_num
+
+    #New plot_num
+    plot_num += 3
+    plt.subplot(plot_num) #set plot_num
     plt.scatter(all_x, all_y, s= 1)
     plt.ylabel('Average deviation from total average')
     plt.xlabel('ML AA20')
     plt.xlim([0,6])
     plt.xticks([0,1,2,3,4,5,6])
 
-    pdb.set_trace()
+    #New plot_num
+    plot_num += 3
+    plt.subplot(plot_num) #set plot_num
+    plt.hist(pvals, bins = 20)
+    plt.ylabel('Count')
+    plt.xlabel('P-value')
 
+    return all_x, all_y, pvals
 
 #####MAIN#####
 args = parser.parse_args()
@@ -225,7 +239,13 @@ for key in ras:
     fig = plt.figure(figsize=(10,10)) #set figsize
     tra = ras[key]
     aln_type = key
-    distance_from_av(df, aln_type, score, cardinality, calc, tra, plotnum)
+    all_x, all_y, pvals = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num)
+
+    #Save calculated values
+    np.save(outdir+aln_type+'_all_x.npy', all_x)
+    np.save(outdir+aln_type+'_all_y.npy', all_y)
+    np.save(outdir+aln_type+'_pvals.npy', pvals)
     plot_num += 2
+
 fig.savefig(outdir+score+'_'+calc+'_average_deviation.svg', format = 'svg')
 pdb.set_trace()
