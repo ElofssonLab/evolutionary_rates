@@ -33,8 +33,10 @@ def runnning_average(outdir, complete_df, aln_type, score, cardinality, plot_gra
     '''
 
     plt.rc('axes', titlesize=10, labelsize=10) #set title and label text sizes
+    plt.subplot(plot_num)
+
     xlabel = 'MLAAdist'+cardinality+aln_type
-    classes = {1:'Alpha', 2: 'Beta', 3: 'Alpha Beta', 4: 'Few 2ndary structures', 'total': 'Total'}
+    classes = {1:'Alpha', 2: 'Beta', 3: 'Alpha Beta', 4: 'Few SS'}
     colors = {1: 'royalblue', 2: 'k', 3: 'green', 4: 'violet', 'total': 'r'}
     sizes = {}
     sizes['total'] = 100
@@ -94,7 +96,7 @@ def runnning_average(outdir, complete_df, aln_type, score, cardinality, plot_gra
         plot_num+=3
         plt.subplot(plot_num) #set plot_num
         for i in [1.,2.,3.,4.]:
-            plt.scatter(js[i], gradients[i],s=1, color =colors[int(i)] )
+            plt.scatter(js[i], gradients[i],s=3, color =colors[int(i)] )
             plt.ylabel('Gradients')
 
         plt.xlim([0,6])
@@ -133,5 +135,6 @@ for aln_type in ['_seqaln', '_straln']:
     pdf, fig = runnning_average(outdir, df, aln_type, score, cardinality, plot_gradients, plot_percentage, plot_num, pdf, fig)
     plot_num += 2
 
+fig.savefig(outdir+score+cardinality+'.svg', format = 'svg')
 pdf.savefig(fig)
 pdf.close()
