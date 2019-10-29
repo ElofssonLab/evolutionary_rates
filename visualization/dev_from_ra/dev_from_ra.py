@@ -11,6 +11,7 @@ import seaborn as sns
 import sys
 import argparse
 from scipy import stats
+import statistics
 
 import pdb
 
@@ -133,13 +134,13 @@ def ra_different(df, aln_types, score, cardinality, calc):
                 av= np.mean(cut_scores)
             avs.append(av)
             js.append(j-step/2)
-            total_avs[j-step] = av
+            total_avs[np.round(j-step,1)] = av
         #Save running averages to dict
         ras[aln_type] = total_avs
 
     return ras
 
-def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes):
+def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes, original_seqlens):
     '''Calculate the difference from the total running average for each H-group
     '''
     #Get unique groups
@@ -153,31 +154,49 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     #Create new subplot
     plt.subplot(plot_num) #set plot_num
 
+    #Classes
+    classes = {'1':'Alpha', '2': 'Beta', '3': 'Alpha Beta', '4': 'Few SS'}
+    #Colors
+    colors = {'1': 'royalblue', '2': 'k', '3': 'yellowgreen', '4': 'violet'}
     #True values = 0, no deviation from total average
     truevals = np.zeros(105) #Maximum 105 pairs per H-group
     all_x = []
     all_y = []
     pvals = []
     group_sizes = [] #save group_sizes
-    mldists = [*tra.keys()] #Define thresholds as collected in ras
+    ordered_groups = []
+    median_group_seqlen = [] #the median (of all used lengths) will be a better measure than the average in this case
     for group in H_groups:
+        C = group[0] #The class for the current H_group
+        ordered_groups.append(group) #Save the group order for later purposes
         group_sizes.append(H_group_sizes[group])
         hgroup_df = df[df['H_group']==group]
         scores = np.asarray(hgroup_df[score+aln_type])
 
+        #uids
+        uids = [*hgroup_df['uid1']]+[*hgroup_df['uid2']]
+        uidlens = []
+        for uid in uids: #need to loop through total not unique. Some may have failed and thus been used fewer times.
+            uidlens.append(original_seqlens[uid])
+        median_group_seqlen.append(statistics.median(uidlens))
+
+
         js = [] #save middle points in mldists
         avdevs = [] #save average deviations from line for each step
+        avs = [] #Save averages
 
         #Only get the values where the H-group has points
+        start = np.round(min(hgroup_df['MLAAdist'+cardinality+aln_type]), 1)
         end = min(max(hgroup_df['MLAAdist'+cardinality+aln_type]), 6)
 
-        for j in np.arange(min(mldists)+step, end+step, step):
+
+        for j in np.arange(start+step, end+step, step):
             below_df = hgroup_df[hgroup_df['MLAAdist'+cardinality+aln_type]<j] #below j
             below_df = hgroup_df[hgroup_df['MLAAdist'+cardinality+aln_type]>=j-step] #above or equal to j-step
-            cut_scores = np.asarray(hgroup_df[score+aln_type])
+            cut_scores = np.asarray(below_df[score+aln_type])
 
 
-            tav = tra[j-step] #total average in current interval
+            tav = tra[np.round(j-step, 1)] #total average in current interval
 
             if calc == 'average':
                 av= np.average(cut_scores)
@@ -186,44 +205,58 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
 
             js.append(j-step/2)
             avdevs.append(av-tav)
-
+            avs.append(av)
         #Do a t-test to calculate if the deviation is significant for each H-group
         #The variances will be unequal, as each H-group only encompasses very feq points
         statistic, pvalue = stats.ttest_ind(avdevs, truevals, equal_var = False)
         pvals.append(pvalue)
-        #Do a scatter plot of the deviation for each evdist
-        plt.scatter(js, avdevs, s= 1)
-        all_x.extend(js)
-        all_y.extend(avdevs)
+        #Do a scatter plot of the ra
+        plt.plot(js, avs,  linewidth = 1, color = colors[C])
+        all_x.append(js)
+        all_y.append(avdevs)
 
-
+    #Plot the ra per H-group
     plt.title(aln_type[1:])
-    plt.ylabel('Average deviation from total average')
+    plt.ylabel('Running average '+score)
     plt.xlim([0,6])
-    plt.xlabel('ML AA20')
+    plt.ylim([0,4])
+    plt.xlabel('ML AA20 distance')
     plt.xticks([0,1,2,3,4,5,6])
 
-    #Do a KDE plot
-    #New plot_num
+    #Do a scatter plot of deviations from ra
     plot_num += 3
     plt.subplot(plot_num) #set plot_num
-    sns.kdeplot(all_x, all_y, shade = True)
-    plt.ylabel('Average deviation from total running average')
-    plt.xlabel('ML AA20')
+    for i in range(len(all_x)):
+        x = all_x[i]
+        y = all_y[i]
+        C = ordered_groups[i][0]
+
+        plt.scatter(x, y, s=1, color = colors[C])
+    plt.ylabel('Average '+score+' deviation')
+    plt.xlabel('ML AA20 distance')
     plt.xlim([0,6])
-    plt.ylim([-1.5, 2.5])
+    plt.ylim([-1.5,2.5])
     plt.xticks([0,1,2,3,4,5,6])
+    #Do a KDE plot
+    #New plot_num
+    # plot_num += 3
+    # plt.subplot(plot_num) #set plot_num
+    # sns.kdeplot(all_x, all_y, shade = True)
+    # plt.ylabel('Average '+score+' deviation')
+    # plt.xlabel('ML AA20')
+    # plt.xlim([0,6])
+    # plt.ylim([-1.5, 2.5])
+    # plt.xticks([0,1,2,3,4,5,6])
 
     #Plot the p-values
     #New plot_num
     plot_num += 3
     plt.subplot(plot_num) #set plot_num
-    plt.scatter(group_sizes, pvals, s = 1)
-    plt.xscale('log')
-    plt.xlabel('Original group size')
-    plt.ylabel('P-value')
+    plt.scatter(np.log10(group_sizes), np.log10(pvals), s = 1)
+    plt.xlabel('log Original group size')
+    plt.ylabel('log P-value')
 
-    return all_x, all_y, pvals, group_sizes
+    return all_x, all_y, pvals, group_sizes, ordered_groups, median_group_seqlen
 
 #####MAIN#####
 args = parser.parse_args()
@@ -245,7 +278,7 @@ H_group_sizes = Counter(H_groups.values())
 cardinality = '_AA20'
 aln_types = ['_seqaln', '_straln']
 score = 'RMSD'
-pdf = PdfPages(outdir+score+'_'+calc+'_average_deviation.pdf')
+pdf = PdfPages(outdir+score+'_'+calc+'_ra_deviation.pdf')
 ras = ra_different(df, aln_types, score, cardinality, calc)
 #Calculate deviations from total ra and plot
 plot_num = 331
@@ -253,16 +286,18 @@ fig = plt.figure(figsize=(10,10)) #set figsize
 for key in ras:
     tra = ras[key]
     aln_type = key
-    all_x, all_y, pvals, group_sizes = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes)
+    all_x, all_y, pvals, group_sizes, ordered_groups, median_group_seqlen = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes, original_seqlens)
 
     #Save calculated values
     np.save(outdir+aln_type[1:]+'_all_x.npy', all_x)
     np.save(outdir+aln_type[1:]+'_all_y.npy', all_y)
     np.save(outdir+aln_type[1:]+'_pvals.npy', pvals)
     np.save(outdir+aln_type[1:]+'_hgroup_sizes.npy', group_sizes)
+    np.save(outdir+aln_type[1:]+'_group_order.npy', ordered_groups)
+    np.save(outdir+aln_type[1:]+'median_group_seqlen.npy', median_group_seqlen)
     plot_num += 2
 
-fig.savefig(outdir+score+'_'+calc+'_average_deviation.svg', format = 'svg')
+fig.savefig(outdir+score+'_'+calc+'_ra_deviation.svg', format = 'svg')
 pdf.savefig(fig)
 pdf.close()
 pdb.set_trace()
