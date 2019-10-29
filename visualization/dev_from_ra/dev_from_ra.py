@@ -166,6 +166,11 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     group_sizes = [] #save group_sizes
     ordered_groups = []
     median_group_seqlen = [] #the median (of all used lengths) will be a better measure than the average in this case
+    number_of_pairs = []
+
+    all_js = {'1':[], '2':[], '3':[], '4':[]} #save middle points in mldists
+    all_avdevs = {'1':[], '2':[], '3':[], '4':[]} #save average deviations from line for each step
+    all_avs = {'1':[], '2':[], '3':[], '4':[]} #Save averages
     for group in H_groups:
         C = group[0] #The class for the current H_group
         ordered_groups.append(group) #Save the group order for later purposes
@@ -180,8 +185,9 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
             uidlens.append(original_seqlens[uid])
         median_group_seqlen.append(statistics.median(uidlens))
 
-
-        js = [] #save middle points in mldists
+        #Number of pairs
+        number_of_pairs.append(len(hgroup_df))
+        js =[] #save middle points in mldists
         avdevs = [] #save average deviations from line for each step
         avs = [] #Save averages
 
@@ -211,10 +217,13 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
         statistic, pvalue = stats.ttest_ind(avdevs, truevals, equal_var = False)
         pvals.append(pvalue)
         #Do a scatter plot of the ra
-        plt.plot(js, avs,  linewidth = 1, color = colors[C])
+        #plt.plot(js, avs,  linewidth = 1, color = colors[C])
         all_x.append(js)
         all_y.append(avdevs)
 
+        all_js[C].extend(js)
+        all_avs[C].extend(avs)
+        all_avdevs[C].extend(avdevs)
     #Plot the ra per H-group
     plt.title(aln_type[1:])
     plt.ylabel('Running average '+score)
@@ -231,7 +240,7 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
         y = all_y[i]
         C = ordered_groups[i][0]
 
-        plt.scatter(x, y, s=1, color = colors[C])
+        #plt.scatter(x, y, s=1, color = colors[C])
     plt.ylabel('Average '+score+' deviation')
     plt.xlabel('ML AA20 distance')
     plt.xlim([0,6])
@@ -252,11 +261,43 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     #New plot_num
     plot_num += 3
     plt.subplot(plot_num) #set plot_num
-    plt.scatter(np.log10(group_sizes), np.log10(pvals), s = 1)
-    plt.xlabel('log Original group size')
+    #plt.scatter(number_of_pairs, np.log10(pvals), s = 1)
+    plt.xlabel('Number of pairs')
     plt.ylabel('log P-value')
 
-    return all_x, all_y, pvals, group_sizes, ordered_groups, median_group_seqlen
+    return all_x, all_y, pvals, group_sizes, ordered_groups, median_group_seqlen, number_of_pairs, all_js, all_avs, all_avdevs
+
+
+def plot_per_class(all_js, all_avs, all_avdevs, aln_type):
+    #Plot all deviations per class
+
+    #Classes
+    classes = {'1':'Alpha', '2': 'Beta', '3': 'Alpha Beta', '4': 'Few SS'}
+    #Colors
+    cmaps = {'1': 'Blues', '2': 'Greys', '3': 'Greens', '4': 'Purples'}
+    a_pdf = PdfPages(outdir+score+'_'+aln_type+'_ra_deviation_per_class.pdf')
+    plot_num = 331
+    fig = plt.figure(figsize=(10,10)) #set figsize
+
+
+    for key in classes:
+        plt.subplot(plot_num) #New subplot
+        sns.kdeplot(all_js[key], all_avs[key],  shade = True, cmap = cmaps[key])
+        plt.ylabel('Runnin average RMSD')
+        plt.title(classes[key])
+        plt.xlim([0,6])
+        plt.ylim([0,4])
+        if key == '2':
+            plot_num+=1
+        else:
+            plot_num+=2
+
+    a_pdf.savefig(fig)
+    a_pdf.close()
+    return None
+
+
+
 
 #####MAIN#####
 args = parser.parse_args()
@@ -278,7 +319,7 @@ H_group_sizes = Counter(H_groups.values())
 cardinality = '_AA20'
 aln_types = ['_seqaln', '_straln']
 score = 'RMSD'
-pdf = PdfPages(outdir+score+'_'+calc+'_ra_deviation.pdf')
+pdf = PdfPages(outdir+score+'_'+calc+'_ra_deviation_num_pairs.pdf')
 ras = ra_different(df, aln_types, score, cardinality, calc)
 #Calculate deviations from total ra and plot
 plot_num = 331
@@ -286,8 +327,10 @@ fig = plt.figure(figsize=(10,10)) #set figsize
 for key in ras:
     tra = ras[key]
     aln_type = key
-    all_x, all_y, pvals, group_sizes, ordered_groups, median_group_seqlen = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes, original_seqlens)
+    all_x, all_y, pvals, group_sizes, ordered_groups, median_group_seqlen, number_of_pairs, all_js, all_avs, all_avdevs = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes, original_seqlens)
 
+    #Plot per class
+    plot_per_class(all_js, all_avs, all_avdevs, aln_type)
     #Save calculated values
     np.save(outdir+aln_type[1:]+'_all_x.npy', all_x)
     np.save(outdir+aln_type[1:]+'_all_y.npy', all_y)
@@ -295,9 +338,10 @@ for key in ras:
     np.save(outdir+aln_type[1:]+'_hgroup_sizes.npy', group_sizes)
     np.save(outdir+aln_type[1:]+'_group_order.npy', ordered_groups)
     np.save(outdir+aln_type[1:]+'median_group_seqlen.npy', median_group_seqlen)
+    np.save(outdir+aln_type[1:]+'number_of_pairs.npy', number_of_pairs)
     plot_num += 2
 
-fig.savefig(outdir+score+'_'+calc+'_ra_deviation.svg', format = 'svg')
+fig.savefig(outdir+score+'_'+calc+'_ra_deviation_num_pairs.svg', format = 'svg')
 pdf.savefig(fig)
 pdf.close()
 pdb.set_trace()
