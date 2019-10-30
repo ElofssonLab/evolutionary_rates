@@ -46,7 +46,10 @@ def ra_different(df, aln_type, score, cardinalities, calc, plot_num, pdf, fig, y
     viridis = cm.get_cmap('viridis', 12)
     colors = {'_AA2':viridis(0.8), '_AA3':viridis(0.6), '_AA6':viridis(0.45), '_AA20':viridis(0.1)} #Set colors
 
-    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025]}
+    #Titles
+    titles = {'_seqaln':'Sequence alignments', '_straln': 'Structure alignments'}
+
+    grad_ylims = {'RMSD':[-0.2,0.2], 'lddt_scores':[-0.025, 0.025]}
     plt.rc('axes', titlesize=10) #set title and label text sizes
     plt.subplot(plot_num) #set plot_num
     sizes = {} #Save percentage of points in each step
@@ -86,10 +89,9 @@ def ra_different(df, aln_type, score, cardinalities, calc, plot_num, pdf, fig, y
         plt.plot(js, avs, label = label, linewidth = 1, color = color)
         sizes[cardinality] = [js, perc_points] #save the mlaadists and perc points
 
-        #plt.scatter(mldists, scores, color = color, s= 1)
-        plt.legend(loc = 'best')
 
-    plt.title(score)
+    #plt.legend(loc = 'best')
+    plt.title(titles[aln_type])
     plt.ylabel(score)
     plt.ylim(ylim)
     plt.xlim([0,6])
@@ -107,10 +109,10 @@ def ra_different(df, aln_type, score, cardinalities, calc, plot_num, pdf, fig, y
             cardinality = ''
         plt.scatter(sizes[cardinality][0], gradients[cardinality],s=2, label = label, color = color)
     plt.ylabel('gradient')
-    #plt.ylim(grad_ylims[score])
+    plt.ylim(grad_ylims[score])
     plt.xlim([0,6])
     plt.xticks([0,1,2,3,4,5,6])
-    plt.legend(loc = 'best')
+    #plt.legend(loc = 'best')
     #Plot Point distribution
     plot_num += 3
     plt.subplot(plot_num) #set plot_num

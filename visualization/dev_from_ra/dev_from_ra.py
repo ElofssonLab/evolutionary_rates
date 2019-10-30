@@ -245,11 +245,12 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     plt.rcParams['lines.markersize'] = 1
     plt.rcParams['lines.linewidth'] = 1
     #ax = sns.regplot(x = median_aln_len, y = all_av_avdevs)
-    sns.kdeplot(median_aln_len, all_av_avdevs, shade=True, shade_lowest = False)
+    ax = sns.kdeplot(median_aln_len, all_av_avdevs, shade=True, shade_lowest = False, cmap = 'Blues')
     #plt.xlabel('Median aligned length per H-group')
     plt.ylabel('Average '+score+' deviation')
     plt.xlim([0,300])
     plt.ylim([-1,1.5])
+    #ax.invert_yaxis()
 
     plt.title(titles[aln_type])
 
@@ -278,7 +279,7 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     plt.rcParams['lines.markersize'] = 1
     plt.rcParams['lines.linewidth'] = 1
     #ax = sns.regplot(x = median_aln_len, y = np.log10(pvals))
-    ax = sns.kdeplot(median_aln_len, np.log10(pvals), shade=True, shade_lowest = False)
+    ax = sns.kdeplot(median_aln_len, np.log10(pvals), shade=True, shade_lowest = False, cmap = 'Blues')
     plt.xlabel('Median aligned length per H-group')
     plt.ylabel('log10 P-value')
     plt.xlim([0,300])
@@ -304,7 +305,7 @@ def plot_per_class(all_js, all_avs, all_avdevs, aln_type):
     for key in classes:
         plt.subplot(plot_num) #New subplot
         sns.kdeplot(all_js[key], all_avs[key],  shade = True, cmap = cmaps[key])
-        plt.ylabel('Runnin average RMSD')
+        plt.ylabel('Running average RMSD')
         plt.title(classes[key])
         plt.xlim([0,6])
         plt.ylim([0,4])
