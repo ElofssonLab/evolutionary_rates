@@ -17,16 +17,16 @@ import pdb
 parser = argparse.ArgumentParser(description = '''A program that plots running averages.''')
 
 parser.add_argument('--df95', nargs=1, type= str,
-default=sys.stdin, help = 'path to directory with the 95 % reduction.')
+default=sys.stdin, help = 'path to df with the 95 % reduction.')
 
 parser.add_argument('--df20', nargs=1, type= str,
-default=sys.stdin, help = 'path to directory with the 20 % reduction.')
+default=sys.stdin, help = 'path to df with the 20 % reduction.')
 
 parser.add_argument('--outdir', nargs=1, type= str,
 default=sys.stdin, help = 'path to output directory.')
 
 parser.add_argument('--calc', nargs=1, type= str,
-default=sys.stdin, help = 'either mean or average.')
+default=sys.stdin, help = 'either median or average.')
 
 #FUNCTIONS
 def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, ylim, title):
@@ -62,8 +62,8 @@ def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, yl
             cut_scores = np.asarray(below_df[score+aln_type])
             if calc == 'average':
                 av= np.average(cut_scores)
-            if calc == 'mean':
-                av= np.mean(cut_scores)
+            if calc == 'median':
+                av= np.median(cut_scores)
             avs.append(av)
             js.append(j-step/2)
             total_avs[j-step] = av

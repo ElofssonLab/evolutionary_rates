@@ -10,23 +10,23 @@ import numpy as np
 import seaborn as sns
 import sys
 import argparse
-
+import statistics
 import pdb
 
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that plots KDE plots.''')
 
 parser.add_argument('--df95', nargs=1, type= str,
-default=sys.stdin, help = 'path to directory with the 95 % reduction.')
+default=sys.stdin, help = 'path to df with the 95 % reduction.')
 
 parser.add_argument('--df20', nargs=1, type= str,
-default=sys.stdin, help = 'path to directory with the 20 % reduction.')
+default=sys.stdin, help = 'path to df with the 20 % reduction.')
 
 parser.add_argument('--outdir', nargs=1, type= str,
 default=sys.stdin, help = 'path to output directory.')
 
 parser.add_argument('--calc', nargs=1, type= str,
-default=sys.stdin, help = 'either mean or average.')
+default=sys.stdin, help = 'either median or average.')
 
 #FUNCTIONS
 def kde(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, ylim):

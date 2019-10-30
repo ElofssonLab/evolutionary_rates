@@ -243,12 +243,13 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     plt.subplot(plot_num) #set plot_num
     #Set marker size
     plt.rcParams['lines.markersize'] = 1
-    sns.regplot(x = median_aln_len, y = all_av_avdevs)
-    #sns.kdeplot(all_av_avdevs, median_aln_len, shade=True, shade_lowest=False)
-    plt.xlabel('Median aligned length per H-group')
+    plt.rcParams['lines.linewidth'] = 1
+    #ax = sns.regplot(x = median_aln_len, y = all_av_avdevs)
+    sns.kdeplot(median_aln_len, all_av_avdevs, shade=True, shade_lowest = False)
+    #plt.xlabel('Median aligned length per H-group')
     plt.ylabel('Average '+score+' deviation')
-    plt.xlim([0,700])
-    plt.ylim([-2.5,2.5])
+    plt.xlim([0,300])
+    plt.ylim([-1,1.5])
 
     plt.title(titles[aln_type])
 
@@ -257,12 +258,16 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     plt.subplot(plot_num) #set plot_num
     #Set marker size
     plt.rcParams['lines.markersize'] = 1
-    sns.regplot(x =median_aln_len, y =  median_group_seqlen)
+    plt.rcParams['lines.linewidth'] = 1
+    ax = sns.regplot(x =median_aln_len, y =  median_group_seqlen)
+    R = stats.pearsonr(median_aln_len, median_group_seqlen)
+    t = str(np.round(R[0], 2))
+    ax.text(150,100, 'Pearsonr: '+t)
     #sns.kdeplot(all_av_avdevs,median_group_seqlen, shade=True, shade_lowest=False)
-    plt.xlabel('Median aligned length per H-group')
+    #plt.xlabel('Median aligned length per H-group')
     plt.ylabel('Median sequence length per H-group')
-    plt.xlim([0,700])
-    plt.ylim([0,700])
+    plt.xlim([0,300])
+    plt.ylim([0,300])
 
 
     #Plot the p-values against the median seqlen
@@ -271,13 +276,14 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     plt.subplot(plot_num) #set plot_num
     #Set marker size
     plt.rcParams['lines.markersize'] = 1
-    ax = sns.regplot(x = median_group_seqlen, y = np.log10(pvals))
-    #sns.kdeplot(np.log10(pvals),median_group_seqlen, shade=True, shade_lowest=False)
-    plt.xlabel('Median sequence length per H-group')
+    plt.rcParams['lines.linewidth'] = 1
+    #ax = sns.regplot(x = median_aln_len, y = np.log10(pvals))
+    ax = sns.kdeplot(median_aln_len, np.log10(pvals), shade=True, shade_lowest = False)
+    plt.xlabel('Median aligned length per H-group')
     plt.ylabel('log10 P-value')
-    plt.xlim([0,700])
-    plt.ylim([-60,0])
-    ax.invert_xaxis() #Invert axis
+    plt.xlim([0,300])
+    plt.ylim([-20,0])
+    ax.invert_yaxis() #Invert axis
 
 
     return all_x, all_y, pvals, group_sizes, ordered_groups, median_group_seqlen, number_of_pairs, all_js, all_avs, all_av_avdevs
@@ -356,7 +362,6 @@ for key in ras:
     np.save(outdir+aln_type[1:]+'number_of_pairs.npy', number_of_pairs)
     plot_num += 2
 
-fig.savefig(outdir+score+'_'+calc+'_ra_deviation_num_pairs.svg', format = 'svg')
+fig.savefig(outdir+score+'_'+calc+'_ra_deviation_seqlen.svg', format = 'svg')
 pdf.savefig(fig)
 pdf.close()
-pdb.set_trace()
