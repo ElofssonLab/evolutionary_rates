@@ -1,0 +1,3 @@
+PDB filter
+#uids before:54271	#uids after:41548	%uids passed:76.6
+#Topologies before:1385	#Topologies after:1266	%Topologies passed:91.4
