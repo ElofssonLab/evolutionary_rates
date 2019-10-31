@@ -51,7 +51,7 @@ def ra_different(df, aln_types, score, cardinality, calc, plot_num, pdf, fig, yl
     sizes = {} #Save percentage of points in each step
 
     gradients = {}
-    for i in range(2):
+    for i in [1]:
         aln_type = aln_types[i]
         #Plot total average for cardinality
         color = colors[i]
@@ -85,8 +85,11 @@ def ra_different(df, aln_types, score, cardinality, calc, plot_num, pdf, fig, yl
         plt.plot(js, avs, label = labels[i], linewidth = 1, color = colors[i])
         sizes[i] = [js, perc_points]
 
+        #include a scatterplot
+        sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
         #plt.scatter(mldists, scores, color = color, s= 1)
         plt.legend(loc = 'best')
+
 
     plt.title(score)
     plt.ylabel(score)
@@ -99,7 +102,7 @@ def ra_different(df, aln_types, score, cardinality, calc, plot_num, pdf, fig, yl
     #Plot gradients
     plot_num+=3
     plt.subplot(plot_num) #set plot_num
-    for i in range(2):
+    for i in range(1,2):
         plt.scatter(sizes[i][0], gradients[i],s=2, label = labels[i], color = colors[i])
     plt.ylabel('gradient')
     plt.ylim(grad_ylims[score])
@@ -109,7 +112,7 @@ def ra_different(df, aln_types, score, cardinality, calc, plot_num, pdf, fig, yl
     #Plot Point distribution
     plot_num += 3
     plt.subplot(plot_num) #set plot_num
-    for i in range(2):
+    for i in range(1,2):
         plt.plot(sizes[i][0], sizes[i][1], label = labels[i], linewidth = 1,  color = colors[i])
     plt.xlabel(xlabel)
     plt.ylabel('% of points')
