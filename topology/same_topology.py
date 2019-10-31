@@ -149,6 +149,8 @@ def overx(passed_uids_grouped, outdir, sequences, H_groups):
 			continue
 		os.mkdir(group_dir)
 		topology_groupings.write(group_dir+'\n')
+		if len(selected_uids)%2 != 0: #If even pairs can not be created. Exclude one.
+			selected_uids = selected_uids[1:]
 		for uid in selected_uids:
 			sequence = sequences[uid]
 			with open(group_dir+'/'+uid+'.fa', "w") as file:
