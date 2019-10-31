@@ -37,6 +37,9 @@ parser.add_argument('--H_groups', nargs=1, type= str,
 parser.add_argument('--sequences', nargs=1, type= str,
                   default=sys.stdin, help = 'path to clustered sequences.')
 
+parser.add_argument('--score', nargs=1, type= str,
+                  default=sys.stdin, help = 'score to use: RMSD, lddt_scores, DIFFSS, DIFF_ACC.')
+
 def read_tsv(H_groups_file):
 	'''Read ids and H-groups into dict
 	'''
@@ -141,7 +144,7 @@ def ra_different(df, aln_types, score, cardinality, calc):
 
     return ras
 
-def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes, original_seqlens):
+def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes, original_seqlens, xlim):
     '''Calculate the difference from the total running average for each H-group
     '''
 
@@ -245,11 +248,11 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     plt.rcParams['lines.markersize'] = 1
     plt.rcParams['lines.linewidth'] = 1
     #ax = sns.regplot(x = median_aln_len, y = all_av_avdevs)
-    ax = sns.kdeplot(median_aln_len, all_av_avdevs, shade=True, shade_lowest = False, cmap = 'Blues')
+    ax = sns.kdeplot(np.log10(median_aln_len), all_av_avdevs, shade=True, shade_lowest = False, cmap = 'Blues')
     #plt.xlabel('Median aligned length per H-group')
     plt.ylabel('Average '+score+' deviation')
-    plt.xlim([0,300])
-    plt.ylim([-1,1.5])
+    plt.xlim(xlim)
+    #plt.ylim([-1,1.5])
     #ax.invert_yaxis()
 
     plt.title(titles[aln_type])
@@ -279,10 +282,10 @@ def distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_gr
     plt.rcParams['lines.markersize'] = 1
     plt.rcParams['lines.linewidth'] = 1
     #ax = sns.regplot(x = median_aln_len, y = np.log10(pvals))
-    ax = sns.kdeplot(median_aln_len, np.log10(pvals), shade=True, shade_lowest = False, cmap = 'Blues')
-    plt.xlabel('Median aligned length per H-group')
+    ax = sns.kdeplot(np.log10(median_aln_len), np.log10(pvals), shade=True, shade_lowest = False, cmap = 'Blues')
+    plt.xlabel('log Median aligned length per H-group')
     plt.ylabel('log10 P-value')
-    plt.xlim([0,300])
+    plt.xlim(xlim)
     plt.ylim([-20,0])
     ax.invert_yaxis() #Invert axis
 
@@ -329,6 +332,7 @@ calc = args.calc[0]
 plot_gradients = args.plot_gradients[0]
 H_groups = read_tsv(args.H_groups[0]) #Read H-groups and uids
 sequences = read_fasta(args.sequences[0]) #Read the clustered sequences
+score = args.score[0]
 original_seqlens = original_length(sequences) #Get the original sequence lengths for the domains
 grouped_sequences = get_groups(H_groups, sequences) #Group sequences
 
@@ -340,7 +344,7 @@ H_group_sizes = Counter(H_groups.values())
 #Calculate total running averages
 cardinality = '_AA20'
 aln_types = ['_seqaln', '_straln']
-score = 'RMSD'
+xlim = [1.6,2.8]
 pdf = PdfPages(outdir+score+'_'+calc+'_ra_deviation_seqlen.pdf')
 ras = ra_different(df, aln_types, score, cardinality, calc)
 #Calculate deviations from total ra and plot
@@ -349,18 +353,18 @@ fig = plt.figure(figsize=(10,10)) #set figsize
 for key in ras:
     tra = ras[key]
     aln_type = key
-    all_x, all_y, pvals, group_sizes, ordered_groups, median_group_seqlen, number_of_pairs, all_js, all_avs, all_avdevs = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes, original_seqlens)
+    all_x, all_y, pvals, group_sizes, ordered_groups, median_group_seqlen, number_of_pairs, all_js, all_avs, all_avdevs = distance_from_av(df, aln_type, score, cardinality, calc, tra, plot_num, H_group_sizes, original_seqlens, xlim)
 
     #Plot per class
     #plot_per_class(all_js, all_avs, all_avdevs, aln_type)
     #Save calculated values
-    np.save(outdir+aln_type[1:]+'_all_x.npy', all_x) #Save mlaadists
-    np.save(outdir+aln_type[1:]+'_all_y.npy', all_y) #Save deviations in score
-    np.save(outdir+aln_type[1:]+'_pvals.npy', pvals)
-    np.save(outdir+aln_type[1:]+'_hgroup_sizes.npy', group_sizes)
-    np.save(outdir+aln_type[1:]+'_group_order.npy', ordered_groups)
-    np.save(outdir+aln_type[1:]+'median_group_seqlen.npy', median_group_seqlen)
-    np.save(outdir+aln_type[1:]+'number_of_pairs.npy', number_of_pairs)
+    np.save(outdir+aln_type[1:]+'_'+score+'_all_x.npy', all_x) #Save mlaadists
+    np.save(outdir+aln_type[1:]+'_'+score+'_all_y.npy', all_y) #Save deviations in score
+    np.save(outdir+aln_type[1:]+'_'+score+'_pvals.npy', pvals)
+    np.save(outdir+aln_type[1:]+'_'+score+'_hgroup_sizes.npy', group_sizes)
+    np.save(outdir+aln_type[1:]+'_'+score+'_group_order.npy', ordered_groups)
+    np.save(outdir+aln_type[1:]+'_'+score+'median_group_seqlen.npy', median_group_seqlen)
+    np.save(outdir+aln_type[1:]+'_'+score+'number_of_pairs.npy', number_of_pairs)
     plot_num += 2
 
 fig.savefig(outdir+score+'_'+calc+'_ra_deviation_seqlen.svg', format = 'svg')
