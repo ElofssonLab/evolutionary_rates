@@ -116,6 +116,7 @@ def overx(passed_uids_grouped, outdir, sequences, H_groups):
 
 	x=2 #At least two entries per topology for a pair
 	#write passed_uids_grouped_over_x to fasta
+	pdb.set_trace()
 	for group in passed_uids_grouped:
 		group_dir = outdir+'fasta/'+group
 		uids = passed_uids_grouped[group]
