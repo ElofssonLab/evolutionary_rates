@@ -28,7 +28,29 @@ parser.add_argument('fastadir', nargs=1, type= str,
                 default=sys.stdin, help = '''path to fastadir.''')
 parser.add_argument('gitdir', nargs=1, type= str,
                 default=sys.stdin, help = '''path to gitdir.''')
+parser.add_argument('--logfile', nargs=1, type= str,
+                  default=sys.stdin, help = 'logfile for stats.')
 
+def write_metrics(logfile, df, title):
+    '''Calculate metrics and write to logfile
+    '''
+
+    #uids
+    uid1 = [*df['uid1']]
+    uid2 = [*df['uid2']]
+    uids = uid1 +uid2
+    u_uids = len([*Counter(uids).keys()])
+    #groups
+    groups = [*df['group']]
+    u_groups = len([*Counter(groups).keys()])
+
+    #Print to logfile
+    with open(logfile, 'a+') as file: #append to file and create it if it does not exist
+        file.write(title+'\n')
+        file.write('#uids'+str(u_uids)+'\n')
+        file.write('#Groups:'+str(u_groups)+'\n')
+
+    return None
 
 def tsv_to_df(globpath, dfname):
     '''Get results from tsv files into
@@ -37,10 +59,10 @@ def tsv_to_df(globpath, dfname):
     all_files = glob.glob(globpath)     # advisable to use os.path.join as this makes concatenation OS independent
     df_from_each_file = [pd.read_csv(f, sep='\t') for f in all_files]
     for dataframe, filename in zip(df_from_each_file, all_files):
-    	hgroup = filename.split('/')[-3]
-    	dataframe['H_group'] = hgroup
-    	dataframe['C.'] = hgroup.split('.')[0]+'.'
-    	dataframe['C.A.'] = hgroup.split('.')[0]+'.'+hgroup.split('.')[1]
+    	group = filename.split('/')[-3]
+    	dataframe['group'] = group
+    	dataframe['C.'] = group.split('.')[0]+'.'
+    	dataframe['C.A.'] = group.split('.')[0]+'.'+group.split('.')[1]
     	df = pd.concat(df_from_each_file, ignore_index=True)
     	df.to_csv(dfname)
     return df
@@ -186,19 +208,21 @@ def percent_aligned(df):
 
     return df
 
-def create_df(results_path, t, dssp, fastadir, gitdir):
+def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     '''Gets results and parses them into a unified dataframe
     '''
 
     #Get results from sequence alignments into df
-    globpath = results_path+'*/TMscore/*seq.tsv'
+    globpath = results_path+'*/sequence/*seq.tsv'
     seq_df_name = results_path+'/from_seq_df.csv'
     from_seq_df = tsv_to_df(globpath, seq_df_name)
+    write_metrics(logfile, from_seq_df, 'Sequence alignments') #write to log
 
     #Get results from structure alignments into df
-    globpath = results_path+'*/TMalign/*str.tsv'
+    globpath = results_path+'*/structure/*str.tsv'
     str_df_name = results_path+'/from_str_df.csv'
     from_str_df = tsv_to_df(globpath, str_df_name)
+    write_metrics(logfile, from_str_df, 'Structuree alignments') #write to log
 
     #get sequence alignments
     globpath = results_path+'*/*.aln'
@@ -206,17 +230,17 @@ def create_df(results_path, t, dssp, fastadir, gitdir):
     seq_aln_df = get_sequence_alignments(globpath, seq_aln_name)
 
     #get sequence alignments from structure alignments
-    globpath = results_path+'*/TMalign/*.aln'
+    globpath = results_path+'*/structure/*.aln'
     str_aln_name = results_path+'/str_aln_df.csv'
     str_aln_df = get_structure_alignments(globpath, str_aln_name)
 
     #Get lddt results for sequence alignments
-    globpath = results_path+'*/TMscore/*.lddt'
+    globpath = results_path+'*/sequence/*.lddt'
     seq_lddt_name = results_path+'/seq_lddt_df.csv'
     seq_lddt_df = get_lddt(globpath, seq_aln_name)
 
     #Get lddt results for structure alignments
-    globpath = results_path+'*/TMalign/*.lddt'
+    globpath = results_path+'*/structure/*.lddt'
     str_lddt_name = results_path+'/str_lddt_df.csv'
     str_lddt_df = get_lddt(globpath, str_aln_name)
 
@@ -246,12 +270,12 @@ def create_df(results_path, t, dssp, fastadir, gitdir):
     for col in cols:
         complete_df = complete_df.rename(columns={col+'_x': col+'_seqaln', col+'_y': col+'_straln'})
 
-    #rename H_group_x to H_group
-    complete_df = complete_df.rename(columns={'H_group_x': 'H_group'})
+    #rename group_x to group
+    complete_df = complete_df.rename(columns={'group_x': 'group'})
     #Save df
     complete_df.to_csv(results_path+'/complete_df.csv')
     #Run DSSP - better done in parallel
-    hgroups = [*Counter(complete_df['H_group']).keys()]
+    hgroups = [*Counter(complete_df['group']).keys()]
 
     os.mkdir(results_path+'/dssp_dfs/') #Make dssp dir
     for group in hgroups:
@@ -267,7 +291,7 @@ def create_df(results_path, t, dssp, fastadir, gitdir):
 
 
     #Calculate contacts - better done in parallel
-    hgroups = [*Counter(complete_dssp_df['H_group']).keys()]
+    hgroups = [*Counter(complete_dssp_df['group']).keys()]
     os.mkdir(results_path+'/contacts/') #Make contact dir
 
     for group in hgroups:
@@ -294,4 +318,6 @@ outdir = args.outdir[0]
 dssp = args.dssp_path[0]
 fastadir = args.fastadir[0]
 gitdir = args.gitdir[0]
+logfile = args.logfile[0]
+
 create_df(indir, t, dssp, fastadir, gitdir)

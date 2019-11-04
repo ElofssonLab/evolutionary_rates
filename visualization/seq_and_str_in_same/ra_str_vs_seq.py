@@ -45,7 +45,7 @@ def ra_different(df, aln_types, score, cardinality, calc, plot_num, pdf, fig, yl
     colors = {0: 'k', 1: 'r'}
     labels = {0:'Sequence alignments', 1: 'Structure alignments'}
     xlabel = 'ML '+cardinality[1:]+' distance'
-    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025]}
+    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
     plt.rc('axes', titlesize=10) #set title and label text sizes
     plt.subplot(plot_num) #set plot_num
     sizes = {} #Save percentage of points in each step
@@ -102,7 +102,7 @@ def ra_different(df, aln_types, score, cardinality, calc, plot_num, pdf, fig, yl
     #Plot gradients
     plot_num+=3
     plt.subplot(plot_num) #set plot_num
-    for i in range(1,2):
+    for i in [1]:
         plt.scatter(sizes[i][0], gradients[i],s=2, label = labels[i], color = colors[i])
     plt.ylabel('gradient')
     plt.ylim(grad_ylims[score])
@@ -112,7 +112,7 @@ def ra_different(df, aln_types, score, cardinality, calc, plot_num, pdf, fig, yl
     #Plot Point distribution
     plot_num += 3
     plt.subplot(plot_num) #set plot_num
-    for i in range(1,2):
+    for i in [1]:
         plt.plot(sizes[i][0], sizes[i][1], label = labels[i], linewidth = 1,  color = colors[i])
     plt.xlabel(xlabel)
     plt.ylabel('% of points')
@@ -133,7 +133,7 @@ plot_gradients = args.plot_gradients[0]
 
 cardinality = '_AA20'
 score ='RMSD'
-pdf = PdfPages(outdir+'rmsd_lddt_'+calc+'_str_vs_seq.pdf')
+pdf = PdfPages(outdir+'ss_acc_str_'+calc+'_str_vs_seq.pdf')
 fig = plt.figure(figsize=(10,10)) #set figsize
 
 aln_types = ['_seqaln', '_straln']
@@ -141,13 +141,14 @@ title = 'Sequence vs Structure alignments'
 ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.5,1.0]}
 
 
+#pdb.set_trace()
 
 plot_num = 331
-for score in ['RMSD', 'lddt_scores']:
+for score in ['DIFFSS', 'DIFF_ACC']:
     ylim = ylims[score]
     pdf, fig = ra_different(df, aln_types, score, cardinality, calc, plot_num, pdf, fig, ylim, title)
     plot_num +=2
 
 pdf.savefig(fig)
-fig.savefig(outdir+'rmsd_lddt_'+calc+'_str_vs_seq.svg', format = 'svg')
+fig.savefig(outdir+'ss_acc_str_'+calc+'_str_vs_seq.svg', format = 'svg')
 pdf.close()
