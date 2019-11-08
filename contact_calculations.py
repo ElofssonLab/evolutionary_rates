@@ -26,8 +26,8 @@ parser.add_argument('fastadir', nargs=1, type= str,
                   default=sys.stdin, help = '''path to fasta directory. include / in end''')
 parser.add_argument('df_path', nargs=1, type= str,
                   default=sys.stdin, help = '''path to df.''')
-parser.add_argument('hgroup', nargs=1, type= str,
-                  default=sys.stdin, help = '''H-group.''')
+parser.add_argument('group', nargs=1, type= str,
+                  default=sys.stdin, help = '''Group.''')
 
 
 
@@ -64,18 +64,18 @@ def match_contacts(df, indir, outdir, fastadir):
 
 
 	for index, row in df.iterrows():
-		hgroup = row['H_group']
+		group = row['group']
 		uid1 = row['uid1']
 		uid2 = row['uid2']
 
 		if uid1 not in contact_dict.keys():
-			contacts, sequence = read_cbs(indir+hgroup+'/'+uid1+'.pdb')
+			contacts, sequence = read_cbs(indir+group+'/'+uid1+'.pdb')
 			contact_dict[uid1] = [contacts, sequence]
-			fasta_dict[uid1] = read_fasta(fastadir+hgroup+'/'+uid1+'.fa')
+			fasta_dict[uid1] = read_fasta(fastadir+group+'/'+uid1+'.fa')
 		if uid2 not in contact_dict.keys():
-			contacts, sequence = read_cbs(indir+hgroup+'/'+uid2+'.pdb')
+			contacts, sequence = read_cbs(indir+group+'/'+uid2+'.pdb')
 			contact_dict[uid2] = [contacts, sequence]
-			fasta_dict[uid2] = read_fasta(fastadir+hgroup+'/'+uid2+'.fa')
+			fasta_dict[uid2] = read_fasta(fastadir+group+'/'+uid2+'.fa')
 
 
 		for suffix in ['_seqaln', '_straln']:
@@ -118,7 +118,7 @@ def match_contacts(df, indir, outdir, fastadir):
 	df['DIFFC_seqaln'] = DIFFC_seqaln
 	df['DIFFC_straln'] = DIFFC_straln
 	#Write new df to outdir
-	df.to_csv(outdir+hgroup+'_df.csv')
+	df.to_csv(outdir+group+'_df.csv')
 	return None
 
 def read_cbs(pdbfile):
@@ -235,9 +235,9 @@ args = parser.parse_args()
 indir = args.indir[0]
 outdir = args.outdir[0]
 fastadir = args.fastadir[0]
-hgroup = args.hgroup[0]
+group = args.group[0]
 df_path = args.df_path[0]
 df = pd.read_csv(df_path)
 
-df = df[df['H_group']==hgroup]
+df = df[df['group']==group]
 match_contacts(df, indir, outdir, fastadir)

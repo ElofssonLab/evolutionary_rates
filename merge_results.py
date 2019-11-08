@@ -244,13 +244,13 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     #Get lddt results for sequence alignments
     globpath = results_path+'*/sequence/*.lddt'
     seq_lddt_name = results_path+'/seq_lddt_df.csv'
-    seq_lddt_df = get_lddt(globpath, seq_aln_name)
+    seq_lddt_df = get_lddt(globpath, seq_lddt_name)
     write_metrics(logfile, seq_lddt_df, 'Sequence alignments lddt') #write to log
 
     #Get lddt results for structure alignments
     globpath = results_path+'*/structure/*.lddt'
     str_lddt_name = results_path+'/str_lddt_df.csv'
-    str_lddt_df = get_lddt(globpath, str_aln_name)
+    str_lddt_df = get_lddt(globpath, str_lddt_name)
     write_metrics(logfile, str_lddt_df, 'Structure alignments lddt') #write to log
 
     #Merge seq aln dfs
@@ -294,7 +294,6 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     #Match DSSP - better done in parallel
     groups = [*Counter(complete_df['group']).keys()]
 
-    pdb.set_trace()
     os.mkdir(results_path+'/dssp_dfs/') #Make dssp dir
     for group in groups:
         command = gitdir+'/match_dssp.py '+results_path+' '+results_path+'/dssp_dfs/ '+fastadir+' '+group+' '+results_path+'/complete_df.csv'
@@ -313,7 +312,7 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     os.mkdir(results_path+'/contacts/') #Make contact dir
 
     for group in groups:
-        command = gitdir+'contact_calculations.py '+results_path+' '+results_path+'/contacts/ '+fastadir+' '+results_path+'/complete_dssp_df.csv'+' '+group
+        command = gitdir+'/contact_calculations.py '+results_path+' '+results_path+'/contacts/ '+fastadir+' '+results_path+'/complete_df.csv'+' '+group
         outp = subprocess.check_output(command, shell = True)#run dssp
 
     #Consolidate contact dfs
@@ -324,6 +323,7 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     complete_dssp_contact_df.to_csv(results_path+'/complete_df.csv')
     write_metrics(logfile, complete_dssp_contact_df, 'Contact calculations (should be 100 % reatainment)') #write to log
 
+    pdb.set_trace()
     #Reduce cardinalities
     return None
 
