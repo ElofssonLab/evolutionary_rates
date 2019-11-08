@@ -151,7 +151,6 @@ def match_dssp_to_aln(df, indir, outdir, fastadir):
 	for key in results_dict:
 		df[key] = results_dict[key]
 
-	pdb.set_trace()
 	#Write new df to outdir
 	df.to_csv(outdir+group+'_df.csv')
 	return None
@@ -210,7 +209,8 @@ def match(gapless_aln, info, org_seq):
 	aln2 = pairwise2.align.globalxx(org_seq, dssp_seq)
 
 	if len(aln1)<1 or len(aln2)<1:
-		pdb.set_trace()
+		raise IOError('Alignments of length 0')
+
 	seq1 = aln1[0][1] #aln to org
 	seq2 = aln2[0][1] #dssp to org
 	dsspi=0
