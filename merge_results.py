@@ -10,6 +10,10 @@ import subprocess
 from collections import Counter
 import os
 import pdb
+
+
+#custom import
+from match_acc_ss import match_ss, match_acc
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that collects results and merges them
                                                 into a unified datframe. A selection on how much of
@@ -213,6 +217,7 @@ def percent_aligned(df):
 
     return df
 
+
 def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     '''Gets results and parses them into a unified dataframe
     '''
@@ -304,8 +309,24 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     df_from_each_file = [pd.read_csv(f) for f in all_files]
     complete_dssp_df = pd.concat(df_from_each_file, ignore_index=True)
     complete_dssp_df = complete_dssp_df.dropna() #Drop NANs
-    complete_dssp_df.to_csv(results_path+'/complete_df.csv')
     write_metrics(logfile, complete_dssp_df, 'DSSP matching (should be 100 % reatainment)') #write to log
+
+    #Calculate DIFF_ACC and DIFFSS
+    #Calculate matching fractional secondary structual annotations
+    IDSS = match_ss(complete_dssp_df,'_seqaln')
+    DIFFSS = 1-np.asarray(IDSS)
+    complete_dssp_df['DIFFSS_seqaln'] = DIFFSS
+    DIFFSS = 1-np.asarray(IDSS)
+    IDSS = match_ss(complete_dssp_df,'_straln')
+    complete_dssp_df['DIFFSS_straln'] = DIFFSS
+    #Calculate matching fractional secondary structual annotations
+    DIFF_ACC = match_acc(complete_dssp_df,'_seqaln')
+    complete_dssp_df['DIFF_ACC_seqaln'] = DIFF_ACC
+
+    DIFF_ACC = match_acc(complete_dssp_df,'_straln')
+    complete_dssp_df['DIFF_ACC_straln'] = DIFF_ACC
+    #Save
+    complete_dssp_df.to_csv(results_path+'/complete_df.csv')
 
     #Calculate contacts - better done in parallel
     groups = [*Counter(complete_dssp_df['group']).keys()]

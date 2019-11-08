@@ -90,15 +90,13 @@ def match_dssp_to_aln(df, indir, outdir, fastadir):
 	dssp_dict = {}
 	fasta_dict = {}
 
-	#Create new columns in df
-	df['ss1_seqaln'] = ''
-	df['acc1_seqaln'] = ''
-	df['ss2_seqaln'] = ''
-	df['acc2_seqaln'] = ''
-	df['ss1_straln'] = ''
-	df['acc1_straln'] = ''
-	df['ss2_straln'] = ''
-	df['acc2_straln'] = ''
+	#Create dict to save results
+	results_dict = {'ss1_seqaln':[],'acc1_seqaln':[],
+	                'ss2_seqaln':[], 'acc2_seqaln':[],
+	                'ss1_straln':[], 'acc1_straln':[],
+                    'ss2_straln':[],'acc2_straln':[]
+                    }
+
 
 	for index, row in df.iterrows():
 
@@ -143,12 +141,17 @@ def match_dssp_to_aln(df, indir, outdir, fastadir):
 			(ss1, acc1) = match(gapless_aln1, dssp_dict[uid1], fasta_dict[uid1])
 			(ss2, acc2) = match(gapless_aln2, dssp_dict[uid2], fasta_dict[uid2])
 
-			df['ss1'+suffix][index] = ss1
-			df['acc1'+suffix][index] = acc1
+			results_dict['ss1'+suffix].append(ss1)
+			results_dict['acc1'+suffix].append(acc1)
 
-			df['ss2'+suffix][index] = ss2
-			df['acc2'+suffix][index] = acc2
+			results_dict['ss2'+suffix].append(ss2)
+			results_dict['acc2'+suffix].append(acc2)
 
+	#Save to df
+	for key in results_dict:
+		df[key] = results_dict[key]
+
+	pdb.set_trace()
 	#Write new df to outdir
 	df.to_csv(outdir+group+'_df.csv')
 	return None
