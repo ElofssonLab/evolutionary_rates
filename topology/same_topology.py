@@ -12,8 +12,8 @@ import numpy as np
 import pdb
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that filters entries in CATH
-        according to a filter file containing PDB ids. All entries in each topology are then 
-	randomly paired, using one entry per H-group and written to individual folders. 
+        according to a filter file containing PDB ids. All entries in each topology are then
+	randomly paired, using one entry per H-group and written to individual folders.
 	One folder per topology. Subfolders are created in batches of 200 entries within a topology.''')
 
 parser.add_argument('--H_groups', nargs=1, type= str,
@@ -115,8 +115,8 @@ def get_passed_uids(failed_pdb_filter, sequences, topologies, num_topologies_bef
         file.write('#Topologies after:'+str(len(passed_uids_grouped))+'\t')
         file.write('%Topologies passed:'+str(np.around(len(passed_uids_grouped)/num_topologies_before*100, decimals = 1))+'\n')
 
-	
-	
+
+
     return passed_uids_grouped
 
 def overx(passed_uids_grouped, outdir, sequences, H_groups):
