@@ -219,6 +219,8 @@ def match(gapless_aln, contact_info, org_seq):
 					continue
 				cis = contacts[match[2]-1] #One minus in contacts compared to contact index match
 
+				if not cis: #if no contacts here
+					continue
 				for c in cis:
 					alni = index[np.where(index[:,2]==c+1)[0][0]][1] #One plus in index compared to contact index
 

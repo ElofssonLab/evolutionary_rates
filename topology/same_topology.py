@@ -161,6 +161,7 @@ def overx(passed_uids_grouped, outdir, sequences, H_groups):
 					j+=60
 	topology_groupings.close()
 
+    #Should also write to logfile
 	return None
 
 #####MAIN#####
