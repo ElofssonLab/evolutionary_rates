@@ -216,40 +216,46 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     globpath = results_path+'*/sequence/*seq.tsv'
     seq_df_name = results_path+'/from_seq_df.csv'
     from_seq_df = tsv_to_df(globpath, seq_df_name)
-    write_metrics(logfile, from_seq_df, 'Sequence alignments') #write to log
+    write_metrics(logfile, from_seq_df, 'Sequence alignments structural alignments') #write to log
 
     #Get results from structure alignments into df
     globpath = results_path+'*/structure/*str.tsv'
     str_df_name = results_path+'/from_str_df.csv'
     from_str_df = tsv_to_df(globpath, str_df_name)
-    write_metrics(logfile, from_str_df, 'Structuree alignments') #write to log
+    write_metrics(logfile, from_str_df, 'Structure alignments structure alignments') #write to log
 
     #get sequence alignments
     globpath = results_path+'*/*.aln'
     seq_aln_name = results_path+'/seq_aln_df.csv'
     seq_aln_df = get_sequence_alignments(globpath, seq_aln_name)
+    write_metrics(logfile, seq_aln_df, 'Sequence alignments sequence alignments') #write to log
 
     #get sequence alignments from structure alignments
     globpath = results_path+'*/structure/*.aln'
     str_aln_name = results_path+'/str_aln_df.csv'
     str_aln_df = get_structure_alignments(globpath, str_aln_name)
+    write_metrics(logfile, str_aln_df, 'Structure alignments sequence alignments') #write to log
 
     #Get lddt results for sequence alignments
     globpath = results_path+'*/sequence/*.lddt'
     seq_lddt_name = results_path+'/seq_lddt_df.csv'
     seq_lddt_df = get_lddt(globpath, seq_aln_name)
+    write_metrics(logfile, seq_lddt_df, 'Sequence alignments lddt') #write to log
 
     #Get lddt results for structure alignments
     globpath = results_path+'*/structure/*.lddt'
     str_lddt_name = results_path+'/str_lddt_df.csv'
     str_lddt_df = get_lddt(globpath, str_aln_name)
+    write_metrics(logfile, str_lddt_df, 'Structure alignments lddt') #write to log
 
+    pdb.set_trace()
     #Merge seq aln dfs
     complete_seq_df = pd.merge(from_seq_df, seq_aln_df, on=['uid1', 'uid2'], how='left')
     complete_seq_df = pd.merge(seq_lddt_df, complete_seq_df, on=['uid1', 'uid2'], how='left')
     complete_seq_df = complete_seq_df.dropna() #Drop NANs
     complete_seq_df = percent_aligned(complete_seq_df) #Calculate percent aligned
     complete_seq_df.to_csv(results_path+'/complete_seq_df.csv')
+    write_metrics(logfile, complete_seq_df, 'Merging of from_seq_df, seq_aln_df and seq_lddt_df') #write to log
 
     #Merge str aln dfs
     complete_str_df = pd.merge(from_str_df, str_aln_df, on=['uid1', 'uid2'], how='left')
@@ -257,13 +263,16 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     complete_str_df = complete_str_df.dropna() #Drop NANs
     complete_str_df = percent_aligned(complete_str_df) #Calculate percent aligned
     complete_str_df.to_csv(results_path+'/complete_str_df.csv')
+    write_metrics(logfile, complete_str_df, 'Merging of from_str_df, str_aln_df and str_lddt_df') #write to log
 
     #Select entries from complete seq df based on percent aligned
     complete_seq_df_t = complete_seq_df[complete_seq_df['percent_aligned']>=t]
+    write_metrics(logfile, complete_seq_df_t, 'Selection on complete_seq_df percent aligned over '+str(t)) #write to log
 
     #Merge sequence and str dataframes after percent aligned selection
     complete_df = pd.merge(complete_seq_df_t, complete_str_df, on=['uid1', 'uid2'], how='left')
     complete_df = complete_df.dropna() #Drop NANs
+    write_metrics(logfile, complete_df, 'Merging of complete_seq_df_t and complete_str_df') #write to log
 
     #Rename x with seqaln and y with straln
     cols = ['lddt_scores', 'MLAAdist', 'RMSD', 'aln_len', 'identity', 'seq1', 'seq2', 'l1', 'l2', 'percent_aligned', ]
@@ -274,7 +283,7 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     complete_df = complete_df.rename(columns={'group_x': 'group'})
     #Save df
     complete_df.to_csv(results_path+'/complete_df.csv')
-    #Run DSSP - better done in parallel
+    #Match DSSP - better done in parallel
     hgroups = [*Counter(complete_df['group']).keys()]
 
     os.mkdir(results_path+'/dssp_dfs/') #Make dssp dir
@@ -288,7 +297,7 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     complete_dssp_df = pd.concat(df_from_each_file, ignore_index=True)
     complete_dssp_df = complete_dssp_df.dropna() #Drop NANs
     complete_dssp_df.to_csv(results_path+'/complete_df.csv')
-
+    write_metrics(logfile, complete_dssp_df, 'DSSP matching (should be 100 % reatainment)') #write to log
 
     #Calculate contacts - better done in parallel
     hgroups = [*Counter(complete_dssp_df['group']).keys()]
@@ -304,7 +313,7 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     complete_dssp_contact_df = pd.concat(df_from_each_file, ignore_index=True)
     complete_dssp_contact_df = complete_dssp_contact_df.dropna() #Drop NANs
     complete_dssp_contact_df.to_csv(results_path+'/complete_df.csv')
-
+    write_metrics(logfile, complete_dssp_contact_df, 'Contact calculations (should be 100 % reatainment)') #write to log
 
     #Reduce cardinalities
     return None
