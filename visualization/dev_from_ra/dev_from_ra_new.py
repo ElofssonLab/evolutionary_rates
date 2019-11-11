@@ -14,7 +14,7 @@ from scipy import stats
 import pdb
 
 #Arguments for argparse module:
-parser = argparse.ArgumentParser(description = '''A program that plots running averages.''')
+parser = argparse.ArgumentParser(description = '''A program that calculates deviations for running averages.''')
 
 parser.add_argument('--topdf', nargs=1, type= str,
 default=sys.stdin, help = 'path to df.')
@@ -96,14 +96,29 @@ hgroupdf['C.A.T.'] = tops
 #rename col
 hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
-topologies = [*Counter(catdf['group']).keys()]
+topcounts = Counter(catdf['group'])
+vals = np.array([*topcounts.values()])
+num_tops_with10 = len(np.where(vals>9)[0])
+print(num_tops_with10/len(vals))
+topologies = np.array([*topcounts.keys()])
+topologies = topologies[np.where(vals>9)[0]]
+
+
+#Save pvalues
+top_metrics = pd.DataFrame()
+top_metrics['Topology'] = topologies
 
 for score in ['lddt_scores']:
     for aln_type in ['_seqaln', '_straln']:
+        avs_from_line = [] #save avs from line and pvals
+        pvals = []
         for top in topologies:
             df = catdf[catdf['group']==top]
-            if len(df)<10:
-                continue #Skip if not 10 entries
-
             av_from_line, pvalue = dev_from_av(avdf, df, score, aln_type, cardinality)
-            pdb.set_trace()
+            avs_from_line.append(av_from_line)
+            pvals.append(pvalue)
+        top_metrics[score+aln_type+'_pval'] = pvals
+        top_metrics[score+aln_type+'_av_dev'] = avs_from_line
+
+top_metrics.to_csv(outdir+'top_metrics.csv')
+pdb.set_trace()
