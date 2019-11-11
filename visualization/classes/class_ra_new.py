@@ -10,7 +10,7 @@ import numpy as np
 import seaborn as sns
 import sys
 import argparse
-
+from scipy import stats
 import pdb
 
 #Arguments for argparse module:
@@ -52,11 +52,11 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     top_scores = np.asarray(topdf[score+aln_type])
     hgroup_mldists = np.asarray(hgroupdf['MLAAdist'+cardinality+aln_type])
     hgroup_scores = np.asarray(hgroupdf[score+aln_type])
-    
+
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
     df = pd.concat([topdf, hgroupdf])
-    for j in np.arange(min(mldists)+step,max(mldists)+step,step):
+    for j in np.arange(min(mldists)+step,6+step,step):
         below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
         below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
         cut_scores = np.asarray(below_df[score+aln_type])
@@ -72,11 +72,11 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     gradients = np.gradient(avs)
 
 
-    return js, avs, perc_points, mldists, scores, gradients  
-   
+    return js, avs, perc_points, mldists, scores, gradients
+
 def make_plots(results, cardinality, outdir, suffix):
     '''Make the plots'''
-    
+
     classes = {1.:'Alpha', 2.: 'Beta', 3.: 'Alpha Beta', 4.: 'Few SS'}
     colors = {1.: 'royalblue', 2.: 'k', 3.: 'green', 4.: 'violet'}
     cmaps = {1.: 'Blues', 2.: 'Greys', 3.: 'Greens', 4.: 'Purples'}
@@ -102,6 +102,25 @@ def make_plots(results, cardinality, outdir, suffix):
 
     return None
 
+def compare_classes(avdf, outfile):
+    '''Compare the classes running averages
+    '''
+    classes = [1.,2.,3.,4.]
+    f = open(outfile, 'w')
+    f.write('Alpha\tBeta\tAlphaBeta\tFewSS')
+    for i in range(4):
+        C1 = classes[i]
+        f.write('\n')
+        for j in range(i+1,4):
+            C2 = classes[j]
+            test_df = pd.DataFrame() #Only want to compare points where both ras have values
+            test_df[C1] = avdf[C1]
+            test_df[C2] = avdf[C2]
+            test_df = test_df.dropna() #Drop nans
+            statistic, pvalue = stats.ttest_ind(test_df[C1], test_df[C2], equal_var = False)
+            f.write('\t'+str(np.round(pvalue,3)))
+
+    f.close() #Close file
 
 #####MAIN#####
 args = parser.parse_args()
@@ -114,15 +133,22 @@ aln_types = ['_seqaln', '_straln']
 ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0]}
 cardinality = '_AA20'
 results = {}
-pdb.set_trace()
+
 for score in ['lddt_scores']:#['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
     ylim = ylims[score]
     for aln_type in aln_types:
+        avdf = pd.DataFrame() #Create dataframe to save avs
         for C in [1.,2.,3.,4.]: #Plot per class
             df1 = topdf[topdf['C._x']==C]
             df2 = hgroupdf[hgroupdf['C._x']==C]
             js, avs, perc_points, mldists, scores, gradients = ra_different(df1, df2, aln_type, score, cardinality, calc, ylim, outdir)
             results[C] = [js, avs, perc_points, mldists, scores, gradients]
-
-        suffix = calc+'_'+score+cardinality+aln_type+'_'+'.svg'
-        make_plots(results, cardinality, outdir, suffix)
+            try:
+             avdf[C] = avs
+            except:
+                pdb.set_trace()
+        suffix = calc+'_'+score+cardinality+aln_type+'.svg'
+        #make_plots(results, cardinality, outdir, suffix)
+        #Compare ras
+        outfile = outdir+score+cardinality+aln_type+'.pvals'
+        compare_classes(avdf, outfile)
