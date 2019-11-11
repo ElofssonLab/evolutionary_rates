@@ -31,7 +31,7 @@ default=sys.stdin, help = 'either median or average.')
 parser.add_argument('--avdf', nargs=1, type= str,
 default=sys.stdin, help = 'Dataframe with averages.')
 
-def dev_from_av(avdf, df, score, aln_type):
+def dev_from_av(avdf, df, score, aln_type, cardinality):
     '''Calculate avearge dev from total running average within group and significance
     '''
 
@@ -42,18 +42,18 @@ def dev_from_av(avdf, df, score, aln_type):
     avdevs = [] #Save deviations
     step = 0.1
 
-    total_dists = avdf['ML '+cardinality[1:]+' distance']
-    total_scores = avdf[score+aln_type]
 
     mldists = np.asarray(df['MLAAdist'+cardinality+aln_type])
     start = np.round(min(mldists),2)
-    pdb.set_trace()
+    start = float(str(start)[0:3])
     end = min(max(mldists), 6) #End at 6
     scores = np.asarray(df[score+aln_type])
 
-    for j in np.arange(min(mldists)+step,end+step,step):
+    for j in np.arange(start+step,end+step,step):
         below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
         below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
+        if len(below_df)<1: #May be discontinuous in step
+            continue
         cut_scores = np.asarray(below_df[score+aln_type])
         if calc == 'average':
             av= np.average(cut_scores)
@@ -61,9 +61,9 @@ def dev_from_av(avdf, df, score, aln_type):
             av= np.median(cut_scores)
         avs.append(av)
 
-        tav = total_avs[np.round(j-step/2, 1)] #total average in current interval
+        x = np.round(j-step/2, 2)
+        tav = avdf[avdf['ML  distance']==x][score+aln_type].values[0] #total average in current interval
         avdevs.append(av-tav)
-
 
     #Do a t-test to calculate if the deviation is significant for each H-group
     #The variances will be unequal, as each H-group only encompasses very feq points
@@ -85,11 +85,25 @@ avdf = pd.read_csv(args.avdf[0])
 
 cardinality = '_AA20'
 
-#rename col
-hgroupdf = hgroupdf.rename(columns={'H_group':'group'})
-df = pd.concat([topdf, hgroupdf])
-pdb.set_trace()
-for score in ['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
-    for aln_type in aln_types:
+#Get topology from hgroupdf
+tops = []
+hgroups = [*hgroupdf['H_group']]
+for hg in hgroups:
+    hg = hg.split('.')
+    tops.append(hg[0]+'.'+hg[1]+'.'+hg[2])
 
-        av_from_line, pvalue = dev_from_av(avdf, df, score, aln_type)
+hgroupdf['C.A.T.'] = tops
+#rename col
+hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
+catdf = pd.concat([topdf, hgroupdf])
+topologies = [*Counter(catdf['group']).keys()]
+
+for score in ['lddt_scores']:
+    for aln_type in ['_seqaln', '_straln']:
+        for top in topologies:
+            df = catdf[catdf['group']==top]
+            if len(df)<10:
+                continue #Skip if not 10 entries
+
+            av_from_line, pvalue = dev_from_av(avdf, df, score, aln_type, cardinality)
+            pdb.set_trace()
