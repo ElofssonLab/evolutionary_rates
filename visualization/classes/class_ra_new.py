@@ -28,6 +28,10 @@ default=sys.stdin, help = 'path to output directory.')
 parser.add_argument('--calc', nargs=1, type= str,
 default=sys.stdin, help = 'either median or average.')
 
+parser.add_argument('--get_one', nargs=1, type= str,
+default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
+
+
 
 def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir):
     '''Produce running average plots for df
@@ -107,10 +111,12 @@ def compare_classes(avdf, outfile):
     '''
     classes = [1.,2.,3.,4.]
     f = open(outfile, 'w')
+    f.write('Two-sided t-tests between ras of classes where both ras have values.\n')
     f.write('Alpha\tBeta\tAlphaBeta\tFewSS')
     for i in range(4):
         C1 = classes[i]
         f.write('\n')
+        f.write('\t'*int(C1))
         for j in range(i+1,4):
             C2 = classes[j]
             test_df = pd.DataFrame() #Only want to compare points where both ras have values
@@ -118,7 +124,7 @@ def compare_classes(avdf, outfile):
             test_df[C2] = avdf[C2]
             test_df = test_df.dropna() #Drop nans
             statistic, pvalue = stats.ttest_ind(test_df[C1], test_df[C2], equal_var = False)
-            f.write('\t'+str(np.round(pvalue,3)))
+            f.write(str(np.round(pvalue,3))+'\t')
 
     f.close() #Close file
 
@@ -128,11 +134,24 @@ topdf = pd.read_csv(args.topdf[0])
 hgroupdf = pd.read_csv(args.hgroupdf[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
+get_one = args.get_one[0]
 
 aln_types = ['_seqaln', '_straln']
 ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0]}
 cardinality = '_AA20'
 results = {}
+
+if get_one == True:
+    #get one pair per H-group from hgroupdf
+    groups = [*Counter(hgroupdf['H_group']).keys()]
+    one_pair_df = pd.DataFrame(columns = hgroupdf.columns)
+    for g in groups:
+        partial_df = hgroupdf[hgroupdf['H_group']==g]
+        i = np.random.randint(len(partial_df), size = 1)
+        start =  partial_df.index[0]
+        selection = partial_df.loc[start+i]
+        one_pair_df = one_pair_df.append(selection)
+    hgroupdf = one_pair_df
 
 for score in ['lddt_scores']:#['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
     ylim = ylims[score]
@@ -148,7 +167,7 @@ for score in ['lddt_scores']:#['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
             except:
                 pdb.set_trace()
         suffix = calc+'_'+score+cardinality+aln_type+'.svg'
-        #make_plots(results, cardinality, outdir, suffix)
+        make_plots(results, cardinality, outdir, suffix)
         #Compare ras
         outfile = outdir+score+cardinality+aln_type+'.pvals'
         compare_classes(avdf, outfile)

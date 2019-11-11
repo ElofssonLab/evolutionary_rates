@@ -31,22 +31,27 @@ default=sys.stdin, help = 'either median or average.')
 parser.add_argument('--avdf', nargs=1, type= str,
 default=sys.stdin, help = 'Dataframe with averages.')
 
-def dev_from_av(total_avs, df):
+def dev_from_av(avdf, df, score, aln_type):
     '''Calculate avearge dev from total running average within group and significance
     '''
 
     if cardinality == '_AA20':
             cardinality = ''
-	
+
     avs = [] #Save average score
-    js = [] #Save dists
     avdevs = [] #Save deviations
     step = 0.1
-    
+
+    total_dists = avdf['ML '+cardinality[1:]+' distance']
+    total_scores = avdf[score+aln_type]
+
     mldists = np.asarray(df['MLAAdist'+cardinality+aln_type])
+    start = np.round(min(mldists),2)
+    pdb.set_trace()
+    end = min(max(mldists), 6) #End at 6
     scores = np.asarray(df[score+aln_type])
-    
-    for j in np.arange(min(mldists)+step,max(mldists)+step,step):
+
+    for j in np.arange(min(mldists)+step,end+step,step):
         below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
         below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
         cut_scores = np.asarray(below_df[score+aln_type])
@@ -55,11 +60,10 @@ def dev_from_av(total_avs, df):
         if calc == 'median':
             av= np.median(cut_scores)
         avs.append(av)
-        js.append(j-step/2)
 
-        tav = total_avs[np.round(j-step, 1)] #total average in current interval
-        avdevs.append(av-tav)    
-            
+        tav = total_avs[np.round(j-step/2, 1)] #total average in current interval
+        avdevs.append(av-tav)
+
 
     #Do a t-test to calculate if the deviation is significant for each H-group
     #The variances will be unequal, as each H-group only encompasses very feq points
@@ -67,7 +71,7 @@ def dev_from_av(total_avs, df):
     truevals = np.zeros(len(df)) #size should not matter since zeros
     statistic, pvalue = stats.ttest_ind(avdevs, truevals, equal_var = False)
 
-    
+
     return np.average(avdevs), pvalue
 
 
@@ -77,15 +81,15 @@ topdf = pd.read_csv(args.topdf[0])
 hgroupdf = pd.read_csv(args.hgroupdf[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
-av_df = pd.read_csv(args.avdf[0])
+avdf = pd.read_csv(args.avdf[0])
 
 cardinality = '_AA20'
 
 #rename col
 hgroupdf = hgroupdf.rename(columns={'H_group':'group'})
 df = pd.concat([topdf, hgroupdf])
-
+pdb.set_trace()
 for score in ['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
     for aln_type in aln_types:
-                
-        av_from_line, pvalue = dev_from_av(total_avs, df)
+
+        av_from_line, pvalue = dev_from_av(avdf, df, score, aln_type)

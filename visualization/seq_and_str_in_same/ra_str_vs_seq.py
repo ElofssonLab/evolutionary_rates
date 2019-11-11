@@ -28,6 +28,9 @@ default=sys.stdin, help = 'path to output directory.')
 parser.add_argument('--calc', nargs=1, type= str,
 default=sys.stdin, help = 'either median or average.')
 
+parser.add_argument('--get_one', nargs=1, type= str,
+default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
+
 
 def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir, av_df):
     '''Produce running average plots for df
@@ -53,7 +56,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     top_scores = np.asarray(topdf[score+aln_type])
     hgroup_mldists = np.asarray(hgroupdf['MLAAdist'+cardinality+aln_type])
     hgroup_scores = np.asarray(hgroupdf[score+aln_type])
-    
+
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
     df = pd.concat([topdf, hgroupdf])
@@ -67,7 +70,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
         if calc == 'median':
             av= np.median(cut_scores)
         avs.append(av)
-        js.append(j-step/2)
+        js.append(np.round(j-step/2,2))
         total_avs[j-step] = av
         perc_points.append(len(below_df)/len(df)*100)
 
@@ -77,7 +80,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.plot(js, avs, linewidth = 2, c = 'b', label = 'Running average')
     #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
     plt.scatter(top_mldists, top_scores, s = 1, c = 'k', alpha = 1.0, label = 'topology')
-    plt.scatter(hgroup_mldists, hgroup_scores, s = 1, c = 'r', alpha = 0.2, label = 'hgroups')
+    plt.scatter(hgroup_mldists, hgroup_scores, s = 1, c = 'r', alpha = 1.0, label = 'hgroups')
     plt.xlabel(xlabel)
     plt.ylabel(score)
     plt.legend()
@@ -107,7 +110,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     av_df['ML '+cardinality[1:]+' distance'] = js
     av_df[score+aln_type] = avs
-    return av_df 
+    return av_df
 
 
 #####MAIN#####
@@ -116,10 +119,23 @@ topdf = pd.read_csv(args.topdf[0])
 hgroupdf = pd.read_csv(args.hgroupdf[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
+get_one = args.get_one[0]
 
 aln_types = ['_seqaln', '_straln']
 ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0]}
 
+if get_one == True:
+    #get one pair per H-group from hgroupdf
+    groups = [*Counter(hgroupdf['H_group']).keys()]
+    one_pair_df = pd.DataFrame(columns = hgroupdf.columns)
+    for g in groups:
+        partial_df = hgroupdf[hgroupdf['H_group']==g]
+        i = np.random.randint(len(partial_df), size = 1)
+        start =  partial_df.index[0]
+        selection = partial_df.loc[start+i]
+        one_pair_df = one_pair_df.append(selection)
+
+    hgroupdf = one_pair_df
 cardinality = '_AA20'
 av_df = pd.DataFrame()
 for score in ['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
@@ -127,6 +143,3 @@ for score in ['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
         ylim = ylims[score]
         av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir, av_df)
 av_df.to_csv(outdir+'av_df.csv')
-
-
-
