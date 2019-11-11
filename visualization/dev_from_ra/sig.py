@@ -40,6 +40,23 @@ def compactness(mldists, scores):
     Y = pdist(X.T, 'euclidean')
     return Y
 
+def plot_class_distr(df):
+    classes = [1.,2.,3.,4.]
+    for C in classes:
+        class_df = df[df['C._x'] == C]
+        sns.distplot(class_df['lddt_scores_straln'], label = C)
+
+    plt.legend()
+    plt.show()
+
+    for i in range(0,4):
+        C1 =df[df['C._x'] == classes[i]]
+        print(str(classes[i])+'\n')
+        for j in range(i+1,4):
+            C2 =df[df['C._x'] == classes[j]]
+            statistic, pvalue = stats.ttest_ind([*C1['lddt_scores_straln']], [*C2['lddt_scores_straln']], equal_var = False)
+            print(str(pvalue)+'\t')
+    pdb.set_trace()
 #####MAIN#####
 args = parser.parse_args()
 topdf = pd.read_csv(args.topdf[0])
@@ -61,6 +78,10 @@ hgroupdf['C.A.T.'] = tops
 #rename col
 hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
+partial_df = catdf[catdf['MLAAdist_straln']>=6]
+partial_df = partial_df[partial_df['MLAAdist_straln']<=8.9]
+plot_class_distr(partial_df)
+
 Y = []
 t = 0.05/len(top_metrics)
 colors = {'sig+':'r', 'nonsig':'k', 'sig-':'b'}
