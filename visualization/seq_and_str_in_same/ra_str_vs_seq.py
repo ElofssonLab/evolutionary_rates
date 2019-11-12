@@ -28,7 +28,7 @@ default=sys.stdin, help = 'path to output directory.')
 parser.add_argument('--calc', nargs=1, type= str,
 default=sys.stdin, help = 'either median or average.')
 
-parser.add_argument('--get_one', nargs=1, type= bool,
+parser.add_argument('--get_one', nargs=1, type= int,
 default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
 
 
@@ -119,7 +119,7 @@ topdf = pd.read_csv(args.topdf[0])
 hgroupdf = pd.read_csv(args.hgroupdf[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
-get_one = args.get_one[0]
+get_one = bool(args.get_one[0])
 
 aln_types = ['_seqaln', '_straln']
 ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0]}

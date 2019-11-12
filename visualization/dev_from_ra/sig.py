@@ -32,7 +32,7 @@ default=sys.stdin, help = 'either median or average.')
 parser.add_argument('--top_metrics', nargs=1, type= str,
 default=sys.stdin, help = 'Dataframe with topology grouping metrics.')
 
-parser.add_argument('--get_one', nargs=1, type= bool,
+parser.add_argument('--get_one', nargs=1, type= int,
 default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
 
 def compactness(mldists, scores):
@@ -69,7 +69,7 @@ def plot_class_distr(df, outdir):
         for j in range(i+1,4):
             C2 =df[df['C._x'] == classes[j]]
             statistic, pvalue = stats.ttest_ind([*C1['lddt_scores_straln']], [*C2['lddt_scores_straln']], equal_var = False)
-            f.write(str(np.round(pvalue,3))+'\t')
+            f.write(str(pvalue)+'\t')
     f.close() #Close file
     return None
 #####MAIN#####
@@ -79,8 +79,8 @@ hgroupdf = pd.read_csv(args.hgroupdf[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
 top_metrics = pd.read_csv(args.top_metrics[0])
-get_one = args.get_one[0]
-pdb.set_trace()
+get_one = bool(args.get_one[0])
+
 cardinality = '_AA20'
 #set random seed
 np.random.seed(42)
@@ -109,7 +109,7 @@ hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
 partial_df = catdf[catdf['MLAAdist_straln']>=6]
 partial_df = partial_df[partial_df['MLAAdist_straln']<=8.9]
-#plot_class_distr(partial_df, outdir)
+plot_class_distr(partial_df, outdir)
 
 
 Y = []
