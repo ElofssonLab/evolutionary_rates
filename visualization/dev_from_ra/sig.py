@@ -104,9 +104,11 @@ for hg in hgroups:
     tops.append(hg[0]+'.'+hg[1]+'.'+hg[2])
 
 hgroupdf['C.A.T.'] = tops
+
 #rename col
 hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
+pdb.set_trace()
 partial_df = catdf[catdf['MLAAdist_straln']>=6]
 partial_df = partial_df[partial_df['MLAAdist_straln']<=8.9]
 plot_class_distr(partial_df, outdir)
