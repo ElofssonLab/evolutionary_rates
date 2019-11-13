@@ -13,11 +13,11 @@ import pdb
 parser = argparse.ArgumentParser(description = '''A program that calculates reduced cardinalities for a df, makes phylip files and runs treepuzzle
                                                 to calculate ML AA distances.''')
 
-parser.add_argument('df', nargs=1, type= str,
+parser.add_argument('--df', nargs=1, type= str,
                   default=sys.stdin, help = 'path to input dataframe.')
-parser.add_argument('outdir', nargs=1, type= str,
+parser.add_argument('--outdir', nargs=1, type= str,
                   default=sys.stdin, help = 'path output directory.')
-parser.add_argument('puzzle', nargs=1, type= str,
+parser.add_argument('--puzzle', nargs=1, type= str,
                 default=sys.stdin, help = '''path to tree-puzzle.''')
 
 def encode2(seq):
@@ -174,10 +174,39 @@ def run_puzzle(indir, puzzle):
 
     return None
 
+def parse_puzzle(results_dir, RC_df, suffices, cardinalities):
+    '''Parse the newly generated tree-puzzle results
+    '''
+    #base
+    base = results_dir+'/reduced_cardinality/'
+    uid1 = [*RC_df['uid1']]
+    uid2 = [*RC_df['uid2']]
+    groups = [*RC_df['group']]
+
+    for cardinality in cardinalities:
+        for suffix in suffices:
+            evdists = []
+            for i in range(len(uid1)):
+                key = uid1[i]+'_'+uid2[i]
+                indir = base + cardinality + '/' + suffix + '/'+groups[i]+'/'
+                #Open distfile - tree-puzzle results
+                dist_file = open(indir + key + '.phy.dist')
+                for line in dist_file:
+                    line = line.rstrip()
+                    line = line.split(" ") #split on double space
+                    line = list(filter(None, line)) #Filter away empty strings
+
+                    if len(line)>2:
+                        seq_dist = line[-1] #Get ML evolutionary distance between sequences
+                        break
+                dist_file.close()
+                evdists.append(seq_dist)
+            RC_df['MLAAdist_'+cardinality+'_'+suffix] = evdists
+    RC_df.to_csv(results_dir+'RC_df.csv')
+    return RC_df
 
 def reduce_and_run(complete_df, results_dir, puzzle):
     #Reduce cardinality, make phylip files and run tree-puzzle
-
     RC_df = pd.DataFrame()
     #Encode sequences with reduced cardinality
     suffices = ['1_seqaln', '2_seqaln', '1_straln', '2_straln']
@@ -193,8 +222,11 @@ def reduce_and_run(complete_df, results_dir, puzzle):
     RC_df.to_csv(results_dir+'RC_df.csv') #Save RC df
     #Write .phy files for reduced cardinality representations of alignments
     suffices = ['seqaln', 'straln']
+    cardinalities = ['AA2', 'AA3', 'AA6']
     u_groups = [*Counter(RC_df['group']).keys()]
-    for cardinality in ['AA2', 'AA3', 'AA6']:
+    os.mkdir(results_dir+'/reduced_cardinality/')
+    for cardinality in cardinalities:
+        os.mkdir(results_dir+'/reduced_cardinality/'+cardinality)
         for suffix in suffices:
             os.mkdir(results_dir+'/reduced_cardinality/'+cardinality+'/'+suffix)
             for group in u_groups:
@@ -212,11 +244,20 @@ def reduce_and_run(complete_df, results_dir, puzzle):
                     make_phylip([uid1[i], uid2[i]], seq1[i], seq2[i], outdir)
 
 
+    #Run tree-puzzle on reduced cardinality phylip files
+    for cardinality in cardinalities:
+        for suffix in suffices:
+             print(cardinality,suffix)
+             dirs = glob.glob(results_dir+'/reduced_cardinality/'+cardinality+'/'+suffix+'/*')
+             for d in dirs:
+                 run_puzzle(d+'/', puzzle)
+
+    #Parse tree-puzzle results
+    RC_df = parse_puzzle(results_dir, RC_df, suffices, cardinalities)
     #Add columns to complete_df
     columns = ['AA2_1_seqaln', 'AA3_1_seqaln', 'AA6_1_seqaln', 'AA2_2_seqaln', 'AA3_2_seqaln',
            'AA6_2_seqaln', 'AA2_1_straln', 'AA3_1_straln', 'AA6_1_straln', 'AA2_2_straln',
-            'AA3_2_straln', 'AA6_2_straln', 'uid1', 'uid2',
-           'H_group', 'MLAAdist_AA2_straln', 'MLAAdist_AA3_straln',
+            'AA3_2_straln', 'AA6_2_straln', 'MLAAdist_AA2_straln', 'MLAAdist_AA3_straln',
            'MLAAdist_AA6_straln', 'MLAAdist_AA2_seqaln', 'MLAAdist_AA3_seqaln',
            'MLAAdist_AA6_seqaln']
 
@@ -228,9 +269,9 @@ def reduce_and_run(complete_df, results_dir, puzzle):
 #####MAIN#####
 args = parser.parse_args()
 
-df = args.df[0]
+df = pd.read_csv(args.df[0])
 outdir = args.outdir[0]
-dssp = args.puzzle[0]
+puzzle = args.puzzle[0]
 
 #Reduce cardinalities
-reduce_and_run(complete_df, results_dir, puzzle)
+reduce_and_run(df, outdir, puzzle)
