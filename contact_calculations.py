@@ -106,8 +106,9 @@ def match_contacts(df, indir, outdir, fastadir):
 						C+=1
 			try:
 				diff = 1-(C/(M+N-C))
-			except:
-				diff = 'NaN'
+			except: #division by 0
+				pdb.set_trace()
+				diff = 1 # No conserved
 			if suffix == '_seqaln':
 				DIFFC_seqaln.append(diff)
 			else:

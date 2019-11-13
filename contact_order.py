@@ -8,19 +8,18 @@ import os
 import glob
 import numpy as np
 import pandas as pd
-from collections import defaultdict
+from collections import defaultdict, Counter
 from scipy.spatial import distance
-from Bio import pairwise2
 import pdb
 
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''Calculate the relative contact order for pdb files.''')
 
-parser.add_argument('indir', nargs=1, type= str,
+parser.add_argument('--indir', nargs=1, type= str,
                   default=sys.stdin, help = '''path to input directory. include / in end''')
-parser.add_argument('outdir', nargs=1, type= str,
+parser.add_argument('--outdir', nargs=1, type= str,
                   default=sys.stdin, help = '''path to output directory. include / in end''')
-parser.add_argument('df_path', nargs=1, type= str,
+parser.add_argument('--df_path', nargs=1, type= str,
                   default=sys.stdin, help = '''path to df.''')
 
 
@@ -36,23 +35,25 @@ def contact_order(df, indir, outdir):
 	rco_dict = {}
 	fasta_dict = {}
 
-	groups = [*Counter(df[*['group']]).keys()] #Get unique groups
-	uids = [*Counter(uid1+uid2).keys()] #Get unique uids
+	groups = [*Counter([*df['group']]).keys()] #Get unique groups
 
 
 	for group in groups:
-		uid1 = df[df['group']==group]['uid1']
-		uid2 = df[df['group']==group]['uid2']
+		uid1 = [*df[df['group']==group]['uid1']]
+		uid2 = [*df[df['group']==group]['uid2']]
 		uids = [*Counter(uid1+uid2).keys()] #Get unique uids
-
-
+		#Get RCOs
 		for uid in uids:
 			contacts, sequence, separation, N, S, RCO = read_cbs(indir+group+'/'+uid+'.pdb')
 			rco_dict[uid] = RCO
-			pdb.set_trace()
 
 
-
+	#RCO
+	for i in range(len(df)):
+		row = df.iloc[i]
+		pdb.set_trace()
+		RCO1 = rco_dict[row['uid1']]
+		RCO1 = rco_dict[row['uid2']]
 
 	#Set new columns in df
 	df['RCO'] = RCO
@@ -122,7 +123,7 @@ def get_contacts(pos):
 				S+=(j-i)
 
 	L = len(contacts)
-	RCO = S/(L*N)
+	RCO = S/(L*N) #It is kind of like actual separation divided by max separation
 	return contacts, separation, N, S, RCO
 
 def calculate_rco(contacts, separation):
@@ -143,7 +144,6 @@ def calculate_rco(contacts, separation):
 args = parser.parse_args()
 indir = args.indir[0]
 outdir = args.outdir[0]
-df_path = args.df_path[0]
-df = pd.read_csv(df_path)
+df = pd.read_csv(args.df_path[0])
 
 contact_order(df, indir, outdir)
