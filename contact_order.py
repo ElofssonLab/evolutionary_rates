@@ -123,7 +123,10 @@ def get_contacts(pos):
 				S+=(j-i)
 
 	L = len(contacts)
-	RCO = S/(L*N) #It is kind of like actual separation divided by max separation
+	if N !=0:
+		RCO = S/(L*N) #It is kind of like actual separation divided by max separation
+	else:
+		RCO = 1 #maximum variability
 	return contacts, separation, N, S, RCO
 
 def calculate_rco(contacts, separation):
