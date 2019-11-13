@@ -28,13 +28,12 @@ parser.add_argument('df_path', nargs=1, type= str,
 
 
 #FUNCTIONS
-
-def calculate_rco(df, indir, outdir):
+def contact_order(df, indir, outdir):
 	'''Calculate the relative contact order
 	'''
 
 
-	contact_dict = {}
+	rco_dict = {}
 	fasta_dict = {}
 
 	groups = [*Counter(df[*['group']]).keys()] #Get unique groups
@@ -48,30 +47,15 @@ def calculate_rco(df, indir, outdir):
 
 
 		for uid in uids:
-			contacts, sequence = read_cbs(indir+group+'/'+uid+'.pdb')
-			contact_dict[uid1] = [contacts, sequence]
+			contacts, sequence, separation, N, S, RCO = read_cbs(indir+group+'/'+uid+'.pdb')
+			rco_dict[uid] = RCO
+			pdb.set_trace()
 
 
 
-			C = 0 #Keep track of the number of conserved contacts in the alignment
-			for i in range(len(mc1)):
-				c1 = mc1[i]
-				c2 = mc2[i]
-				for j in c1:
-					if j in c2:#If the contacts at the same position is shared.
-						C+=1
-			try:
-				diff = 1-(C/(M+N-C))
-			except:
-				diff = 'NaN'
-			if suffix == '_seqaln':
-				DIFFC_seqaln.append(diff)
-			else:
-				DIFFC_straln.append(diff)
 
 	#Set new columns in df
-	df['DIFFC_seqaln'] = DIFFC_seqaln
-	df['DIFFC_straln'] = DIFFC_straln
+	df['RCO'] = RCO
 	#Write new df to outdir
 	df.to_csv(outdir+group+'_df.csv')
 	return None
@@ -97,8 +81,9 @@ def read_cbs(pdbfile):
 				prev_res = record['res_no']
 				pos.append(np.array([record['x'], record['y'], record['z']]))
 				sequence += three_to_one[record['res_name']]
-	contacts = get_contacts(pos)
-	return contacts, sequence
+	contacts, separation, N, S, RCO = get_contacts(pos)
+
+	return contacts, sequence, separation, N, S, RCO
 
 
 def parse_atm_record(line):
@@ -122,15 +107,37 @@ def parse_atm_record(line):
 
 def get_contacts(pos):
 	contacts = [] #Save each residue's contacts
+	separation = [] #Save each contacts sequence separation
+	N=0 #Total number of contacts
+	S=0 #Total sequence separation
 	for i in range(len(pos)):
 		contacts.append([])
+		separation.append([])
 		for j in range(i+5, len(pos)):
 			dist = distance.euclidean(pos[i], pos[j])
 			if dist < 8:
 				contacts[i].append(j)
+				separation[i].append(j-i) #sequence separation
+				N+=1
+				S+=(j-i)
+
+	L = len(contacts)
+	RCO = S/(L*N)
+	return contacts, separation, N, S, RCO
+
+def calculate_rco(contacts, separation):
+	'''Calculate the relative contact order
+	'''
+
+	l = len(contacts)
+	N= 0 #Total number of contacts
+	S=0 #Total sequence separation
+	for i in range(len(contacts)):
+		for j in range(len(contacts[i])):
+			N+=1
 
 
-	return contacts
+
 
 #MAIN
 args = parser.parse_args()

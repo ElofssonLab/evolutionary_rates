@@ -190,17 +190,20 @@ def match(gapless_aln, contact_info, org_seq):
 	seq1 = aln1[0][1] #gapless aligned sequence to org
 	seq2 = aln2[0][1] #c_seq to org
 
-	index = np.zeros([len(seq1),3], dtype=int) #Create an index of the conversion btw positions in the alignments
+	index = np.zeros([max(len(seq1), len(seq2)),3], dtype=int) #Create an index of the conversion btw positions in the alignments
 	i1=1
 	i2=1
-	for i in range(len(seq1)):
+	for i in range(len(seq2)): #seq2 is longer than seq 1, potentially creating mismatched lengths
 		index[i,0] = i+1 #Can't have 0 index - since non-matches are zeros
-		if seq1[i] != '-':
-			index[i,1] = i1 #gapless alignment
-			i1+=1
 		if seq2[i] != '-':
-                        index[i,2] = i2 #extracted sequence from pdb file
-                        i2+=1
+			index[i,2] = i2 #gapless alignment
+			i2+=1
+		if i > len(seq1)-1:#If the end of seq1 has been reached
+			continue
+		if seq1[i] != '-':
+						index[i,1] = i1 #extracted sequence from pdb file
+						i1+=1
+
 
 
 
