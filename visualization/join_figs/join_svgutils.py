@@ -44,15 +44,22 @@ fig3 = args.fig3[0]
 fig4 = args.fig4[0]
 outdir = args.outdir[0]
 
-Figure("16cm", "6.5cm",
+Figure("24cm", "6.5cm",
        Panel(
-            SVG(fig1).scale(0.35),
-            Text("A", 25, 20, size=12, weight='bold') #Ttext after if moving/scaling
+            SVG(fig1).scale(0.5),
+            Text("(a)", 35, 20, size=12, weight='bold') #Ttext after if moving/scaling
           ),
        Panel(
-          SVG(fig2).scale(0.35).move(280, 0),
-          Text("B", 25, 20, size=12, weight='bold').move(280,0)
-       )).save("fig_final.svg")
+          SVG(fig2).scale(0.5),
+          Text("(b)", 35, 20, size=12, weight='bold')
+
+        ),Panel(
+            SVG(fig3).scale(0.5), #0.318 if 11x11
+             Text("(c)", 35, 20, size=12, weight='bold') #Ttext after if moving/scaling
+           )).tile(3,1).save("figureS2.svg")
+       # Panel(
+       #    SVG(fig4).scale(0.35).move(280, 280),
+       #    Text("(d)", 25, 20, size=12, weight='bold').move(280,280)
+       # )).save("figure2.svg")
 
 pdb.set_trace()
-figures = [fig1,fig2,fig3,fig4]

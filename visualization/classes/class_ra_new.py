@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
@@ -28,7 +28,7 @@ default=sys.stdin, help = 'path to output directory.')
 parser.add_argument('--calc', nargs=1, type= str,
 default=sys.stdin, help = 'either median or average.')
 
-parser.add_argument('--get_one', nargs=1, type= str,
+parser.add_argument('--get_one', nargs=1, type= int,
 default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
 
 
@@ -60,7 +60,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
     df = pd.concat([topdf, hgroupdf])
-    for j in np.arange(min(mldists)+step,6+step,step):
+    for j in np.arange(min(mldists)+step,max(mldists)+step,step):
         below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
         below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
         cut_scores = np.asarray(below_df[score+aln_type])
@@ -80,8 +80,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
 def make_plots(results, cardinality, outdir, suffix):
     '''Make the plots'''
-
-    classes = {1.:'Alpha', 2.: 'Beta', 3.: 'Alpha Beta', 4.: 'Few SS'}
+    matplotlib.rcParams.update({'font.size': 22})
+    classes = {1.:'Mainly Alpha', 2.: 'Mainly Beta', 3.: 'Alpha Beta', 4.: 'Few SS'}
     colors = {1.: 'royalblue', 2.: 'k', 3.: 'green', 4.: 'violet'}
     cmaps = {1.: 'Blues', 2.: 'Greys', 3.: 'Greens', 4.: 'Purples'}
     xlabel = 'ML '+cardinality[1:]+' distance'
@@ -99,8 +99,8 @@ def make_plots(results, cardinality, outdir, suffix):
         plt.ylabel(score)
         plt.legend()
         plt.ylim(ylim)
-        plt.xlim([0,10])
-        plt.xticks([0,1,2,3,4,5,6,7,8,9,10])
+        plt.xlim([0,9.1])
+        plt.xticks([0,1,2,3,4,5,6,7,8,9])
     fig.savefig(outdir+'class_running_'+suffix, format = 'svg')
     plt.close()
 
@@ -134,7 +134,7 @@ topdf = pd.read_csv(args.topdf[0])
 hgroupdf = pd.read_csv(args.hgroupdf[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
-get_one = args.get_one[0]
+get_one = bool(args.get_one[0])
 
 aln_types = ['_seqaln', '_straln']
 ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0]}
@@ -165,9 +165,9 @@ for score in ['lddt_scores']:#['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
             try:
              avdf[C] = avs
             except:
-                pdb.set_trace()
+                pdb.set_trace()#Remember to haev below 6 for stats calcs
         suffix = calc+'_'+score+cardinality+aln_type+'.svg'
         make_plots(results, cardinality, outdir, suffix)
         #Compare ras
         outfile = outdir+score+cardinality+aln_type+'.pvals'
-        compare_classes(avdf, outfile)
+        #compare_classes(avdf, outfile)

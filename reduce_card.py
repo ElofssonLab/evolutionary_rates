@@ -10,10 +10,8 @@ from collections import Counter
 import os
 import pdb
 #Arguments for argparse module:
-parser = argparse.ArgumentParser(description = '''A program that collects results and merges them
-                                                into a unified datframe. A selection on how much of
-                                                the shortest sequence in each pair is made according
-                                                to a threshold.''')
+parser = argparse.ArgumentParser(description = '''A program that calculates reduced cardinalities for a df, makes phylip files and runs treepuzzle
+                                                to calculate ML AA distances.''')
 
 parser.add_argument('df', nargs=1, type= str,
                   default=sys.stdin, help = 'path to input dataframe.')
@@ -179,7 +177,7 @@ def run_puzzle(indir, puzzle):
 
 def reduce_and_run(complete_df, results_dir, puzzle):
     #Reduce cardinality, make phylip files and run tree-puzzle
-    
+
     RC_df = pd.DataFrame()
     #Encode sequences with reduced cardinality
     suffices = ['1_seqaln', '2_seqaln', '1_straln', '2_straln']
@@ -190,12 +188,12 @@ def reduce_and_run(complete_df, results_dir, puzzle):
 
     RC_df['uid1'] = complete_df['uid1']
     RC_df['uid2'] = complete_df['uid2']
-    RC_df['H_group'] = complete_df['H_group']
+    RC_df['group'] = complete_df['group']
 
-
+    RC_df.to_csv(results_dir+'RC_df.csv') #Save RC df
     #Write .phy files for reduced cardinality representations of alignments
     suffices = ['seqaln', 'straln']
-    u_groups = [*Counter(RC_df['H_group']).keys()]
+    u_groups = [*Counter(RC_df['group']).keys()]
     for cardinality in ['AA2', 'AA3', 'AA6']:
         for suffix in suffices:
             os.mkdir(results_dir+'/reduced_cardinality/'+cardinality+'/'+suffix)
@@ -204,7 +202,7 @@ def reduce_and_run(complete_df, results_dir, puzzle):
                 if not os.path.isdir(outdir): #check if dir exists, otherwise make it
                     os.mkdir(outdir)
 
-                df = RC_df[RC_df['H_group'] == group]
+                df = RC_df[RC_df['group'] == group]
 
                 seq1 = [*df[cardinality+'_1_'+suffix]]
                 seq2 = [*df[cardinality+'_2_'+suffix]]
@@ -214,7 +212,7 @@ def reduce_and_run(complete_df, results_dir, puzzle):
                     make_phylip([uid1[i], uid2[i]], seq1[i], seq2[i], outdir)
 
 
-    #Add columns to dssp_df
+    #Add columns to complete_df
     columns = ['AA2_1_seqaln', 'AA3_1_seqaln', 'AA6_1_seqaln', 'AA2_2_seqaln', 'AA3_2_seqaln',
            'AA6_2_seqaln', 'AA2_1_straln', 'AA3_1_straln', 'AA6_1_straln', 'AA2_2_straln',
             'AA3_2_straln', 'AA6_2_straln', 'uid1', 'uid2',
@@ -223,8 +221,9 @@ def reduce_and_run(complete_df, results_dir, puzzle):
            'MLAAdist_AA6_seqaln']
 
     for column in columns:
-        complete_dssp_df[column] = RC_df[column]
-    complete_dssp_df.columns
+        complete_df[column] = RC_df[column]
+
+    complete_df.to_csv(outdir+'complete_df_allcards.csv')
 
 #####MAIN#####
 args = parser.parse_args()
@@ -233,4 +232,5 @@ df = args.df[0]
 outdir = args.outdir[0]
 dssp = args.puzzle[0]
 
-reduce_cardinality(indir, t, dssp, fastadir, gitdir)
+#Reduce cardinalities
+reduce_and_run(complete_df, results_dir, puzzle)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
@@ -36,11 +37,12 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     '''Produce running average plots for df
     '''
 
+    matplotlib.rcParams.update({'font.size': 22})
     suffix = calc+'_'+score+cardinality+aln_type+'_'+'.svg'
     colors = {'_seqaln': 'k', '_straln': 'r'}
     xlabel = 'ML '+cardinality[1:]+' distance'
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
-    plt.rc('axes', titlesize=10) #set title and label text sizes
+
 
     gradients = {}
 
@@ -79,25 +81,26 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #Plot RA
     plt.plot(js, avs, linewidth = 2, c = 'b', label = 'Running average')
     #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
-    plt.scatter(top_mldists, top_scores, s = 1, c = 'k', alpha = 1.0, label = 'topology')
-    plt.scatter(hgroup_mldists, hgroup_scores, s = 1, c = 'r', alpha = 1.0, label = 'hgroups')
+    plt.scatter(top_mldists, top_scores, s = 1, c = 'k', alpha = 1.0, label = 'Dataset 3')
+    plt.scatter(hgroup_mldists, hgroup_scores, s = 1, c = 'r', alpha = 0.5, label = 'Dataset 1')
     plt.xlabel(xlabel)
     plt.ylabel(score)
     plt.legend()
     plt.ylim(ylim)
-    plt.xlim([0,10])
-    plt.xticks([0,1,2,3,4,5,6,7,8,9,10])
+    plt.xlim([0,9.1])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
     fig.savefig(outdir+'running_'+suffix, format = 'svg')
     plt.close()
 
     #Plot gradients
-    fig = plt.figure(figsize=(10,10)) #set figsize
+    fig = plt.figure(figsize=(11,11)) #set figsize
     plt.scatter(js, gradients,s=5)
     plt.plot(js, gradients, linewidth = 1)
     plt.ylabel('gradient')
     #plt.ylim(grad_ylims[score])
-    #plt.xlim([2,10])
-    #plt.xticks([2,3,4,5,6,7,8,9,10])
+    plt.xlim([0,9.1])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
+    plt.xlabel(xlabel)
     fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
     #Plot Point distribution
     fig = plt.figure(figsize=(10,10)) #set figsize

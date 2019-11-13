@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
+import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 from collections import Counter
@@ -108,15 +108,16 @@ hgroupdf['C.A.T.'] = tops
 #rename col
 hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
-pdb.set_trace()
+
 partial_df = catdf[catdf['MLAAdist_straln']>=6]
 partial_df = partial_df[partial_df['MLAAdist_straln']<=8.9]
-plot_class_distr(partial_df, outdir)
+#plot_class_distr(partial_df, outdir)
 
 
 Y = []
 t = 0.05/len(top_metrics)
-colors = {'sig+':'r', 'nonsig':'k', 'sig-':'b'}
+colors = {'negative':'r', 'non-significant':'k', 'positive':'b'}
+matplotlib.rcParams.update({'font.size': 22})
 fig = plt.figure(figsize=(10,10)) #set figsize
 for i in range(len(top_metrics)):
     row = top_metrics.iloc[i]
@@ -133,16 +134,20 @@ for i in range(len(top_metrics)):
 
     if pval <t:
         if av > 0:
-            lab = 'sig+'
+            lab = 'positive'
+            alpha = 1
         else:
-            lab = 'sig-'
+            lab = 'negative'
+            alpha = 1
     else:
-        lab = 'nonsig'
+        lab = 'non-significant'
+        alpha = 1
 
 
-    plt.scatter(mldists, scores, c = colors[lab], s = 3)
+    plt.scatter(mldists[0:10], scores[0:10], c = colors[lab], s = 3, alpha = alpha)
 
-plt.legend()
+plt.legend(('negative', 'non-significant', 'positive'),
+           shadow=False, loc=(0.48, 0.75), fontsize=22, markerscale=5., scatterpoints=1)
 plt.xlabel('ML AA20 distance')
 plt.ylabel('lddt_scores_straln')
 plt.show()
