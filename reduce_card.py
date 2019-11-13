@@ -264,7 +264,7 @@ def reduce_and_run(complete_df, results_dir, puzzle):
     for column in columns:
         complete_df[column] = RC_df[column]
 
-    complete_df.to_csv(outdir+'complete_df_allcards.csv')
+    complete_df.to_csv(results_dir+'complete_df_allcards.csv')
 
 #####MAIN#####
 args = parser.parse_args()
