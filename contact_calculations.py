@@ -94,7 +94,6 @@ def match_contacts(df, indir, outdir, fastadir):
 					gapless_aln1 += aln1[i]
 					gapless_aln2 += aln2[i]
 
-
 			(mc1, M) = match(gapless_aln1, contact_dict[uid1], fasta_dict[uid1])
 			(mc2, N) = match(gapless_aln2, contact_dict[uid2], fasta_dict[uid2])
 
@@ -185,10 +184,10 @@ def match(gapless_aln, contact_info, org_seq):
 	c_seq = contact_info[1]
 
 	#align to original sequence
-	aln1 = pairwise2.align.globalxx(org_seq, gapless_aln)
-	aln2 = pairwise2.align.globalxx(org_seq, c_seq)
+	aln1 = pairwise2.align.globalxx(org_seq, gapless_aln) #org_seq is the fasta sequence
+	aln2 = pairwise2.align.globalxx(org_seq, c_seq) #c_seq is the sequence extracted from the pdb file
 
-	seq1 = aln1[0][1] #aln to org
+	seq1 = aln1[0][1] #gapless aligned sequence to org
 	seq2 = aln2[0][1] #c_seq to org
 
 	index = np.zeros([len(seq1),3], dtype=int) #Create an index of the conversion btw positions in the alignments
@@ -197,10 +196,10 @@ def match(gapless_aln, contact_info, org_seq):
 	for i in range(len(seq1)):
 		index[i,0] = i+1 #Can't have 0 index - since non-matches are zeros
 		if seq1[i] != '-':
-			index[i,1] = i1
+			index[i,1] = i1 #gapless alignment
 			i1+=1
 		if seq2[i] != '-':
-                        index[i,2] = i2
+                        index[i,2] = i2 #extracted sequence from pdb file
                         i2+=1
 
 
@@ -210,7 +209,7 @@ def match(gapless_aln, contact_info, org_seq):
 	#Save number of contacts
 	T = 0
 	for i in range(len(seq1)):
-		if seq1[i] != '-':
+		if seq1[i] != '-': #If there are no gaps in the alignment
 			matched_contacts.append([])
 			if seq2[i] != '-': #If there are no gaps in the alignment
 				try:
@@ -221,13 +220,12 @@ def match(gapless_aln, contact_info, org_seq):
 
 				if not cis: #if no contacts here
 					continue
-				for c in cis:
+				for c in cis: #Match contacts to gapless alignment index
 					alni = index[np.where(index[:,2]==c+1)[0][0]][1] #One plus in index compared to contact index
 
 					if alni != 0: #If not zero; zero = not present
 						matched_contacts[-1].append(alni-1) #One minus in aln compared to contact index match
-						T+=1
-
+						T+=1 #Total number of contacts in gapless alignment
 
 
 	return matched_contacts, T
