@@ -35,8 +35,9 @@ def contact_order(df, indir, outdir):
 	rco_dict = {}
 	fasta_dict = {}
 
+	if 'group' not in df.columns: #If the group name is not group
+		df = df.rename(columns={'H_group':'group'})
 	groups = [*Counter([*df['group']]).keys()] #Get unique groups
-
 
 	for group in groups:
 		uid1 = [*df[df['group']==group]['uid1']]
@@ -46,7 +47,7 @@ def contact_order(df, indir, outdir):
 		for uid in uids:
 			contacts, sequence, separation, N, S, RCO = read_cbs(indir+group+'/'+uid+'.pdb')
 			rco_dict[uid] = RCO
-	
+
 
 
 	#Get RCOs matching df

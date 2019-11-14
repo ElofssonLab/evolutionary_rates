@@ -124,6 +124,7 @@ outdir = args.outdir[0]
 calc = args.calc[0]
 get_one = bool(args.get_one[0])
 
+pdb.set_trace()
 aln_types = ['_seqaln', '_straln']
 ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0]}
 

@@ -328,13 +328,13 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     #Save
     complete_dssp_df.to_csv(results_path+'/complete_df.csv')
 
-    #Calculate contacts - better done in parallel
+    #Calculate difference in conserved contacts - better done in parallel
     groups = [*Counter(complete_dssp_df['group']).keys()]
     os.mkdir(results_path+'/contacts/') #Make contact dir
 
     for group in groups:
         command = gitdir+'/contact_calculations.py '+results_path+' '+results_path+'/contacts/ '+fastadir+' '+results_path+'/complete_df.csv'+' '+group
-        outp = subprocess.check_output(command, shell = True)#run dssp
+        outp = subprocess.check_output(command, shell = True)#calculate difference in conserved contacts
 
     #Consolidate contact dfs
     all_files = glob.glob(results_path+'/contacts/*.csv')
@@ -343,6 +343,15 @@ def create_df(results_path, t, dssp, fastadir, gitdir, logfile):
     complete_dssp_contact_df = complete_dssp_contact_df.dropna() #Drop NANs
     complete_dssp_contact_df.to_csv(results_path+'/complete_df.csv')
     write_metrics(logfile, complete_dssp_contact_df, 'Contact calculations (should be 100 % reatainment)') #write to log
+
+    #Calculate relative contact orders - better done in parallel
+    command = gitdir+'/contact_order.py '+'--indir '+results_path+' --outdir '+results_path+ ' --df '+results_path+'/complete_df.csv'
+    outp = subprocess.check_output(command, shell = True)#run dssp
+
+    #Reduce cardinalities - better done in parallel
+    command = gitdir+'/reduce_card.py '+ '--df '+results_path+'/complete_df.csv' + ' --indir '+results_path+' --outdir '+results_path
+    outp = subprocess.check_output(command, shell = True)#run dssp
+
 
     pdb.set_trace()
     #Reduce cardinalities
