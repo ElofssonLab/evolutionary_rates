@@ -242,5 +242,7 @@ group = args.group[0]
 df_path = args.df_path[0]
 df = pd.read_csv(df_path)
 
+if 'group' not in df.columns: #If the group name is not group
+	df = df.rename(columns={'H_group':'group'})
 df = df[df['group']==group]
 match_contacts(df, indir, outdir, fastadir)
