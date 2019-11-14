@@ -98,7 +98,7 @@ if get_one == True:
 
 #Get topology from hgroupdf
 tops = []
-hgroups = [*hgroupdf['H_group']]
+hgroups = [*hgroupdf['group']]
 for hg in hgroups:
     hg = hg.split('.')
     tops.append(hg[0]+'.'+hg[1]+'.'+hg[2])
@@ -106,6 +106,7 @@ for hg in hgroups:
 hgroupdf['C.A.T.'] = tops
 
 #rename col
+hgroupdf = hgroupdf.rename(columns={'group':'H_group'})
 hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
 
@@ -113,6 +114,31 @@ partial_df = catdf[catdf['MLAAdist_straln']>=6]
 partial_df = partial_df[partial_df['MLAAdist_straln']<=8.9]
 #plot_class_distr(partial_df, outdir)
 
+#Plot RCO
+cmap = plt.cm.rainbow
+step = 0.1
+fig, ax = plt.subplots()
+ax.scatter(catdf['MLAAdist_straln'], catdf['lddt_scores_straln'], color=cmap(catdf['RCO1']), s = 1)
+ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+ax.set_xlim([0,9.1])
+plt.xlabel('ML AA20 distance')
+plt.ylabel('lddt_scores_straln')
+plt.show()
+sm = plt.cm.ScalarMappable(cmap=cmap)
+sm.set_array([])  # only needed for matplotlib < 3.1
+fig.colorbar(sm)
+
+pdb.set_trace()
+for t in np.arange(step, 1+step, step):
+    print(t)
+    partial_rco = catdf[catdf['RCO1']<t]
+    partial_rco = partial_rco[partial_rco['RCO1']>=t-step]
+
+    plt.scatter(partial_rco['MLAAdist_straln'], partial_rco['lddt_scores_straln'], label = str(t), s=1, alpha = 0.5)
+
+plt.legend()
+plt.show()
+pdb.set_trace()
 
 Y = []
 t = 0.05/len(top_metrics)
