@@ -38,6 +38,8 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
     if cardinality == '_AA20':
             cardinality = ''
 
+    absolute_deviations = [] #absolute of all devs
+    rco_extreme = []
     avs = [] #Save average score
     avdevs = [] #Save deviations
     step = 0.1
@@ -49,7 +51,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
     end = min(max(mldists), 6) #End at 6
     scores = np.asarray(df[score+aln_type])
 
-    for j in np.arange(start+step,end+step,step):
+    for j in np.arange(start+step,end+2*step,step):
         below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
         below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
         if len(below_df)<1: #May be discontinuous in step
@@ -65,6 +67,12 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
         tav = avdf[avdf['ML  distance']==x][score+aln_type].values[0] #total average in current interval
         avdevs.append(av-tav)
 
+        #Plot deviation against RCO
+        absolute_deviations.extend(np.absolute(cut_scores-tav))
+        rco1 = [*below_df['RCO1']]
+        rco2 = [*below_df['RCO2']]
+
+    pdb.set_trace()
     #Do a t-test to calculate if the deviation is significant for each H-group
     #The variances will be unequal, as each H-group only encompasses very feq points
     #True values = 0, no deviation from total average
@@ -87,13 +95,14 @@ cardinality = '_AA20'
 
 #Get topology from hgroupdf
 tops = []
-hgroups = [*hgroupdf['H_group']]
+hgroups = [*hgroupdf['group']]
 for hg in hgroups:
     hg = hg.split('.')
     tops.append(hg[0]+'.'+hg[1]+'.'+hg[2])
 
 hgroupdf['C.A.T.'] = tops
 #rename col
+hgroupdf = hgroupdf.rename(columns={'group':'H_group'})
 hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
 topcounts = Counter(catdf['group'])
@@ -113,7 +122,7 @@ for score in ['lddt_scores']:
         avs_from_line = [] #save avs from line and pvals
         pvals = []
         for top in topologies:
-            df = catdf[catdf['group']==top]
+            df = catdf#[catdf['group']==top]
             av_from_line, pvalue = dev_from_av(avdf, df, score, aln_type, cardinality)
             avs_from_line.append(av_from_line)
             pvals.append(pvalue)
