@@ -46,19 +46,22 @@ def contact_order(df, indir, outdir):
 		for uid in uids:
 			contacts, sequence, separation, N, S, RCO = read_cbs(indir+group+'/'+uid+'.pdb')
 			rco_dict[uid] = RCO
+	
 
 
-	#RCO
+	#Get RCOs matching df
+	RCO1 = [] #Save RCOs
+	RCO2 = [] #Save RCOs
 	for i in range(len(df)):
 		row = df.iloc[i]
-		pdb.set_trace()
-		RCO1 = rco_dict[row['uid1']]
-		RCO1 = rco_dict[row['uid2']]
+		RCO1.append(rco_dict[row['uid1']])
+		RCO2.append(rco_dict[row['uid2']])
 
 	#Set new columns in df
-	df['RCO'] = RCO
+	df['RCO1'] = RCO1
+	df['RCO2'] = RCO2
 	#Write new df to outdir
-	df.to_csv(outdir+group+'_df.csv')
+	df.to_csv(outdir+'complete_df.csv')
 	return None
 
 def read_cbs(pdbfile):
