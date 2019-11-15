@@ -13,6 +13,7 @@ import argparse
 from scipy import stats
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
+
 import pdb
 
 #Arguments for argparse module:
@@ -36,20 +37,19 @@ default=sys.stdin, help = 'Dataframe with topology grouping metrics.')
 parser.add_argument('--get_one', nargs=1, type= int,
 default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
 
-def create_features(df):
-    '''Get feaures
+def get_features(df):
+    '''Get features for classification
     '''
-
     x1 = np.array(df['MLAAdist_straln'])
     x2 = np.array(df['RCO1'])
     x3 = np.array(df['RCO2'])
 
     X = np.array([x1,x2,x3])
-    X = X.T #Transpose
+    X = X.T
+
     y = np.array(df['lddt_scores_straln'])
 
     return X,y
-
 #####MAIN#####
 args = parser.parse_args()
 topdf = pd.read_csv(args.topdf[0])
@@ -92,25 +92,8 @@ catdf = pd.concat([topdf, hgroupdf])
 catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 
-#Features
-X,y = create_features(catdf)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
+#Get features
+X,y = get_features(df)
 
-#clf
-clf = RandomForestRegressor(n_estimators=100, bootstrap = True, max_features = 'sqrt')
-# Fit on training data
-clf.fit(X_train, y_train)
-#predict
-clf_predictions = clf.predict(X_test)
-#Average error
-average_error = np.average(np.absolute(clf_predictions-y_test))
-print(average_error)
-
-#Plot results
-fig = plt.figure(figsize=(10,10)) #set figsize
-ax = sns.jointplot(x = clf_predictions, y = y_test, kind = 'kde')
-ax.annotate(stats.pearsonr)
-plt.xlabel('Predicted lddt scores')
-plt.ylabel('True lddt scores')
-ax.savefig(outdir+'pred_vs_true_lddt_scores_straln.svg', format = 'svg')
-pdb.set_trace()
+#Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
