@@ -93,7 +93,34 @@ catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 
 #Get features
-X,y = get_features(df)
+X,y = get_features(catdf)
 
 #Split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+#Classifier
+clf = RandomForestRegressor(n_estimators=100, bootstrap = True, max_features = 'sqrt')
+# Fit on training data
+clf.fit(X_train, y_train)
+
+#predict
+pred = clf.predict(X_test)
+
+#Average error
+average_error = np.average(np.absolute(pred-y_test))
+print(average_error)
+
+#Plot
+matplotlib.rcParams.update({'font.size': 22})
+fig = plt.figure(figsize=(10,10)) #set figsize
+sns.kdeplot(pred, y_test,  shade=True, shade_lowest = False)
+plt.xlim([0.5,1.1])
+plt.ylim([0.5,1.1])
+plt.xlabel('Predicted lddt score')
+plt.ylabel('True lddt score')
+R = stats.pearsonr(pred, y_test)
+plt.text(0.55,1.0,'Pearson R: '+str(np.round(R[0],2)))
+plt.text(0.55,0.9,'Average error: '+str(np.round(average_error,2)))
+plt.show()
+
+fig.savefig(outdir+'lddt_straln_true_pred.svg', format = 'svg')
