@@ -102,14 +102,20 @@ def plot_rco(catdf, aln_type, cmap_name):
     plt.xlabel('ML AA20 distance')
     plt.ylabel('lddt score')
     plt.show()
-    fig.savefig(outdir+aln_type+'_RCO.svg', format = 'svg')
+    fig.savefig(outdir+cmap_name+'_lddt_scores'+aln_type+'_RCO.svg', format = 'svg')
     return None
 
-def outliers(catdf):
-    catdf = catdf[catdf['lddt_scores_straln']>0.9]
-    catdf = catdf[catdf['MLAAdist_straln']>2]
-    uids = [*catdf['uid1']]+[*catdf['uid2']]
-    uids = Counter(uids)
+def outliers(catdf, type):
+    if type == 'pos':
+        catdf = catdf[catdf['lddt_scores_straln']>0.9]
+        catdf = catdf[catdf['MLAAdist_straln']>2]
+        uids = [*catdf['uid1']]+[*catdf['uid2']]
+        uids = Counter(uids)
+    if type == 'neg':
+        catdf = catdf[catdf['lddt_scores_straln']<0.45]
+        catdf = catdf[catdf['MLAAdist_straln']<2]
+        uids = [*catdf['uid1']]+[*catdf['uid2']]
+        uids = Counter(uids)
 
 
     pdb.set_trace()
@@ -220,9 +226,11 @@ catdf = pd.concat([topdf, hgroupdf])
 catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 
+#Look into outliers
+#outliers(catdf, 'neg')
 
 #Plot by RCO
-plot_rco(catdf, '_straln', 'viridis')
+plot_rco(catdf, '_straln', 'coolwarm') #bwr quite good also
 pdb.set_trace()
 #sig_and_rco(catdf)
 partial_df = catdf[catdf['MLAAdist_straln']>=6]
