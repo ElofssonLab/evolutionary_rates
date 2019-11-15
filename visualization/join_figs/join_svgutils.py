@@ -44,22 +44,22 @@ fig3 = args.fig3[0]
 fig4 = args.fig4[0]
 outdir = args.outdir[0]
 
-Figure("24cm", "6.5cm",
+Figure("16.5cm", "6.5cm",
        Panel(
-            SVG(fig1).scale(0.5),
-            Text("(a)", 35, 20, size=12, weight='bold') #Ttext after if moving/scaling
+            SVG(fig1).scale(0.35),
+            Text("(a)", 25, 20, size=12, weight='bold') #Ttext after if moving/scaling
           ),
        Panel(
-          SVG(fig2).scale(0.5),
-          Text("(b)", 35, 20, size=12, weight='bold')
+          SVG(fig2).scale(0.35),
+          Text("(b)", 25, 20, size=12, weight='bold'))).tile(2,1).save("figure4.svg")
 
-        ),Panel(
-            SVG(fig3).scale(0.5), #0.318 if 11x11
-             Text("(c)", 35, 20, size=12, weight='bold') #Ttext after if moving/scaling
-           )).tile(3,1).save("figureS2.svg")
-       # Panel(
-       #    SVG(fig4).scale(0.35).move(280, 280),
-       #    Text("(d)", 25, 20, size=12, weight='bold').move(280,280)
-       # )).save("figure2.svg")
-
+        # ),
+        # Panel(
+        #      SVG(fig3).scale(0.35), #0.318 if 11x11
+        #       Text("(c)", 25, 20, size=12, weight='bold') #Ttext after if moving/scaling
+        #     ),
+        # Panel(
+        #    SVG(fig4).scale(0.35),
+        #    Text("(d)", 25, 20, size=12, weight='bold')
+        # )).tile(2,2).save("figureS6.svg")
 pdb.set_trace()

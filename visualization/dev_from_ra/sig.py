@@ -54,7 +54,7 @@ def plot_class_distr(df, outdir):
     plt.legend()
     #plt.show()
 
-    f = open(outdir+'pvals_per_class.txt', 'w')
+    f = open(outdir+'pvals_per_class_1_per_group.txt', 'w')
     f.write('''P-values calculated by two sided t-tests between straln lddt scores wihtin classes using points
             above or equal to 6 in ML AA20 distance, but below or equal to 8.9\n''')
 
@@ -75,7 +75,7 @@ def plot_class_distr(df, outdir):
     return None
 
 
-def plot_rco(catdf, aln_type, cmap_name):
+def plot_rco(catdf, aln_type, cmap_name, type):
     #Plot RCO
     matplotlib.rcParams.update({'font.size': 22})
 
@@ -83,15 +83,9 @@ def plot_rco(catdf, aln_type, cmap_name):
     cmap = cm.get_cmap(cmap_name, 10) #twilight_shifted was wuite nice - donät see diff btw low and high though
     step = 0.1
     for t in np.arange(step, 1+step, step):
-        partial_rco1 = catdf[catdf['RCO1']<=t]
-        partial_rco1 = partial_rco1[partial_rco1['RCO1']>t-step] #RCO1 in interval
-
-        partial_rco2 = catdf[catdf['RCO2']<t]
-        partial_rco2 = partial_rco2[partial_rco2['RCO2']>=t-step] #RCO2 in interval
-        #concat
-        cat_rco = pd.concat([partial_rco1, partial_rco2])
-        cat_rco = cat_rco.drop_duplicates() #Drop duplicates
-        plt.scatter(cat_rco['MLAAdist'+aln_type], cat_rco['lddt_scores'+aln_type], color = cmap(t), label = str(t), s=2, alpha = 1)
+        partial_rco = catdf[catdf['RCO'+type]<=t]
+        partial_rco = partial_rco[partial_rco['RCO'+type]>t-step] #RCO1 in interval
+        plt.scatter(partial_rco['MLAAdist'+aln_type],partial_rco['lddt_scores'+aln_type], color = cmap(t), label = str(t), s=2, alpha = 1)
 
     sm = plt.cm.ScalarMappable(cmap=cmap)
     sm.set_array([])
@@ -102,7 +96,7 @@ def plot_rco(catdf, aln_type, cmap_name):
     plt.xlabel('ML AA20 distance')
     plt.ylabel('lddt score')
     plt.show()
-    fig.savefig(outdir+cmap_name+'_lddt_scores'+aln_type+'_RCO.svg', format = 'svg')
+    fig.savefig(outdir+'RCO'+type+'_'+cmap_name+'_lddt_scores'+aln_type+'_RCO.svg', format = 'svg')
     return None
 
 def outliers(catdf, type):
@@ -198,10 +192,10 @@ cardinality = '_AA20'
 np.random.seed(42)
 if get_one == True:
     #get one pair per H-group from hgroupdf
-    groups = [*Counter(hgroupdf['H_group']).keys()]
+    groups = [*Counter(hgroupdf['group']).keys()]
     one_pair_df = pd.DataFrame(columns = hgroupdf.columns)
     for g in groups:
-        partial_df = hgroupdf[hgroupdf['H_group']==g]
+        partial_df = hgroupdf[hgroupdf['group']==g]
         i = np.random.randint(len(partial_df), size = 1)
         start =  partial_df.index[0]
         selection = partial_df.loc[start+i]
@@ -227,14 +221,15 @@ catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 
 #Look into outliers
-#outliers(catdf, 'neg')
+outliers(catdf, 'neg')
 
 #Plot by RCO
-plot_rco(catdf, '_straln', 'coolwarm') #bwr quite good also
+#plot_rco(catdf, '_straln', 'coolwarm', '1') #bwr quite good also
+#plot_rco(catdf, '_straln', 'coolwarm', '2') #bwr quite good also
 pdb.set_trace()
 #sig_and_rco(catdf)
 partial_df = catdf[catdf['MLAAdist_straln']>=6]
 partial_df = partial_df[partial_df['MLAAdist_straln']<=8.9]
-#plot_class_distr(partial_df, outdir)
-
+plot_class_distr(partial_df, outdir)
+pdb.set_trace()
 plot_sig(catdf, top_metrics)
