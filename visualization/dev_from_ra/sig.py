@@ -33,6 +33,9 @@ default=sys.stdin, help = 'either median or average.')
 parser.add_argument('--top_metrics', nargs=1, type= str,
 default=sys.stdin, help = 'Dataframe with topology grouping metrics.')
 
+parser.add_argument('--avdf', nargs=1, type= str,
+default=sys.stdin, help = 'Dataframe with running averages for different scores for topdf+hgroupdf.')
+
 parser.add_argument('--get_one', nargs=1, type= int,
 default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
 
@@ -75,28 +78,26 @@ def plot_class_distr(df, outdir):
     return None
 
 
-def plot_rco(catdf, aln_type, cmap_name, type):
+def plot_rco(catdf, aln_type, cmap_name, type, js, avs):
     #Plot RCO
     matplotlib.rcParams.update({'font.size': 22})
 
     fig = plt.figure(figsize=(12,10)) #set figsize
-    cmap = cm.get_cmap(cmap_name, 10) #twilight_shifted was wuite nice - donät see diff btw low and high though
-    step = 0.1
-    for t in np.arange(step, 1+step, step):
-        partial_rco = catdf[catdf['RCO'+type]<=t]
-        partial_rco = partial_rco[partial_rco['RCO'+type]>t-step] #RCO1 in interval
-        plt.scatter(partial_rco['MLAAdist'+aln_type],partial_rco['lddt_scores'+aln_type], color = cmap(t), label = str(t), s=2, alpha = 1)
+    sns.jointplot(data = catdf, x = 'MLAAdist'+aln_type, y = 'lddt_scores'+aln_type, kind = 'kde')
+    pdb.set_trace()
+    #Plot scatter
+    plt.scatter([*catdf['MLAAdist'+aln_type]], [*catdf['lddt_scores'+aln_type]], s = 2, lw=0.1,c=[*catdf['RCO'+type]], cmap=plt.cm.get_cmap(cmap_name, 3))
+    plt.colorbar(ticks=np.arange(0,0.7,0.1), label='RCO')
 
-    sm = plt.cm.ScalarMappable(cmap=cmap)
-    sm.set_array([])
-    cbar = plt.colorbar(sm)
-    #cbar.set_label('Relative contact order', rotation=270)
+    #Plot RA as well
+    plt.plot(js, avs, linewidth = 2, c = 'b', label = 'Running average')
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.xlabel('ML AA20 distance')
     plt.ylabel('lddt score')
+    plt.legend()
     plt.show()
-    fig.savefig(outdir+'one_RCO'+type+'_'+cmap_name+'_lddt_scores'+aln_type+'_RCO.svg', format = 'svg')
+    #fig.savefig(outdir+'RCO'+type+'_'+cmap_name+'_lddt_scores'+aln_type+'_RCO.svg', format = 'svg')
     return None
 
 def outliers(catdf, type):
@@ -185,6 +186,7 @@ hgroupdf = pd.read_csv(args.hgroupdf[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
 top_metrics = pd.read_csv(args.top_metrics[0])
+avdf = pd.read_csv(args.avdf[0])
 get_one = bool(args.get_one[0])
 
 cardinality = '_AA20'
@@ -224,8 +226,11 @@ catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 #outliers(catdf, 'neg')
 
 #Plot by RCO
-plot_rco(catdf, '_straln', 'coolwarm', '1') #bwr quite good also
-plot_rco(catdf, '_straln', 'coolwarm', '2') #bwr quite good also
+mldists=avdf['ML  distance']
+scores=avdf['lddt_scores_straln']
+plot_rco(catdf, '_straln', 'coolwarm', '1', mldists, scores) #bwr quite good also
+pdb.set_trace()
+plot_rco(catdf, '_straln', 'coolwarm', '2',mldists, scores) #bwr quite good also
 pdb.set_trace()
 #sig_and_rco(catdf)
 partial_df = catdf[catdf['MLAAdist_straln']>=6]

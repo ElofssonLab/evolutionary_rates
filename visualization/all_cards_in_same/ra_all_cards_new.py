@@ -146,7 +146,7 @@ calc = args.calc[0]
 get_one = bool(args.get_one[0])
 
 aln_types = ['_seqaln', '_straln']
-ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0]}
+ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0],'DIFFC':[0,1]}
 
 #set random seed
 np.random.seed(42)
@@ -165,7 +165,7 @@ if get_one == True:
 
 cardinalities = ['_AA2','_AA3','_AA6','_AA20']
 av_df = pd.DataFrame()
-for score in ['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
+for score in ['DIFFC','RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
     for aln_type in aln_types:
         ylim = ylims[score]
         av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, outdir, av_df)
