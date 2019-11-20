@@ -96,7 +96,7 @@ def plot_rco(catdf, aln_type, cmap_name, type):
     plt.xlabel('ML AA20 distance')
     plt.ylabel('lddt score')
     plt.show()
-    fig.savefig(outdir+'RCO'+type+'_'+cmap_name+'_lddt_scores'+aln_type+'_RCO.svg', format = 'svg')
+    fig.savefig(outdir+'one_RCO'+type+'_'+cmap_name+'_lddt_scores'+aln_type+'_RCO.svg', format = 'svg')
     return None
 
 def outliers(catdf, type):
@@ -221,11 +221,11 @@ catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 
 #Look into outliers
-outliers(catdf, 'neg')
+#outliers(catdf, 'neg')
 
 #Plot by RCO
-#plot_rco(catdf, '_straln', 'coolwarm', '1') #bwr quite good also
-#plot_rco(catdf, '_straln', 'coolwarm', '2') #bwr quite good also
+plot_rco(catdf, '_straln', 'coolwarm', '1') #bwr quite good also
+plot_rco(catdf, '_straln', 'coolwarm', '2') #bwr quite good also
 pdb.set_trace()
 #sig_and_rco(catdf)
 partial_df = catdf[catdf['MLAAdist_straln']>=6]

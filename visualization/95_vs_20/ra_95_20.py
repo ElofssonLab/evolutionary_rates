@@ -17,16 +17,16 @@ import pdb
 parser = argparse.ArgumentParser(description = '''A program that plots running averages.''')
 
 parser.add_argument('--df95', nargs=1, type= str,
-default=sys.stdin, help = 'path to df with the 95 % reduction.')
+default=sys.stdin, help = 'path to directory with the 95 % reduction.')
 
 parser.add_argument('--df20', nargs=1, type= str,
-default=sys.stdin, help = 'path to df with the 20 % reduction.')
+default=sys.stdin, help = 'path to directory with the 20 % reduction.')
 
 parser.add_argument('--outdir', nargs=1, type= str,
 default=sys.stdin, help = 'path to output directory.')
 
 parser.add_argument('--calc', nargs=1, type= str,
-default=sys.stdin, help = 'either median or average.')
+default=sys.stdin, help = 'either mean or average.')
 
 #FUNCTIONS
 def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, ylim, title):
@@ -34,7 +34,7 @@ def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, yl
     '''
 
     colors = {0: 'b', 1: 'darkred'}
-    labels = {0:'95% reduction', 1: '20% reduction'}
+    labels = {0:'Dataset 1', 1: 'Datset 2'}
     titles = {'seqaln': 'Sequence alignments', 'straln': 'Structure alignments'}
     plt.rc('axes', titlesize=10) #set title and label text sizes
     plt.subplot(plot_num) #set plot_num
@@ -62,8 +62,8 @@ def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, yl
             cut_scores = np.asarray(below_df[score+aln_type])
             if calc == 'average':
                 av= np.average(cut_scores)
-            if calc == 'median':
-                av= np.median(cut_scores)
+            if calc == 'mean':
+                av= np.mean(cut_scores)
             avs.append(av)
             js.append(j-step/2)
             total_avs[j-step] = av
@@ -81,8 +81,8 @@ def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, yl
     #plt.xlabel('MLAAdist'+aln_type)
     plt.ylabel(score)
     plt.ylim(ylim)
-    plt.xlim([0,6])
-    plt.xticks([0,1,2,3,4,5,6])
+    plt.xlim([0,9.1])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.title(title)
 
     #Plot gradients
@@ -91,9 +91,9 @@ def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, yl
     for i in range(2):
         plt.scatter(sizes[i][0], gradients[i],s=2, label = labels[i], color = colors[i])
     plt.ylabel('gradient')
-    plt.ylim([-0.1,0.1])
-    plt.xlim([0,6])
-    plt.xticks([0,1,2,3,4,5,6])
+    plt.ylim([-0.02,0.02])
+    plt.xlim([0,9.1])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.legend(loc = 'best')
     #Plot Point distribution
     plot_num += 3
@@ -103,9 +103,9 @@ def ra_different(dfs, aln_type, score, cardinality, calc, plot_num, pdf, fig, yl
     plt.xlabel(xlabel)
     plt.ylabel('% of points')
     plt.legend(loc = 'best')
-    plt.ylim([0,20])
-    plt.xlim([0,6])
-    plt.xticks([0,1,2,3,4,5,6])
+    plt.xlim([0,9.1])
+    plt.ylim([0,6])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
 
     return pdf, fig
 
@@ -116,14 +116,14 @@ df95 = pd.read_csv(args.df95[0])
 df20 = pd.read_csv(args.df20[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
-score ='RMSD'
+score ='lddt_scores'
 cardinality = '_AA20'
 pdf = PdfPages(outdir+score+'_'+calc+'_95_vs_20.pdf')
 fig = plt.figure(figsize=(10,10)) #set figsize
 
 aln_types = ['_seqaln', '_straln']
 title = 'Sequence vs Structure alignments'
-ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.5, 1.0]}
+ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2, 1.0]}
 
 
 
@@ -135,5 +135,5 @@ for aln_type in aln_types:
     plot_num +=2
 
 pdf.savefig(fig)
-fig.savefig(outdir+score+'_'+calc+cardinality+'_95_vs_20.svg', format = 'svg')
+fig.savefig(outdir+score+'_'+calc+cardinality+'_95_vs_20.png', format = 'png')
 pdf.close()

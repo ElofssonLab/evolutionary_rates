@@ -47,13 +47,28 @@ hgroupdf20 = pd.read_csv(args.hgroupdf20[0])
 outdir = args.outdir[0]
 
 dfs = [topdf, hgroupdf95, hgroupdf20]
-suffix = ['topdf.svg', 'hgroupdf95.svg', 'hgroupdf20.svg']
+suffix = ['_topdf.svg', '_hgroupdf95.svg', '_hgroupdf20.svg']
+
+labels = {1.:'Mainly Alpha', 2.: 'Mainly Beta', 3.:'Alpha Beta', 4.: 'Few SS'}
+colors = {1.: 'royalblue', 2.: 'k', 3.: 'green', 4.: 'violet'}
+matplotlib.rcParams.update({'font.size': 22})
 for i in range(3):
     df = dfs[i]
     print(len(df))
-    fig = plt.figure(figsize=(10,10)) #set figsize
-    ax = sns.pairplot(data = df, vars = ['aln_len_seqaln', 'aln_len_straln'], hue = 'C._x')
-    ax.savefig(outdir+'pairplot'+suffix[i], format = 'svg')
+
+    for aln_type in ['_seqaln', '_straln']:
+        fig = plt.figure(figsize=(10,10)) #set figsize
+        for key in labels:
+            class_df = df[df['C._x']==key]
+            label = labels[key]
+            sns.distplot(class_df['aln_len'+aln_type], color = colors[key], hist = False, label = label)
+            plt.xlabel('Aligned length')
+            plt.ylabel('Density')
+            plt.xlim([0,300])
+            plt.ylim([0,0.04])
+            plt.legend()
+        fig.savefig(outdir+'kde'+aln_type+suffix[i], format = 'svg')
+        plt.close()
 
 
 pdb.set_trace()

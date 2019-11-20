@@ -38,7 +38,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
     '''
 
     matplotlib.rcParams.update({'font.size': 22})
-    suffix = calc+'_'+score+'_all_cards'+aln_type+'.svg'
+    suffix = calc+'_'+score+'_all_cards'+aln_type+'.png'
     viridis = cm.get_cmap('viridis', 12)
     colors = {'_AA2':viridis(0.8), '_AA3':viridis(0.6), '_AA6':viridis(0.45), '_AA20':viridis(0.1)} #Set colors
     xlabel = 'ML distance'
@@ -98,7 +98,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
     plt.ylim(ylim)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    fig.savefig(outdir+'running_'+suffix, format = 'svg')
+    fig.savefig(outdir+'running_'+suffix, format = 'png')
     plt.close()
 
 
@@ -116,7 +116,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.xlabel(xlabel)
-    fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
+    fig.savefig(outdir+'gradient_running_'+suffix, format = 'png')
     #Plot Point distribution - same for all scores
     if score == 'RMSD':
         fig = plt.figure(figsize=(10,10)) #set figsize
@@ -131,7 +131,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
         plt.legend()
         plt.xlim([0,9.1])
         plt.xticks([0,1,2,3,4,5,6,7,8,9])
-        fig.savefig(outdir+'perc_pairs_running_'+suffix, format = 'svg')
+        fig.savefig(outdir+'perc_pairs_running_'+suffix, format = 'png')
 
 
     return av_df
