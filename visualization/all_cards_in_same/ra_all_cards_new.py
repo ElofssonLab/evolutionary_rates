@@ -38,7 +38,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
     '''
 
     matplotlib.rcParams.update({'font.size': 22})
-    suffix = calc+'_'+score+'_all_cards'+aln_type+'.png'
+    suffix = calc+'_'+score+'_all_cards'+aln_type+'.svg'
     viridis = cm.get_cmap('viridis', 12)
     colors = {'_AA2':viridis(0.8), '_AA3':viridis(0.6), '_AA6':viridis(0.45), '_AA20':viridis(0.1)} #Set colors
     xlabel = 'ML distance'
@@ -98,7 +98,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
     plt.ylim(ylim)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    fig.savefig(outdir+'running_'+suffix, format = 'png')
+    fig.savefig(outdir+'running_'+suffix, format = 'svg')
     plt.close()
 
 
@@ -116,7 +116,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.xlabel(xlabel)
-    fig.savefig(outdir+'gradient_running_'+suffix, format = 'png')
+    fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
     #Plot Point distribution - same for all scores
     if score == 'RMSD':
         fig = plt.figure(figsize=(10,10)) #set figsize
@@ -131,7 +131,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
         plt.legend()
         plt.xlim([0,9.1])
         plt.xticks([0,1,2,3,4,5,6,7,8,9])
-        fig.savefig(outdir+'perc_pairs_running_'+suffix, format = 'png')
+        fig.savefig(outdir+'perc_pairs_running_'+suffix, format = 'svg')
 
 
     return av_df
@@ -146,7 +146,7 @@ calc = args.calc[0]
 get_one = bool(args.get_one[0])
 
 aln_types = ['_seqaln', '_straln']
-ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0],'DIFFC':[0,1]}
+ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0],'DIFFC':[0,1], 'TMscore':[0,1]}
 
 #set random seed
 np.random.seed(42)
@@ -165,7 +165,13 @@ if get_one == True:
 
 cardinalities = ['_AA2','_AA3','_AA6','_AA20']
 av_df = pd.DataFrame()
-for score in ['DIFFC','RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
+
+#rename cols
+hgroupdf = hgroupdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
+topdf = topdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
+
+for score in ['TMscore','DIFFC','RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
     for aln_type in aln_types:
         ylim = ylims[score]
         av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, outdir, av_df)
+    pdb.set_trace()

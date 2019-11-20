@@ -38,7 +38,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     '''
 
     matplotlib.rcParams.update({'font.size': 22})
-    suffix = calc+'_'+score+cardinality+aln_type+'_'+'.png'
+    suffix = calc+'_'+score+cardinality+aln_type+'_'+'.svg'
     colors = {'_seqaln': 'k', '_straln': 'r'}
     xlabel = 'ML '+cardinality[1:]+' distance'
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
@@ -89,13 +89,13 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.ylim(ylim)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    fig.savefig(outdir+'running_'+suffix, format = 'png')
+    fig.savefig(outdir+'running_'+suffix, format = 'svg')
     plt.close()
 
     #Plot gradients
     fig = plt.figure(figsize=(11,11)) #set figsize
     plt.scatter(js, gradients,s=5)
-    plt.plot(js, gradients, linewidth = 1)
+    plt.plot(js, gradients, linewidth = 2)
     plt.ylabel('gradient')
     #plt.ylim(grad_ylims[score])
     plt.xlim([0,9.1])
@@ -103,7 +103,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     if score == 'lddt_scores':
         plt.ylim([-0.04, 0.04])
     plt.xlabel(xlabel)
-    fig.savefig(outdir+'gradient_running_'+suffix, format = 'png')
+    fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
     #Plot Point distribution
     fig = plt.figure(figsize=(10,10)) #set figsize
     plt.plot(js, perc_points, linewidth = 2)
@@ -111,7 +111,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.ylabel('% of points')
     #plt.xlim([2,10])
     #plt.xticks([2,3,4,5,6,7,8,9,10])
-    fig.savefig(outdir+'perc_points_running_'+suffix, format = 'png')
+    fig.savefig(outdir+'perc_points_running_'+suffix, format = 'svg')
 
     av_df['ML '+cardinality[1:]+' distance'] = js
     av_df[score+aln_type] = avs
