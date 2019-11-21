@@ -112,7 +112,7 @@ def RCO_vs_deviation(catdf, avdf, outdir, type):
     matplotlib.rcParams.update({'font.size': 22})
     #Plot RCO 1 and 2 distibutions
     if type == '1':
-        fig = plt.figure(figsize=(12,10)) #set figsize
+        fig = plt.figure(figsize=(10,10)) #set figsize
         sns.distplot(catdf['RCO1'], label = 'RCO1')
         sns.distplot(catdf['RCO2'], label = 'RCO2')
         plt.xlabel('RCO')
@@ -122,11 +122,12 @@ def RCO_vs_deviation(catdf, avdf, outdir, type):
         plt.annotate('Average RCO: '+str(np.round(np.average(np.array(catdf['RCO1']+catdf['RCO2'])/2),2)), xy=(0.4,3))
         fig.savefig(outdir+'RCOdistributions.svg', format = 'svg')
 
-
-    fig = plt.figure(figsize=(12,10)) #set figsize
+    plt.close()
+    fig = plt.figure(figsize=(10,10)) #set figsize
     #Select RCOs
     deviations = {'low':[], 'high':[], 'middle':[]}
     RCOs = {'low':[], 'high':[], 'middle':[]}
+    labels = {'low':'RCO'+type+'<0.1', 'high':'RCO'+type+'>0.5', 'middle':'RCO'+type+' 0.1-0.5'}
     step = 0.1
     for j in np.arange(step,6+step,step):
         tav = avdf[avdf['ML  distance']==np.round(j-0.05,2)]['lddt_scores_straln'].values[0] #total running average
@@ -144,11 +145,16 @@ def RCO_vs_deviation(catdf, avdf, outdir, type):
         deviations['middle'].extend(rcomiddle['lddt_scores_straln']-tav)
 
     for key in deviations:
-        sns.kdeplot(deviations[key], RCOs[key], shade=True, shade_lowest = False, label = key)
+        sns.kdeplot(RCOs[key], deviations[key], shade=True, shade_lowest = False, label = labels[key])
     plt.legend()
-    plt.show()
+    plt.ylabel('Deviation from total running average')
+    plt.xlabel('RCO'+type)
+    plt.yticks(np.arange(-0.4,0.5,0.1))
+    #plt.xticks(np.arange(0,0.7,0.1))
+    fig.savefig(outdir+'RCO'+type+'_and_dev_from_ra.svg', format = 'svg')
 
-    fig = plt.figure(figsize=(12,10)) #set figsize
+    #Plot distributions of deviations
+    fig = plt.figure(figsize=(10,10)) #set figsize
     sns.distplot(deviations['low'], label = 'RCO'+type+' < 0.1', norm_hist = True)
     sns.distplot(deviations['high'], label = 'RCO'+type+' > 0.5', norm_hist = True)
     sns.distplot(deviations['middle'], label = 'RCO'+type+' 0.1-0.5', norm_hist = True)
@@ -156,7 +162,6 @@ def RCO_vs_deviation(catdf, avdf, outdir, type):
     plt.xlabel('Deviation from total running average')
     plt.ylabel('Density')
     fig.savefig(outdir+'deviation_distribution_by_RCO'+type+'.svg', format = 'svg')
-    plt.show()
 
     f = open(outdir+'pvals_comparing_dev_by_rco'+type+'.txt', 'w')
     f.write('P-values calculated by two sided t-tests between straln lddt scores with rco'+type+' values\n')
@@ -203,11 +208,14 @@ def outliers(catdf, type, outdir):
     fig.savefig(outdir+'RCO_distributions_for_'+type+'_outliers.svg', format = 'svg')
 
 def plot_sig(catdf, top_metrics):
-    '''Plot pairs py siginificance
+    '''Plot pairs by siginificance
     '''
     t = 0.05/len(top_metrics) #Number of groups tested together
     sig_rco = 0 #Save assessment if sig and rco >0.9 or <0.1
     colors = {'negative':'b', 'non-significant':'k', 'positive':'r'}
+    alpha = {'negative':1, 'non-significant':0.5, 'positive':1}
+    mldists = {'negative':[], 'non-significant':[], 'positive':[]}
+    scores = {'negative':[], 'non-significant':[], 'positive':[]}
     matplotlib.rcParams.update({'font.size': 22})
     fig = plt.figure(figsize=(10,10)) #set figsize
     for i in range(len(top_metrics)):
@@ -218,33 +226,28 @@ def plot_sig(catdf, top_metrics):
         df = catdf[catdf['group']==top]
         if len(df) <1: #If no points in df
             continue
-        mldists = np.asarray(df['MLAAdist_straln'])
-        scores = np.asarray(df['lddt_scores_straln'])
+
         #y = compactness(mldists,scores) #assess spread in topology
-        #Y.append(y[0])
-
-
         if pval <t:
             if av > 0:
                 lab = 'positive'
-                alpha = 1
             else:
                 lab = 'negative'
-                alpha = 1
         else:
             lab = 'non-significant'
 
+        mldists[lab].extend([*df['MLAAdist_straln']])
+        scores[lab].extend([*df['lddt_scores_straln']])
+    for lab in colors:
+        plt.scatter(mldists[lab], scores[lab], c = colors[lab], s = 4, alpha = 0.3, label = lab)
 
-        plt.scatter(mldists, scores, c = colors[lab], s = 3, alpha = alpha)
-
-    #plt.legend(('negative', 'non-significant', 'positive'),
-               #shadow=False, loc=(0.48, 0.75), fontsize=22, markerscale=5., scatterpoints=1)
+    plt.legend(markerscale=10)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.xlabel('ML AA20 distance')
     plt.ylabel('lddt score')
     plt.show()
-    fig.savefig(outdir+'one_pair_lddt_straln_rco_and_sig.svg', format = 'svg')
+    fig.savefig(outdir+'one_pair_lddt_straln_sig.svg', format = 'svg')#one_pair_
 
     return None
 #####MAIN#####
@@ -291,13 +294,13 @@ catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 
 #Look into outliers
-outliers(catdf, 'pos', outdir)
-outliers(catdf, 'neg', outdir)
+#outliers(catdf, 'pos', outdir)
+#outliers(catdf, 'neg', outdir)
 #Plot by RCO
-#mldists=avdf['ML  distance']
-#scores=avdf['lddt_scores_straln']
-#plot_rco(catdf, '_straln', 'coolwarm', '1', mldists, scores) #bwr quite good also
-#plot_rco(catdf, '_straln', 'coolwarm', '2',mldists, scores) #bwr quite good also
+# mldists=avdf['ML  distance']
+# scores=avdf['lddt_scores_straln']
+# plot_rco(catdf, '_straln', 'coolwarm', '1', mldists, scores) #bwr quite good also
+# plot_rco(catdf, '_straln', 'coolwarm', '2',mldists, scores) #bwr quite good also
 
 #sig_and_rco(catdf)
 #partial_df = catdf[catdf['MLAAdist_straln']>=6]
@@ -305,6 +308,6 @@ outliers(catdf, 'neg', outdir)
 #plot_class_distr(partial_df, outdir)
 #plot_sig(catdf, top_metrics)
 #RCO vs deviation
-#RCO_vs_deviation(catdf, avdf, outdir, '1')
-#RCO_vs_deviation(catdf, avdf, outdir, '2')
+RCO_vs_deviation(catdf, avdf, outdir, '1')
+RCO_vs_deviation(catdf, avdf, outdir, '2')
 pdb.set_trace()
