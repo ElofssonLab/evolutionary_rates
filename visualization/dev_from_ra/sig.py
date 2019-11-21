@@ -105,23 +105,59 @@ def plot_rco(catdf, aln_type, cmap_name, type, js, avs):
     fig.savefig(outdir+'RCO'+type+'_'+cmap_name+'_lddt_scores'+aln_type+'_RCO.png', format = 'png')
     return None
 
-def RCO_vs_deviation(catdf, avdf):
+def RCO_vs_deviation(catdf, avdf, outdir, type):
     '''Plot RCO against the deviation for each point
     '''
-    deviations = []
-    RCOs = []
+
+    matplotlib.rcParams.update({'font.size': 22})
+    fig = plt.figure(figsize=(12,10)) #set figsize
+    #Select RCOs
+    deviations = {'low':[], 'high':[], 'middle':[]}
+    RCOs = {'low':[], 'high':[]}
     step = 0.1
-    for j in np.arange(step,9+step,step):
+    for j in np.arange(step,6+step,step):
+        tav = avdf[avdf['ML  distance']==np.round(j-0.05,2)]['lddt_scores_straln'].values[0] #total running average
         below_df = catdf[catdf['MLAAdist_straln']<j]
         below_df = below_df[below_df['MLAAdist_straln']>=j-step]
-        cut_scores = np.asarray(below_df['lddt_scores_straln'])
-        RCOs.extend([*below_df['RCO1']])
+        rcolow = below_df[below_df['RCO'+type]<0.1]
+        rcohigh = below_df[below_df['RCO'+type]>0.5]
+        rcomiddle = below_df[below_df['RCO'+type]>=0.1]
+        rcomiddle = rcomiddle[rcomiddle['RCO'+type]<=0.5]
+        RCOs['low'].extend(rcolow['RCO'+type])
+        RCOs['high'].extend(rcohigh['RCO'+type])
+        deviations['low'].extend(rcolow['lddt_scores_straln']-tav)
+        deviations['high'].extend(rcohigh['lddt_scores_straln']-tav)
+        deviations['middle'].extend(rcomiddle['lddt_scores_straln']-tav)
 
+    #sns.kdeplot(RCOs, deviations, shade=True)
+    sns.distplot(deviations['low'], label = 'RCO'+type+' < 0.1', norm_hist = True)
+    sns.distplot(deviations['high'], label = 'RCO'+type+' > 0.5', norm_hist = True)
+    sns.distplot(deviations['middle'], label = 'RCO'+type+' 0.2-0.5', norm_hist = True)
+    plt.legend()
+    plt.xlabel('Deviation from total running average')
+    plt.ylabel('Density')
+    fig.savefig(outdir+'deviation_distribution_by_RCO'+type+'.svg', format = 'svg')
+    plt.show()
 
-        deviations.extend(cut_scores-avdf[avdf['ML  distance']==np.round(j-0.05,2)]['lddt_scores_straln'].values[0])
+    f = open(outdir+'pvals_comparing_dev_by_rco'+type+'.txt', 'w')
+    f.write('P-values calculated by two sided t-tests between straln lddt scores with rco'+type+' values\n')
+    f.write('<0.2, 0.2-0.5 and >0.5 in range 0.6 ML AA20 distance\n')
 
-    plt.scatter(deviations, RCOs, s= 1)
-    pdb.set_trace()
+    keys = ['low', 'high', 'middle']
+    f.write('Number of pairs:\n')
+    for key in keys:
+        f.write(key+': '+str(len(deviations[key]))+'\t')
+
+    for i in range(3):
+        key1 = keys[i]
+        f.write('\n'+key1+'\t'*int(i+2))
+        for j in range(i+1,3):
+            key2= keys[j]
+            statistic, pvalue = stats.ttest_ind(deviations[key1], deviations[key2], equal_var = False)
+            f.write(str(pvalue)+'\t')
+    f.close()
+    return None
+
 def outliers(catdf, type):
     if type == 'pos':
         catdf = catdf[catdf['lddt_scores_straln']>0.9]
@@ -240,5 +276,5 @@ catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 #plot_class_distr(partial_df, outdir)
 #plot_sig(catdf, top_metrics)
 #RCO vs deviation
-RCO_vs_deviation(catdf, avdf)
+RCO_vs_deviation(catdf, avdf, outdir, '1')
 pdb.set_trace()
