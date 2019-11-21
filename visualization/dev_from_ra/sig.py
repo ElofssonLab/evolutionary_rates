@@ -110,10 +110,23 @@ def RCO_vs_deviation(catdf, avdf, outdir, type):
     '''
 
     matplotlib.rcParams.update({'font.size': 22})
+    #Plot RCO 1 and 2 distibutions
+    if type == '1':
+        fig = plt.figure(figsize=(12,10)) #set figsize
+        sns.distplot(catdf['RCO1'], label = 'RCO1')
+        sns.distplot(catdf['RCO2'], label = 'RCO2')
+        plt.xlabel('RCO')
+        plt.ylabel('Density')
+        plt.legend()
+        plt.annotate('Pearson R: '+str(np.round(stats.pearsonr(catdf['RCO1'],catdf['RCO2'])[0],2)), xy=(0.4,4))
+        plt.annotate('Average RCO: '+str(np.round(np.average(np.array(catdf['RCO1']+catdf['RCO2'])/2),2)), xy=(0.4,3))
+        fig.savefig(outdir+'RCOdistributions.svg', format = 'svg')
+
+
     fig = plt.figure(figsize=(12,10)) #set figsize
     #Select RCOs
     deviations = {'low':[], 'high':[], 'middle':[]}
-    RCOs = {'low':[], 'high':[]}
+    RCOs = {'low':[], 'high':[], 'middle':[]}
     step = 0.1
     for j in np.arange(step,6+step,step):
         tav = avdf[avdf['ML  distance']==np.round(j-0.05,2)]['lddt_scores_straln'].values[0] #total running average
@@ -125,14 +138,20 @@ def RCO_vs_deviation(catdf, avdf, outdir, type):
         rcomiddle = rcomiddle[rcomiddle['RCO'+type]<=0.5]
         RCOs['low'].extend(rcolow['RCO'+type])
         RCOs['high'].extend(rcohigh['RCO'+type])
+        RCOs['middle'].extend(rcomiddle['RCO'+type])
         deviations['low'].extend(rcolow['lddt_scores_straln']-tav)
         deviations['high'].extend(rcohigh['lddt_scores_straln']-tav)
         deviations['middle'].extend(rcomiddle['lddt_scores_straln']-tav)
 
-    #sns.kdeplot(RCOs, deviations, shade=True)
+    for key in deviations:
+        sns.kdeplot(deviations[key], RCOs[key], shade=True, shade_lowest = False, label = key)
+    plt.legend()
+    plt.show()
+
+    fig = plt.figure(figsize=(12,10)) #set figsize
     sns.distplot(deviations['low'], label = 'RCO'+type+' < 0.1', norm_hist = True)
     sns.distplot(deviations['high'], label = 'RCO'+type+' > 0.5', norm_hist = True)
-    sns.distplot(deviations['middle'], label = 'RCO'+type+' 0.2-0.5', norm_hist = True)
+    sns.distplot(deviations['middle'], label = 'RCO'+type+' 0.1-0.5', norm_hist = True)
     plt.legend()
     plt.xlabel('Deviation from total running average')
     plt.ylabel('Density')
@@ -141,7 +160,7 @@ def RCO_vs_deviation(catdf, avdf, outdir, type):
 
     f = open(outdir+'pvals_comparing_dev_by_rco'+type+'.txt', 'w')
     f.write('P-values calculated by two sided t-tests between straln lddt scores with rco'+type+' values\n')
-    f.write('<0.2, 0.2-0.5 and >0.5 in range 0.6 ML AA20 distance\n')
+    f.write('<0.1, 0.1-0.5 and >0.5 in range 0.6 ML AA20 distance\n')
 
     keys = ['low', 'high', 'middle']
     f.write('Number of pairs:\n')
@@ -158,7 +177,7 @@ def RCO_vs_deviation(catdf, avdf, outdir, type):
     f.close()
     return None
 
-def outliers(catdf, type):
+def outliers(catdf, type, outdir):
     if type == 'pos':
         catdf = catdf[catdf['lddt_scores_straln']>0.9]
         catdf = catdf[catdf['MLAAdist_straln']>2]
@@ -170,8 +189,18 @@ def outliers(catdf, type):
         uids = [*catdf['uid1']]+[*catdf['uid2']]
         uids = Counter(uids)
 
+    #Plot RCOs
+    matplotlib.rcParams.update({'font.size': 22})
+    fig = plt.figure(figsize=(10,10)) #set figsize
+    sns.distplot(catdf['RCO1'], label = 'RCO1', bins = 15)
+    sns.distplot(catdf['RCO2'], label = 'RCO2', bins = 15)
+    plt.axvline(x=0.29, linestyle='--', linewidth = 2, label = 'Average RCO')
+    plt.legend()
+    plt.xlabel('RCO')
+    plt.ylabel('Density')
+    plt.show()
 
-    pdb.set_trace()
+    fig.savefig(outdir+'RCO_distributions_for_'+type+'_outliers.svg', format = 'svg')
 
 def plot_sig(catdf, top_metrics):
     '''Plot pairs py siginificance
@@ -262,8 +291,8 @@ catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 
 #Look into outliers
-#outliers(catdf, 'neg')
-
+outliers(catdf, 'pos', outdir)
+outliers(catdf, 'neg', outdir)
 #Plot by RCO
 #mldists=avdf['ML  distance']
 #scores=avdf['lddt_scores_straln']
@@ -276,5 +305,6 @@ catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 #plot_class_distr(partial_df, outdir)
 #plot_sig(catdf, top_metrics)
 #RCO vs deviation
-RCO_vs_deviation(catdf, avdf, outdir, '1')
+#RCO_vs_deviation(catdf, avdf, outdir, '1')
+#RCO_vs_deviation(catdf, avdf, outdir, '2')
 pdb.set_trace()
