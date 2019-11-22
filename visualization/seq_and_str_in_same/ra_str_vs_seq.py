@@ -133,10 +133,10 @@ ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.
 np.random.seed(42)
 if get_one == True:
     #get one pair per H-group from hgroupdf
-    groups = [*Counter(hgroupdf['H_group']).keys()]
+    groups = [*Counter(hgroupdf['group']).keys()]
     one_pair_df = pd.DataFrame(columns = hgroupdf.columns)
     for g in groups:
-        partial_df = hgroupdf[hgroupdf['H_group']==g]
+        partial_df = hgroupdf[hgroupdf['group']==g]
         i = np.random.randint(len(partial_df), size = 1)
         start =  partial_df.index[0]
         selection = partial_df.loc[start+i]
