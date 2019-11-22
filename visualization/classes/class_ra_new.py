@@ -60,7 +60,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
     df = pd.concat([topdf, hgroupdf])
-    for j in np.arange(min(mldists)+step,max(mldists)+step,step):
+    for j in np.arange(min(mldists)+step,6+step,step):
         below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
         below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
         cut_scores = np.asarray(below_df[score+aln_type])
@@ -97,7 +97,9 @@ def make_plots(results, cardinality, outdir, suffix):
         #plt.scatter(mldists, scores, s = 1, c = colors[i], alpha = 0.5, label = classes[i])
         plt.xlabel(xlabel)
         plt.ylabel(score)
-        plt.legend()
+        leg = plt.legend()
+        for line in leg.get_lines():
+            line.set_linewidth(10)
         plt.ylim(ylim)
         plt.xlim([0,9.1])
         plt.xticks([0,1,2,3,4,5,6,7,8,9])
@@ -141,6 +143,8 @@ ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.
 cardinality = '_AA20'
 results = {}
 
+#set random seed
+np.random.seed(42)
 if get_one == True:
     #get one pair per H-group from hgroupdf
     groups = [*Counter(hgroupdf['H_group']).keys()]
@@ -165,9 +169,9 @@ for score in ['lddt_scores']:#['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
             try:
              avdf[C] = avs
             except:
-                pdb.set_trace()#Remember to haev below 6 for stats calcs
-        suffix = calc+'_'+score+cardinality+aln_type+'.svg'
-        make_plots(results, cardinality, outdir, suffix)
+                pdb.set_trace()#Remember to have MLAAdist below 6 for stats calcs
+        #suffix = calc+'_'+score+cardinality+aln_type+'.svg'
+        #make_plots(results, cardinality, outdir, suffix)
         #Compare ras
         outfile = outdir+score+cardinality+aln_type+'.pvals'
-        #compare_classes(avdf, outfile)
+        compare_classes(avdf, outfile)

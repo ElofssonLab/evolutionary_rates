@@ -94,8 +94,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     #Plot gradients
     fig = plt.figure(figsize=(11,11)) #set figsize
-    plt.scatter(js, gradients,s=5)
-    plt.plot(js, gradients, linewidth = 4)
+    plt.scatter(js, gradients,s=20)
+    plt.plot(js, gradients, linewidth = 3)
     plt.ylabel('gradient')
     #plt.ylim(grad_ylims[score])
     plt.xlim([0,9.1])
