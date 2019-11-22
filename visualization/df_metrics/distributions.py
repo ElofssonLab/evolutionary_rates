@@ -61,12 +61,14 @@ for i in range(3):
         for key in labels:
             class_df = df[df['C._x']==key]
             label = labels[key]
-            sns.distplot(class_df['aln_len'+aln_type], color = colors[key], hist = False, label = label,kde_kws=dict(linewidth=4))
+            sns.distplot(class_df['aln_len'+aln_type], color = colors[key], hist = False, label = label,kde_kws=dict(linewidth=8))
             plt.xlabel('Aligned length')
             plt.ylabel('Density')
             plt.xlim([0,300])
             plt.ylim([0,0.04])
-            plt.legend()
+            leg = plt.legend()
+            for line in leg.get_lines():
+                line.set_linewidth(10)
         fig.savefig(outdir+'kde'+aln_type+suffix[i], format = 'svg')
         plt.close()
 

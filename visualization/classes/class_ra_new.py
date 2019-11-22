@@ -60,7 +60,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
     df = pd.concat([topdf, hgroupdf])
-    for j in np.arange(min(mldists)+step,6+step,step):
+    for j in np.arange(min(mldists)+step,max(mldists)+step,step):
         below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
         below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
         cut_scores = np.asarray(below_df[score+aln_type])
@@ -96,7 +96,10 @@ def make_plots(results, cardinality, outdir, suffix):
         sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = cmaps[i])
         #plt.scatter(mldists, scores, s = 1, c = colors[i], alpha = 0.5, label = classes[i])
         plt.xlabel(xlabel)
-        plt.ylabel(score)
+        if score == 'lddt_scores':
+            plt.ylabel('lddt score')
+        else:
+            plt.ylabel(score)
         leg = plt.legend()
         for line in leg.get_lines():
             line.set_linewidth(10)
@@ -170,8 +173,8 @@ for score in ['lddt_scores']:#['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
              avdf[C] = avs
             except:
                 pdb.set_trace()#Remember to have MLAAdist below 6 for stats calcs
-        #suffix = calc+'_'+score+cardinality+aln_type+'.svg'
-        #make_plots(results, cardinality, outdir, suffix)
+        suffix = calc+'_'+score+cardinality+aln_type+'.svg'
+        make_plots(results, cardinality, outdir, suffix)
         #Compare ras
-        outfile = outdir+score+cardinality+aln_type+'.pvals'
-        compare_classes(avdf, outfile)
+        #outfile = outdir+score+cardinality+aln_type+'.pvals'
+        #compare_classes(avdf, outfile)

@@ -84,7 +84,10 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.scatter(top_mldists, top_scores, s = 1, c = 'k', alpha = 1.0, label = 'Dataset 3')
     plt.scatter(hgroup_mldists, hgroup_scores, s = 1, c = 'r', alpha = 0.5, label = 'Dataset 1')
     plt.xlabel(xlabel)
-    plt.ylabel(score)
+    if score == 'lddt_scores':
+        plt.ylabel('lddt score')
+    else:
+        plt.ylabel(score)
     plt.legend(markerscale=10)
     plt.ylim(ylim)
     plt.xlim([0,9.1])

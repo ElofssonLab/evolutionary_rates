@@ -265,15 +265,15 @@ fig = Figure("21cm", "21cm",
 #Write text after if moving/scaling
 fig = Figure("21cm", "10cm",
         Panel(
-             SVG(fig25).scale(0.4), #0.318 if 11x11
+             SVG(fig25).scale(0.35), #0.318 if 11x11
              Text("(a)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig26).scale(0.4),
+             SVG(fig26).scale(0.35),
              Text("(b)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig27).scale(0.4), #0.318 if 11x11
+             SVG(fig27).scale(0.35), #0.318 if 11x11
              Text("(c)", 25, 20, size=14, weight='bold')
              )).tile(3,1).save("figureS8.svg")
 

@@ -87,14 +87,16 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
         grads = np.gradient(avs)
         gradients[cardinality] = grads
         #Plot RA
-        plt.plot(js, avs, label = label, linewidth = 2, color = color)
+        plt.plot(js, avs, label = label, linewidth = 4, color = color)
         sizes[cardinality] = [js, perc_points] #save the mlaadists and perc points
 
         #plt.scatter(top_mldists, top_scores, s = 1, c = 'k', alpha = 1.0, label = 'Dataset 3')
         #plt.scatter(hgroup_mldists, hgroup_scores, s = 1, c = 'r', alpha = 0.5, label = 'Dataset 1')
     plt.xlabel(xlabel)
     plt.ylabel(score)
-    plt.legend()
+    leg = plt.legend()
+    for line in leg.get_lines():
+        line.set_linewidth(10)
     plt.ylim(ylim)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
@@ -109,13 +111,16 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
         color = colors[cardinality] #set color
         if cardinality == '_AA20':
             cardinality = ''
-            plt.scatter(sizes[cardinality][0], gradients[cardinality],s=2, label = label, color = color)
+            plt.scatter(sizes[cardinality][0], gradients[cardinality],s=10, label = label, color = color)
 
     plt.ylabel('gradient')
     #plt.ylim(grad_ylims[score])
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.xlabel(xlabel)
+    leg = plt.legend()
+    for line in leg.get_lines():
+        line.set_linewidth(10)
     fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
     #Plot Point distribution - same for all scores
     if score == 'RMSD':
@@ -125,12 +130,15 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
             color = colors[cardinality] #set color
             if cardinality == '_AA20':
                 cardinality = ''
-            plt.plot(sizes[cardinality][0], sizes[cardinality][1], label = label, linewidth = 2, color = color)
+            plt.plot(sizes[cardinality][0], sizes[cardinality][1], label = label, linewidth = 4, color = color)
         plt.xlabel(xlabel)
         plt.ylabel('% of pairs')
-        plt.legend()
+        leg = plt.legend()
+        for line in leg.get_lines():
+            line.set_linewidth(10)
         plt.xlim([0,9.1])
         plt.xticks([0,1,2,3,4,5,6,7,8,9])
+        plt.ylim([0,20])
         fig.savefig(outdir+'perc_pairs_running_'+suffix, format = 'svg')
 
 
@@ -174,4 +182,3 @@ for score in ['TMscore','DIFFC','RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
     for aln_type in aln_types:
         ylim = ylims[score]
         av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, outdir, av_df)
-    pdb.set_trace()
