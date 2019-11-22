@@ -85,7 +85,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.scatter(hgroup_mldists, hgroup_scores, s = 1, c = 'r', alpha = 0.5, label = 'Dataset 1')
     plt.xlabel(xlabel)
     plt.ylabel(score)
-    plt.legend()
+    plt.legend(markerscale=10)
     plt.ylim(ylim)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
@@ -95,7 +95,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #Plot gradients
     fig = plt.figure(figsize=(11,11)) #set figsize
     plt.scatter(js, gradients,s=5)
-    plt.plot(js, gradients, linewidth = 2)
+    plt.plot(js, gradients, linewidth = 4)
     plt.ylabel('gradient')
     #plt.ylim(grad_ylims[score])
     plt.xlim([0,9.1])
@@ -106,7 +106,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
     #Plot Point distribution
     fig = plt.figure(figsize=(10,10)) #set figsize
-    plt.plot(js, perc_points, linewidth = 2)
+    plt.plot(js, perc_points, linewidth = 4)
     plt.xlabel(xlabel)
     plt.ylabel('% of points')
     #plt.xlim([2,10])

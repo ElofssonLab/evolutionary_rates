@@ -87,7 +87,7 @@ fig = Figure("21cm", "21cm",
 
 #Plot main Figure 3
 #Write text after if moving/scaling
-fig = Figure("16cm", "16cm", SVG(fig5).scale(1.0).save("figure3.svg")
+fig = Figure("21cm", "21cm", SVG(fig5).scale(1.0)).save("figure3.svg")
 
 #Plot main Figure 4
 #Write text after if moving/scaling
@@ -101,10 +101,10 @@ fig = Figure("21cm", "21cm",
              Text("(b)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig8).scale(0.5), #0.318 if 11x11
+             SVG(fig8).scale(0.5).move(10,0), #0.318 if 11x11
              Text("(c)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig9).scale(0.5), #0.318 if 11x11
+             SVG(fig9).scale(0.5).move(10,0), #0.318 if 11x11
              Text("(d)", 25, 20, size=14, weight='bold')
-            )).tile(2,2).save("figure2.svg")
+            )).tile(2,2).save("figure4.svg")

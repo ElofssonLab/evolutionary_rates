@@ -61,7 +61,7 @@ for i in range(3):
         for key in labels:
             class_df = df[df['C._x']==key]
             label = labels[key]
-            sns.distplot(class_df['aln_len'+aln_type], color = colors[key], hist = False, label = label, linewidth = 2)
+            sns.distplot(class_df['aln_len'+aln_type], color = colors[key], hist = False, label = label,kde_kws=dict(linewidth=4))
             plt.xlabel('Aligned length')
             plt.ylabel('Density')
             plt.xlim([0,300])
