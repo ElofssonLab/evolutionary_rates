@@ -10,6 +10,9 @@ import seaborn as sns
 import sys
 import argparse
 from scipy import stats
+import researchpy as rp
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
 
 import pdb
 
@@ -31,7 +34,7 @@ default=sys.stdin, help = 'either median or average.')
 parser.add_argument('--avdf', nargs=1, type= str,
 default=sys.stdin, help = 'Dataframe with averages.')
 
-def dev_from_av(avdf, df, score, aln_type, cardinality):
+def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
     '''Calculate avearge dev from total running average within group and significance
     '''
 
@@ -48,7 +51,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
     mldists = np.asarray(df['MLAAdist'+cardinality+aln_type])
     start = np.round(min(mldists),2)
     start = float(str(start)[0:3])
-    end = min(max(mldists), 9) #End at 6
+    end = min(max(mldists), max_seqdist) #End at max_seqdist
     scores = np.asarray(df[score+aln_type])
     js = [] #Save js
 
@@ -88,6 +91,38 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
 
     return np.average(avdevs), pvalue, js, avs
 
+def plot_partial(partial_df):
+    '''RA plots of partial dfs
+    '''
+    for i in range(len(partial_df)):
+         plt.plot([*partial_df['lddt_scores_straln_seqdists']][i],[*partial_df['lddt_scores_straln_ra']][i], alpha = 0.5)
+
+    pdb.set_trace()
+
+def class_percentages(df):
+    '''Calculate class percentages
+    '''
+
+    percentages = []
+    for C in [1.,2.,3.,4.]:
+        try:
+            percentages.append(len(df[df['C._x']==C])/len(df))
+        except:
+            percentages.append(0)
+
+    return percentages
+
+
+def anova_table(aov):
+    aov['mean_sq'] = aov[:]['sum_sq']/aov[:]['df']
+
+    aov['eta_sq'] = aov[:-1]['sum_sq']/sum(aov['sum_sq'])
+
+    aov['omega_sq'] = (aov[:-1]['sum_sq']-(aov[:-1]['df']*aov['mean_sq'][-1]))/(sum(aov['sum_sq'])+aov['mean_sq'][-1])
+
+    cols = ['sum_sq', 'df', 'mean_sq', 'F', 'PR(>F)', 'eta_sq', 'omega_sq']
+    aov = aov[cols]
+    return aov
 
 #####MAIN#####
 args = parser.parse_args()
@@ -111,6 +146,8 @@ hgroupdf['C.A.T.'] = tops
 hgroupdf = hgroupdf.rename(columns={'group':'H_group'})
 hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
+#select below 6
+catdf = catdf[catdf['MLAAdist_straln']<=6]
 topcounts = Counter(catdf['group'])
 vals = np.array([*topcounts.values()])
 num_tops_with10 = len(np.where(vals>9)[0]) #Get all topologies with at least 10 values
@@ -124,14 +161,14 @@ top_metrics = pd.DataFrame()
 top_metrics['Topology'] = topologies
 
 for score in ['lddt_scores']:
-    for aln_type in ['_seqaln', '_straln']:
+    for aln_type in ['_straln']:
         avs_from_line = [] #save avs from line and pvals
         pvals = []
         all_js = []
         all_avs = []
         for top in topologies:
             df = catdf[catdf['group']==top]
-            av_from_line, pvalue, js, avs = dev_from_av(avdf, df, score, aln_type, cardinality)
+            av_from_line, pvalue, js, avs = dev_from_av(avdf, df, score, aln_type, cardinality, 6)
             avs_from_line.append(av_from_line)
             pvals.append(pvalue)
             all_js.append(js)
@@ -141,5 +178,49 @@ for score in ['lddt_scores']:
         top_metrics[score+aln_type+'_seqdists'] = all_js
         top_metrics[score+aln_type+'_ra'] = all_avs
 
+
+#Get significant
+sig_df = top_metrics[top_metrics['lddt_scores_straln_pval']<0.05/len(top_metrics)]
+#Get pos deviating>0
+pos_sig = sig_df[sig_df['lddt_scores_straln_av_dev']>0]
+pos_sig['Significance'] = 'Positive'
+#Get neg deviating<0
+neg_sig = sig_df[sig_df['lddt_scores_straln_av_dev']<0]
+neg_sig['Significance'] = 'Negative'
+#check
+if len(pos_sig)+len(neg_sig) != len(sig_df):
+    pdb.set_trace()
+
+#Get data from cat_df matching sig topologies
+pos_sig = pd.merge(pos_sig, catdf, left_on='Topology', right_on='group', how='left')
+neg_sig = pd.merge(neg_sig, catdf, left_on='Topology', right_on='group', how='left')
+#Get non significant
+nonsig_df = top_metrics[top_metrics['lddt_scores_straln_pval']>=0.05/len(top_metrics)]
+#Get data from cat_df matching sig topologies
+nonsig_df = pd.merge(nonsig_df, catdf, left_on='Topology', right_on='group', how='left')
+nonsig_df['Significance'] = 'Non-significant'
+#Concat
+cat_dev = pd.concat([pos_sig, neg_sig])
+print('%pos sig', class_percentages(pos_sig))
+print('%neg sig', class_percentages(neg_sig))
+print('%nonsig', class_percentages(nonsig_df))
+cat_dev = pd.concat([cat_dev, nonsig_df])
+
+plt.show()
+#Calculate fraction retained
+print('Fraction of pairs within topologies with at least 10 entries:', len(cat_dev)/len(catdf))
+#Fit ANOVA
+f = open(outdir+'ANOVA.txt', 'w')
+for column in ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln', 'percent_aligned_straln']:
+    test_str = column+' ~ C(Significance)'
+    results = ols(test_str, data=cat_dev).fit()
+    aov_table = sm.stats.anova_lm(results, typ=2)
+    outp = anova_table(aov_table)
+    f.write(column)
+    f.write(str(outp))
+    f.write('\n\n')
+f.close()
+
+#plot_partial(sig_df)
 top_metrics.to_csv(outdir+'top_metrics.csv')
 pdb.set_trace()
