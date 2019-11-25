@@ -187,14 +187,15 @@ def ttest_table(neg_sig, pos_sig, nonsig_df, features):
     '''Perform t-tests for features
     '''
 
-    print('Feature\tNeg\tPositive')
+    f = open('ttests.tsv', 'w')
+    f.write('Feature\tNeg\tPositive\n')
     for feature in features:
-        print(feature+'\t')
+        f.write(feature+'\t')
         statistic, pvalue = stats.ttest_ind(neg_sig[feature], nonsig_df[feature], equal_var = False)
-        print(str(statistic)+'\t')
+        f.write(str(statistic)+'\t')
         statistic, pvalue = stats.ttest_ind(pos_sig[feature], nonsig_df[feature], equal_var = False)
-        print(str(statistic)+'\n')
-
+        f.write(str(statistic)+'\n')
+    f.close()
 
     return None
 #####MAIN#####
@@ -221,6 +222,10 @@ hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
 #select below 6
 catdf = catdf[catdf['MLAAdist_straln']<=6]
+#The ones should actually be zeros
+catdf['RCO1']=catdf['RCO1'].replace([1], 0)
+catdf['RCO2']=catdf['RCO2'].replace([1], 0)
+
 topcounts = Counter(catdf['group'])
 vals = np.array([*topcounts.values()])
 num_tops_with10 = len(np.where(vals>9)[0]) #Get all topologies with at least 10 values
