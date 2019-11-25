@@ -48,11 +48,16 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
     mldists = np.asarray(df['MLAAdist'+cardinality+aln_type])
     start = np.round(min(mldists),2)
     start = float(str(start)[0:3])
-    end = min(max(mldists), 6) #End at 6
+    end = min(max(mldists), 9) #End at 6
     scores = np.asarray(df[score+aln_type])
+    js = [] #Save js
 
-    for j in np.arange(start+step,end+2*step,step):
-        below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
+    for j in np.arange(start+step,end+step,step):
+        if np.round(j, 2) == end: #Make sure to get endpoints
+            below_df = df[df['MLAAdist'+cardinality+aln_type]<=j]
+        else:
+            below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
+
         below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
         if len(below_df)<1: #May be discontinuous in step
             continue
@@ -64,6 +69,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
         avs.append(av)
 
         x = np.round(j-step/2, 2)
+        js.append(x)
         tav = avdf[avdf['ML  distance']==x][score+aln_type].values[0] #total average in current interval
         avdevs.append(av-tav)
 
@@ -72,15 +78,15 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
         rco1 = [*below_df['RCO1']]
         rco2 = [*below_df['RCO2']]
 
-    pdb.set_trace()
+
     #Do a t-test to calculate if the deviation is significant for each H-group
     #The variances will be unequal, as each H-group only encompasses very feq points
     #True values = 0, no deviation from total average
     truevals = np.zeros(len(df)) #size should not matter since zeros
     statistic, pvalue = stats.ttest_ind(avdevs, truevals, equal_var = False)
+    #plt.plot(js, avs)
 
-
-    return np.average(avdevs), pvalue
+    return np.average(avdevs), pvalue, js, avs
 
 
 #####MAIN#####
@@ -107,8 +113,8 @@ hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
 topcounts = Counter(catdf['group'])
 vals = np.array([*topcounts.values()])
-num_tops_with10 = len(np.where(vals>9)[0])
-print(num_tops_with10/len(vals))
+num_tops_with10 = len(np.where(vals>9)[0]) #Get all topologies with at least 10 values
+print('Fraction of topologies with at least 10 entries:',num_tops_with10/len(vals))
 topologies = np.array([*topcounts.keys()])
 topologies = topologies[np.where(vals>9)[0]]
 
@@ -121,13 +127,19 @@ for score in ['lddt_scores']:
     for aln_type in ['_seqaln', '_straln']:
         avs_from_line = [] #save avs from line and pvals
         pvals = []
+        all_js = []
+        all_avs = []
         for top in topologies:
-            df = catdf#[catdf['group']==top]
-            av_from_line, pvalue = dev_from_av(avdf, df, score, aln_type, cardinality)
+            df = catdf[catdf['group']==top]
+            av_from_line, pvalue, js, avs = dev_from_av(avdf, df, score, aln_type, cardinality)
             avs_from_line.append(av_from_line)
             pvals.append(pvalue)
+            all_js.append(js)
+            all_avs.append(avs)
         top_metrics[score+aln_type+'_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
+        top_metrics[score+aln_type+'_seqdists'] = all_js
+        top_metrics[score+aln_type+'_ra'] = all_avs
 
 top_metrics.to_csv(outdir+'top_metrics.csv')
 pdb.set_trace()
