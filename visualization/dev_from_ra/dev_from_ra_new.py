@@ -3,6 +3,7 @@
 
 
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 from collections import Counter
 import numpy as np
@@ -91,13 +92,42 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
 
     return np.average(avdevs), pvalue, js, avs
 
-def plot_partial(partial_df):
-    '''RA plots of partial dfs
+def plot_partial(partial_df, avdf, catdf, name):
+    '''RA plots of partial dfs and the total RA
     '''
+    topologies = [*partial_df['Topology']]
+    mldists = [*partial_df['lddt_scores_straln_seqdists']]
+    scores = [*partial_df['lddt_scores_straln_ra']]
+    fig = plt.figure(figsize=(10,10)) #set figsize
+    matplotlib.rcParams.update({'font.size': 22})
     for i in range(len(partial_df)):
-         plt.plot([*partial_df['lddt_scores_straln_seqdists']][i],[*partial_df['lddt_scores_straln_ra']][i], alpha = 0.5)
+        top = topologies[i]
+        plt.plot(mldists[i],scores[i], alpha = 0.1, color = 'b', linewidth =2)
+    plt.plot(avdf['ML  distance'], avdf['lddt_scores_straln'], color = 'r', linewidth = 3, label = 'Total RA')
+    plt.legend()
+    plt.xlim([0,9.1])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
+    plt.ylim([0.2,1])
+    plt.xlabel('ML AA20 distance')
+    plt.ylabel('lddt score for straln workflow')
+    fig.savefig(outdir+name, format = 'png')
 
-    pdb.set_trace()
+    #Scatterplot
+    fig = plt.figure(figsize=(10,10)) #set figsize
+    for i in range(len(partial_df)):
+        top = topologies[i]
+        topdf = catdf[catdf['group']==top]
+        plt.scatter(topdf['MLAAdist_straln'],topdf['lddt_scores_straln'],alpha = 0.2, color = 'b', s = 1)
+    plt.plot(avdf['ML  distance'], avdf['lddt_scores_straln'], color = 'r', linewidth = 3, label = 'Total RA')
+    plt.legend()
+    plt.xlim([0,9.1])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
+    plt.ylim([0.2,1])
+    plt.xlabel('ML AA20 distance')
+    plt.ylabel('lddt score for straln workflow')
+    fig.savefig(outdir+'scatter_'+name, format = 'png')
+
+    return None
 
 def class_percentages(df):
     '''Calculate class percentages
@@ -112,6 +142,35 @@ def class_percentages(df):
 
     return percentages
 
+def anova(cat_dev):
+    '''Perform anova
+    '''
+
+    #Make violinplots
+    features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln', 'percent_aligned_straln']
+    for feature in features:
+        matplotlib.rcParams.update({'font.size': 22})
+        fig = plt.figure(figsize=(10,10)) #set figsize
+        sns.violinplot(data = cat_dev, x = 'Significance', y = feature)
+        fig.savefig(outdir+feature+aln_type+score+'.png', format = 'png')
+    #Calculate fraction retained
+    eta_sq = []
+    omega_sq = []
+    Pr = []
+
+    #Fit ANOVA
+    for column in features:
+        test_str = column+' ~ C(Significance)'
+        results = ols(test_str, data=cat_dev).fit()
+        aov_table = sm.stats.anova_lm(results, typ=2)
+        outp = anova_table(aov_table)
+        eta_sq.append(outp.iloc[0]['eta_sq'])
+        omega_sq.append(outp.iloc[0]['omega_sq'])
+        Pr.append(outp.iloc[0]['PR(>F)'])
+
+    anova_df =  pd.DataFrame(data = {'Feature': features, 'eta_sq': eta_sq, 'omega_sq':omega_sq, 'PR(>F)':Pr})
+
+    return anova_df
 
 def anova_table(aov):
     aov['mean_sq'] = aov[:]['sum_sq']/aov[:]['df']
@@ -124,6 +183,20 @@ def anova_table(aov):
     aov = aov[cols]
     return aov
 
+def ttest_table(neg_sig, pos_sig, nonsig_df, features):
+    '''Perform t-tests for features
+    '''
+
+    print('Feature\tNeg\tPositive')
+    for feature in features:
+        print(feature+'\t')
+        statistic, pvalue = stats.ttest_ind(neg_sig[feature], nonsig_df[feature], equal_var = False)
+        print(str(statistic)+'\t')
+        statistic, pvalue = stats.ttest_ind(pos_sig[feature], nonsig_df[feature], equal_var = False)
+        print(str(statistic)+'\n')
+
+
+    return None
 #####MAIN#####
 args = parser.parse_args()
 topdf = pd.read_csv(args.topdf[0])
@@ -191,35 +264,36 @@ neg_sig['Significance'] = 'Negative'
 if len(pos_sig)+len(neg_sig) != len(sig_df):
     pdb.set_trace()
 
+#Plot the RAs of the pos and neg sig groups
+#plot_partial(pos_sig, avdf, catdf, 'ra_pos_sig.png')
+#plot_partial(neg_sig, avdf, catdf, 'ra_neg_sig.png')
+
+
 #Get data from cat_df matching sig topologies
 pos_sig = pd.merge(pos_sig, catdf, left_on='Topology', right_on='group', how='left')
 neg_sig = pd.merge(neg_sig, catdf, left_on='Topology', right_on='group', how='left')
 #Get non significant
 nonsig_df = top_metrics[top_metrics['lddt_scores_straln_pval']>=0.05/len(top_metrics)]
+#plot_partial(nonsig_df, avdf, catdf, 'ra_non_sig.png')
 #Get data from cat_df matching sig topologies
 nonsig_df = pd.merge(nonsig_df, catdf, left_on='Topology', right_on='group', how='left')
 nonsig_df['Significance'] = 'Non-significant'
+
 #Concat
 cat_dev = pd.concat([pos_sig, neg_sig])
+classes = ['Mainly Alpha', 'Mainly Beta', 'Alpha Beta', 'Few SS']
 print('%pos sig', class_percentages(pos_sig))
 print('%neg sig', class_percentages(neg_sig))
 print('%nonsig', class_percentages(nonsig_df))
 cat_dev = pd.concat([cat_dev, nonsig_df])
-
-plt.show()
-#Calculate fraction retained
+#Fraction of pairs retained
 print('Fraction of pairs within topologies with at least 10 entries:', len(cat_dev)/len(catdf))
-#Fit ANOVA
-f = open(outdir+'ANOVA.txt', 'w')
-for column in ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln', 'percent_aligned_straln']:
-    test_str = column+' ~ C(Significance)'
-    results = ols(test_str, data=cat_dev).fit()
-    aov_table = sm.stats.anova_lm(results, typ=2)
-    outp = anova_table(aov_table)
-    f.write(column)
-    f.write(str(outp))
-    f.write('\n\n')
-f.close()
+
+#Perform t-tests
+features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln']
+ttest_table(neg_sig, pos_sig, nonsig_df, features)
+#Calculate ANOVA
+#anova(cat_dev)
 
 #plot_partial(sig_df)
 top_metrics.to_csv(outdir+'top_metrics.csv')
