@@ -47,6 +47,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
     #Save percentage points and gradients
     sizes = {}
     gradients = {}
+    second_gradients = {}
 
     fig = plt.figure(figsize=(10,10)) #set figsize
     df = pd.concat([topdf, hgroupdf])
@@ -85,7 +86,9 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
 
         #Include derivatives
         grads = np.gradient(avs)
+        second_grads = np.gradient(grads)
         gradients[cardinality] = grads
+        second_gradients[cardinality] = second_grads
         #Plot RA
         plt.plot(js, avs, label = label, linewidth = 4, color = color)
         sizes[cardinality] = [js, perc_points] #save the mlaadists and perc points
@@ -105,13 +108,13 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
 
 
     #Plot gradients
-    fig = plt.figure(figsize=(11,11)) #set figsize
+    fig = plt.figure(figsize=(10,10)) #set figsize
     for cardinality in cardinalities:
         label = cardinality[1:] #set label
         color = colors[cardinality] #set color
         if cardinality == '_AA20':
             cardinality = ''
-            plt.scatter(sizes[cardinality][0], gradients[cardinality],s=10, label = label, color = color)
+        plt.scatter(sizes[cardinality][0], gradients[cardinality],s=10, label = label, color = color)
 
     plt.ylabel('gradient')
     #plt.ylim(grad_ylims[score])
@@ -122,6 +125,25 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, ou
     for line in leg.get_lines():
         line.set_linewidth(10)
     fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
+
+    #Save second gradients
+    for cardinality in cardinalities:
+        label = cardinality[1:] #set label
+        color = colors[cardinality] #set color
+        if cardinality == '_AA20':
+            cardinality = ''
+        plt.scatter(sizes[cardinality][0], second_gradients[cardinality],s=10, label = label, color = color)
+
+    plt.ylabel('gradient')
+    #plt.ylim(grad_ylims[score])
+    plt.xlim([0,9.1])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
+    plt.xlabel(xlabel)
+    leg = plt.legend()
+    for line in leg.get_lines():
+        line.set_linewidth(10)
+    fig.savefig(outdir+'second_gradient_running_'+suffix, format = 'svg') 
+    
     #Plot Point distribution - same for all scores
     if score == 'RMSD':
         fig = plt.figure(figsize=(10,10)) #set figsize
@@ -172,8 +194,7 @@ if get_one == True:
     hgroupdf = one_pair_df
 
 cardinalities = ['_AA2','_AA3','_AA6','_AA20']
-av_df = pd.DataFrame()
-
+av_df = pd.DataFrame() #Doing nothing with this really
 #rename cols
 hgroupdf = hgroupdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 topdf = topdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
@@ -182,3 +203,5 @@ for score in ['TMscore','DIFFC','RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
     for aln_type in aln_types:
         ylim = ylims[score]
         av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinalities, calc, ylim, outdir, av_df)
+
+pdb.set_trace()

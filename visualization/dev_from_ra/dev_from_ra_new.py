@@ -92,7 +92,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
 
     return np.average(avdevs), pvalue, js, avs
 
-def plot_partial(partial_df, avdf, catdf, name):
+def plot_partial(partial_df, partial_merged, avdf, name):
     '''RA plots of partial dfs and the total RA
     '''
     topologies = [*partial_df['Topology']]
@@ -100,9 +100,33 @@ def plot_partial(partial_df, avdf, catdf, name):
     scores = [*partial_df['lddt_scores_straln_ra']]
     fig = plt.figure(figsize=(10,10)) #set figsize
     matplotlib.rcParams.update({'font.size': 22})
+    #Plot RA per topology
     for i in range(len(partial_df)):
         top = topologies[i]
         plt.plot(mldists[i],scores[i], alpha = 0.1, color = 'b', linewidth =2)
+    
+    #Plot total RA for topologies
+    step = 0.1
+    start = 0
+    end = 6
+    total_top_js = []
+    total_top_ra = []
+    cardinality = ''
+    aln_type = '_straln'
+    for j in np.arange(start+step,end+step,step):
+        if np.round(j, 2) == end: #Make sure to get endpoints
+            below_df = partial_merged[partial_merged['MLAAdist'+cardinality+aln_type]<=j]
+        else:
+            below_df = partial_merged[partial_merged['MLAAdist'+cardinality+aln_type]<j]
+
+        below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
+        if len(below_df)<1: #May be discontinuous in step
+            continue
+        cut_scores = np.asarray(below_df['lddt_scores_straln'])
+
+        total_top_ra.append(np.average(cut_scores))
+        total_top_js.append(np.round(j-step/2,2))
+    plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Average topology RA')
     plt.plot(avdf['ML  distance'], avdf['lddt_scores_straln'], color = 'r', linewidth = 3, label = 'Total RA')
     plt.legend()
     plt.xlim([0,9.1])
@@ -114,11 +138,9 @@ def plot_partial(partial_df, avdf, catdf, name):
 
     #Scatterplot
     fig = plt.figure(figsize=(10,10)) #set figsize
-    for i in range(len(partial_df)):
-        top = topologies[i]
-        topdf = catdf[catdf['group']==top]
-        plt.scatter(topdf['MLAAdist_straln'],topdf['lddt_scores_straln'],alpha = 0.2, color = 'b', s = 1)
+    plt.scatter(partial_merged['MLAAdist_straln'],partial_merged['lddt_scores_straln'],alpha = 0.2, color = 'b', s = 1)
     plt.plot(avdf['ML  distance'], avdf['lddt_scores_straln'], color = 'r', linewidth = 3, label = 'Total RA')
+    plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Average topology RA')
     plt.legend()
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
@@ -127,6 +149,23 @@ def plot_partial(partial_df, avdf, catdf, name):
     plt.ylabel('lddt score for straln workflow')
     fig.savefig(outdir+'scatter_'+name, format = 'png')
 
+    #Plot gradients
+    fig = plt.figure(figsize=(10,10)) #set figsize
+    plt.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Average topology gradient')
+    plt.plot(avdf['ML  distance'], np.gradient(avdf['lddt_scores_straln']), color = 'r', linewidth = 3, label = 'Total RA gradients')
+    plt.legend()
+    #T-test
+    partial_avdf = avdf[avdf['ML  distance']<6]
+    statistic, pvalue = stats.ttest_ind(np.gradient(total_top_ra), np.gradient(partial_avdf['lddt_scores_straln']), equal_var = False)
+    plt.annotate('pval:'+str(pvalue), (0.2, 0.01))
+    plt.xlim([0,9.1])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
+    plt.ylim([-0.025,0.025])
+    plt.xlabel('ML AA20 distance')
+    plt.ylabel('lddt score gradients for straln workflow')
+    fig.savefig(outdir+'gradients_'+name, format = 'png')
+
+    
     return None
 
 def class_percentages(df):
@@ -188,16 +227,45 @@ def ttest_table(neg_sig, pos_sig, nonsig_df, features):
     '''
 
     f = open('ttests.tsv', 'w')
-    f.write('Feature\tNeg\tPositive\n')
+    f.write('Feature\tNeg tstat\tPositive tstat\tNeg Z\tPositive Z\n')
     for feature in features:
         f.write(feature+'\t')
         statistic, pvalue = stats.ttest_ind(neg_sig[feature], nonsig_df[feature], equal_var = False)
         f.write(str(statistic)+'\t')
         statistic, pvalue = stats.ttest_ind(pos_sig[feature], nonsig_df[feature], equal_var = False)
-        f.write(str(statistic)+'\n')
+        f.write(str(statistic)+'\t')
+	
+        #Z-scores
+        z = (np.average(neg_sig[feature])-np.average(nonsig_df[feature]))/(np.std(nonsig_df[feature])/np.sqrt(len(neg_sig)))  
+        f.write(str(z)+'\t')
+        z = (np.average(pos_sig[feature])-np.average(nonsig_df[feature]))/(np.std(nonsig_df[feature])/np.sqrt(len(pos_sig)))    
+        f.write(str(z)+'\n')
     f.close()
 
     return None
+
+def gradient_comparison(neg_sig, pos_sig, nonsig_df):
+    '''Compare the gradients between the running averages in the pos neg and nonsig datasets
+    '''
+    
+    pdb.set_trace()
+    gradients = neg_sig['lddt_scores_straln_gradients']
+    mldists = neg_sig['lddt_scores_straln_seqdists']
+    for i in range(len(gradients)):
+        plt.plot(mldists[i], gradients[i], color = 'b')
+     
+    gradients = pos_sig['lddt_scores_straln_gradients']
+    mldists = pos_sig['lddt_scores_straln_seqdists']
+    for i in range(len(gradients)):
+        plt.plot(mldists[i], gradients[i], color = 'b')    
+
+    gradients = nonsig_df['lddt_scores_straln_gradients']
+    mldists = nonsig_df['lddt_scores_straln_seqdists']
+    for i in range(len(gradients)):
+        plt.plot(mldists[i], gradients[i])
+
+    return None
+
 #####MAIN#####
 args = parser.parse_args()
 topdf = pd.read_csv(args.topdf[0])
@@ -225,7 +293,6 @@ catdf = catdf[catdf['MLAAdist_straln']<=6]
 #The ones should actually be zeros
 catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
-
 topcounts = Counter(catdf['group'])
 vals = np.array([*topcounts.values()])
 num_tops_with10 = len(np.where(vals>9)[0]) #Get all topologies with at least 10 values
@@ -244,6 +311,7 @@ for score in ['lddt_scores']:
         pvals = []
         all_js = []
         all_avs = []
+        gradients = []
         for top in topologies:
             df = catdf[catdf['group']==top]
             av_from_line, pvalue, js, avs = dev_from_av(avdf, df, score, aln_type, cardinality, 6)
@@ -251,11 +319,12 @@ for score in ['lddt_scores']:
             pvals.append(pvalue)
             all_js.append(js)
             all_avs.append(avs)
+            gradients.append(np.gradient(avs))
         top_metrics[score+aln_type+'_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
         top_metrics[score+aln_type+'_ra'] = all_avs
-
+        top_metrics[score+aln_type+'_gradients'] = gradients
 
 #Get significant
 sig_df = top_metrics[top_metrics['lddt_scores_straln_pval']<0.05/len(top_metrics)]
@@ -269,20 +338,22 @@ neg_sig['Significance'] = 'Negative'
 if len(pos_sig)+len(neg_sig) != len(sig_df):
     pdb.set_trace()
 
-#Plot the RAs of the pos and neg sig groups
-#plot_partial(pos_sig, avdf, catdf, 'ra_pos_sig.png')
-#plot_partial(neg_sig, avdf, catdf, 'ra_neg_sig.png')
-
-
-#Get data from cat_df matching sig topologies
-pos_sig = pd.merge(pos_sig, catdf, left_on='Topology', right_on='group', how='left')
-neg_sig = pd.merge(neg_sig, catdf, left_on='Topology', right_on='group', how='left')
 #Get non significant
 nonsig_df = top_metrics[top_metrics['lddt_scores_straln_pval']>=0.05/len(top_metrics)]
-#plot_partial(nonsig_df, avdf, catdf, 'ra_non_sig.png')
+
+#Compare gradients
+#gradient_comparison(neg_sig, pos_sig, nonsig_df)
 #Get data from cat_df matching sig topologies
-nonsig_df = pd.merge(nonsig_df, catdf, left_on='Topology', right_on='group', how='left')
+pos_sig_merged = pd.merge(pos_sig, catdf, left_on='Topology', right_on='group', how='left')
+neg_sig_merged = pd.merge(neg_sig, catdf, left_on='Topology', right_on='group', how='left')
+#Get data from cat_df matching sig topologies
+nonsig_df_merged = pd.merge(nonsig_df, catdf, left_on='Topology', right_on='group', how='left')
 nonsig_df['Significance'] = 'Non-significant'
+
+#Plot the RAs of the pos and neg sig groups
+plot_partial(pos_sig,pos_sig_merged, avdf, 'ra_pos_sig.png')
+plot_partial(neg_sig, neg_sig_merged, avdf, 'ra_neg_sig.png')
+plot_partial(nonsig_df, nonsig_df_merged, avdf, 'ra_non_sig.png')
 
 #Concat
 cat_dev = pd.concat([pos_sig, neg_sig])
@@ -293,13 +364,11 @@ print('%nonsig', class_percentages(nonsig_df))
 cat_dev = pd.concat([cat_dev, nonsig_df])
 #Fraction of pairs retained
 print('Fraction of pairs within topologies with at least 10 entries:', len(cat_dev)/len(catdf))
-
 #Perform t-tests
 features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln']
-ttest_table(neg_sig, pos_sig, nonsig_df, features)
+ttest_table(neg_sig_merged, pos_sig_merged, nonsig_df_merged, features)
 #Calculate ANOVA
 #anova(cat_dev)
 
-#plot_partial(sig_df)
-top_metrics.to_csv(outdir+'top_metrics.csv')
-pdb.set_trace()
+
+#top_metrics.to_csv(outdir+'top_metrics.csv')
