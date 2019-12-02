@@ -104,7 +104,7 @@ def plot_partial(partial_df, partial_merged, avdf, name):
     for i in range(len(partial_df)):
         top = topologies[i]
         plt.plot(mldists[i],scores[i], alpha = 0.1, color = 'b', linewidth =2)
-    
+
     #Plot total RA for topologies
     step = 0.1
     start = 0
@@ -133,7 +133,7 @@ def plot_partial(partial_df, partial_merged, avdf, name):
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim([0.2,1])
     plt.xlabel('ML AA20 distance')
-    plt.ylabel('lddt score for straln workflow')
+    plt.ylabel('lddt score')
     fig.savefig(outdir+name, format = 'png')
 
     #Scatterplot
@@ -146,26 +146,26 @@ def plot_partial(partial_df, partial_merged, avdf, name):
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim([0.2,1])
     plt.xlabel('ML AA20 distance')
-    plt.ylabel('lddt score for straln workflow')
+    plt.ylabel('lddt score')
     fig.savefig(outdir+'scatter_'+name, format = 'png')
 
     #Plot gradients
-    fig = plt.figure(figsize=(10,10)) #set figsize
+    fig = plt.figure(figsize=(11,11)) #set figsize
     plt.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Average topology gradient')
     plt.plot(avdf['ML  distance'], np.gradient(avdf['lddt_scores_straln']), color = 'r', linewidth = 3, label = 'Total RA gradients')
     plt.legend()
     #T-test
     partial_avdf = avdf[avdf['ML  distance']<6]
     statistic, pvalue = stats.ttest_ind(np.gradient(total_top_ra), np.gradient(partial_avdf['lddt_scores_straln']), equal_var = False)
-    plt.annotate('pval:'+str(pvalue), (0.2, 0.01))
+    plt.annotate('pval:'+str(np.round(pvalue,2)), (0.2, 0.01))
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim([-0.025,0.025])
     plt.xlabel('ML AA20 distance')
-    plt.ylabel('lddt score gradients for straln workflow')
+    plt.ylabel('lddt score gradients')
     fig.savefig(outdir+'gradients_'+name, format = 'png')
 
-    
+
     return None
 
 def class_percentages(df):
@@ -231,15 +231,15 @@ def ttest_table(neg_sig, pos_sig, nonsig_df, features):
     for feature in features:
         f.write(feature+'\t')
         statistic, pvalue = stats.ttest_ind(neg_sig[feature], nonsig_df[feature], equal_var = False)
-        f.write(str(statistic)+'\t')
+        f.write(str(np.round(statistic,2))+'\t')
         statistic, pvalue = stats.ttest_ind(pos_sig[feature], nonsig_df[feature], equal_var = False)
-        f.write(str(statistic)+'\t')
-	
+        f.write(str(np.round(statistic,2))+'\t')
+
         #Z-scores
-        z = (np.average(neg_sig[feature])-np.average(nonsig_df[feature]))/(np.std(nonsig_df[feature])/np.sqrt(len(neg_sig)))  
-        f.write(str(z)+'\t')
-        z = (np.average(pos_sig[feature])-np.average(nonsig_df[feature]))/(np.std(nonsig_df[feature])/np.sqrt(len(pos_sig)))    
-        f.write(str(z)+'\n')
+        z = (np.average(neg_sig[feature])-np.average(nonsig_df[feature]))/(np.std(nonsig_df[feature])/np.sqrt(len(neg_sig)))
+        f.write(str(np.round(z,2))+'\t')
+        z = (np.average(pos_sig[feature])-np.average(nonsig_df[feature]))/(np.std(nonsig_df[feature])/np.sqrt(len(pos_sig)))
+        f.write(str(np.round(z,2))+'\n')
     f.close()
 
     return None
@@ -247,17 +247,17 @@ def ttest_table(neg_sig, pos_sig, nonsig_df, features):
 def gradient_comparison(neg_sig, pos_sig, nonsig_df):
     '''Compare the gradients between the running averages in the pos neg and nonsig datasets
     '''
-    
+
     pdb.set_trace()
     gradients = neg_sig['lddt_scores_straln_gradients']
     mldists = neg_sig['lddt_scores_straln_seqdists']
     for i in range(len(gradients)):
         plt.plot(mldists[i], gradients[i], color = 'b')
-     
+
     gradients = pos_sig['lddt_scores_straln_gradients']
     mldists = pos_sig['lddt_scores_straln_seqdists']
     for i in range(len(gradients)):
-        plt.plot(mldists[i], gradients[i], color = 'b')    
+        plt.plot(mldists[i], gradients[i], color = 'b')
 
     gradients = nonsig_df['lddt_scores_straln_gradients']
     mldists = nonsig_df['lddt_scores_straln_seqdists']
@@ -266,6 +266,52 @@ def gradient_comparison(neg_sig, pos_sig, nonsig_df):
 
     return None
 
+def three_sets_comparison(top_metrics, score):
+    '''Compares positively, negatively and non-deviating groups in their
+    deviation from the total running average.
+    '''
+
+    #Get significant
+    sig_df = top_metrics[top_metrics['lddt_scores_straln_pval']<0.05/len(top_metrics)]
+    #Get pos deviating>0
+    pos_sig = sig_df[sig_df['lddt_scores_straln_av_dev']>0]
+    pos_sig['Significance'] = 'Positive'
+    #Get neg deviating<0
+    neg_sig = sig_df[sig_df['lddt_scores_straln_av_dev']<0]
+    neg_sig['Significance'] = 'Negative'
+    #check
+    if len(pos_sig)+len(neg_sig) != len(sig_df):
+        pdb.set_trace()
+
+    #Get non significant
+    nonsig_df = top_metrics[top_metrics['lddt_scores_straln_pval']>=0.05/len(top_metrics)]
+
+    #Compare gradients
+    #gradient_comparison(neg_sig, pos_sig, nonsig_df)
+    #Get data from cat_df matching sig topologies
+    pos_sig_merged = pd.merge(pos_sig, catdf, left_on='Topology', right_on='group', how='left')
+    neg_sig_merged = pd.merge(neg_sig, catdf, left_on='Topology', right_on='group', how='left')
+    #Get data from cat_df matching sig topologies
+    nonsig_df_merged = pd.merge(nonsig_df, catdf, left_on='Topology', right_on='group', how='left')
+    nonsig_df['Significance'] = 'Non-significant'
+
+    #Plot the RAs of the pos and neg sig groups
+    plot_partial(pos_sig,pos_sig_merged, avdf, 'ra_pos_sig.png')
+    plot_partial(neg_sig, neg_sig_merged, avdf, 'ra_neg_sig.png')
+    plot_partial(nonsig_df, nonsig_df_merged, avdf, 'ra_non_sig.png')
+
+    #Concat
+    cat_dev = pd.concat([pos_sig_merged, neg_sig_merged])
+    classes = ['Mainly Alpha', 'Mainly Beta', 'Alpha Beta', 'Few SS']
+    print('%pos sig', class_percentages(pos_sig_merged))
+    print('%neg sig', class_percentages(neg_sig_merged))
+    print('%nonsig', class_percentages(nonsig_df_merged))
+    cat_dev = pd.concat([cat_dev, nonsig_df_merged])
+    #Fraction of pairs retained
+    print('Fraction of pairs within topologies with at least 10 entries: '+str(len(cat_dev))+'/'+str(len(catdf)), len(cat_dev)/len(catdf))
+    #Perform t-tests
+    features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln']
+    ttest_table(neg_sig_merged, pos_sig_merged, nonsig_df_merged, features)
 #####MAIN#####
 args = parser.parse_args()
 topdf = pd.read_csv(args.topdf[0])
@@ -296,7 +342,8 @@ catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 topcounts = Counter(catdf['group'])
 vals = np.array([*topcounts.values()])
 num_tops_with10 = len(np.where(vals>9)[0]) #Get all topologies with at least 10 values
-print('Fraction of topologies with at least 10 entries:',num_tops_with10/len(vals))
+pdb.set_trace()
+print('Fraction of topologies with at least 10 entries: '+str(num_tops_with10)+'/'+str(len(vals)),num_tops_with10/len(vals))
 topologies = np.array([*topcounts.keys()])
 topologies = topologies[np.where(vals>9)[0]]
 
@@ -326,47 +373,7 @@ for score in ['lddt_scores']:
         top_metrics[score+aln_type+'_ra'] = all_avs
         top_metrics[score+aln_type+'_gradients'] = gradients
 
-#Get significant
-sig_df = top_metrics[top_metrics['lddt_scores_straln_pval']<0.05/len(top_metrics)]
-#Get pos deviating>0
-pos_sig = sig_df[sig_df['lddt_scores_straln_av_dev']>0]
-pos_sig['Significance'] = 'Positive'
-#Get neg deviating<0
-neg_sig = sig_df[sig_df['lddt_scores_straln_av_dev']<0]
-neg_sig['Significance'] = 'Negative'
-#check
-if len(pos_sig)+len(neg_sig) != len(sig_df):
-    pdb.set_trace()
 
-#Get non significant
-nonsig_df = top_metrics[top_metrics['lddt_scores_straln_pval']>=0.05/len(top_metrics)]
-
-#Compare gradients
-#gradient_comparison(neg_sig, pos_sig, nonsig_df)
-#Get data from cat_df matching sig topologies
-pos_sig_merged = pd.merge(pos_sig, catdf, left_on='Topology', right_on='group', how='left')
-neg_sig_merged = pd.merge(neg_sig, catdf, left_on='Topology', right_on='group', how='left')
-#Get data from cat_df matching sig topologies
-nonsig_df_merged = pd.merge(nonsig_df, catdf, left_on='Topology', right_on='group', how='left')
-nonsig_df['Significance'] = 'Non-significant'
-
-#Plot the RAs of the pos and neg sig groups
-plot_partial(pos_sig,pos_sig_merged, avdf, 'ra_pos_sig.png')
-plot_partial(neg_sig, neg_sig_merged, avdf, 'ra_neg_sig.png')
-plot_partial(nonsig_df, nonsig_df_merged, avdf, 'ra_non_sig.png')
-
-#Concat
-cat_dev = pd.concat([pos_sig, neg_sig])
-classes = ['Mainly Alpha', 'Mainly Beta', 'Alpha Beta', 'Few SS']
-print('%pos sig', class_percentages(pos_sig))
-print('%neg sig', class_percentages(neg_sig))
-print('%nonsig', class_percentages(nonsig_df))
-cat_dev = pd.concat([cat_dev, nonsig_df])
-#Fraction of pairs retained
-print('Fraction of pairs within topologies with at least 10 entries:', len(cat_dev)/len(catdf))
-#Perform t-tests
-features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln']
-ttest_table(neg_sig_merged, pos_sig_merged, nonsig_df_merged, features)
 #Calculate ANOVA
 #anova(cat_dev)
 
