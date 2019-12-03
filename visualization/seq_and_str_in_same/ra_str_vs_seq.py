@@ -34,7 +34,7 @@ default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
 
 
 def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir, av_df):
-    '''Produce running average plots for df
+    '''Produce running average plots for df using 100 steps with an equal amount of points in each
     '''
 
     matplotlib.rcParams.update({'font.size': 22})
@@ -44,16 +44,12 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
 
 
-    gradients = {}
-
     #Plot total average for cardinality
     if cardinality == '_AA20':
         cardinality = ''
     avs = [] #Save average score
     js = [] #Save dists
-    perc_points = []
-    total_avs = {}
-    step = 0.1
+
     top_mldists = np.asarray(topdf['MLAAdist'+cardinality+aln_type])
     top_scores = np.asarray(topdf[score+aln_type])
     hgroup_mldists = np.asarray(hgroupdf['MLAAdist'+cardinality+aln_type])
@@ -63,22 +59,27 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     scores = np.append(top_scores, hgroup_scores)
     df = pd.concat([topdf, hgroupdf])
     fig = plt.figure(figsize=(10,10)) #set figsize
-    for j in np.arange(min(mldists)+step,max(mldists)+step,step):
-        below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
-        below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
+
+
+    #Sort df by x-value
+    df = df.sort_values(by=['MLAAdist'+cardinality+aln_type], ascending=True)
+    step = int(np.around(len(df)/100, decimals=0))
+
+    for x in range(0,len(df), step):
+        below_df = df.iloc[x:x+step] #Take step first points
         cut_scores = np.asarray(below_df[score+aln_type])
         if calc == 'average':
             av= np.average(cut_scores)
         if calc == 'median':
             av= np.median(cut_scores)
         avs.append(av)
-        js.append(np.round(j-step/2,2))
-        total_avs[j-step] = av
-        perc_points.append(len(below_df)/len(df)*100)
+        js.append(np.round(np.average(below_df['MLAAdist'+cardinality+aln_type]),2))
+
 
     #Include derivatives
     gradients = np.gradient(avs)
     #Plot RA
+    plt.scatter(js, avs, marker = '|', c = 'b', s= 100)
     plt.plot(js, avs, linewidth = 2, c = 'b', label = 'Running average')
     #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
     plt.scatter(top_mldists, top_scores, s = 1, c = 'k', alpha = 1.0, label = 'Dataset 3')
@@ -92,8 +93,10 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.ylim(ylim)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
+    plt.show()
     fig.savefig(outdir+'running_'+suffix, format = 'svg')
     plt.close()
+    pdb.set_trace()
 
     #Plot gradients
     fig = plt.figure(figsize=(11,11)) #set figsize
@@ -106,6 +109,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     if score == 'lddt_scores':
         plt.ylim([-0.04, 0.04])
     plt.xlabel(xlabel)
+    plt.show()
     fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
     #Plot Point distribution
     fig = plt.figure(figsize=(10,10)) #set figsize
@@ -129,7 +133,7 @@ outdir = args.outdir[0]
 calc = args.calc[0]
 get_one = bool(args.get_one[0])
 
-aln_types = ['_seqaln', '_straln']
+aln_types = ['_straln','_seqaln']
 ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1]}
 
 #set random seed
@@ -149,7 +153,7 @@ if get_one == True:
 
 cardinality = '_AA20'
 av_df = pd.DataFrame()
-for score in [ 'DIFFC', 'RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
+for score in [ 'lddt_scores','DIFFC', 'RMSD','DIFFSS', 'DIFF_ACC']:
     for aln_type in aln_types:
         ylim = ylims[score]
         av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir, av_df)

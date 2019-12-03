@@ -96,6 +96,8 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     '''RA plots of partial dfs and the total RA
     '''
     topologies = [*partial_df['Topology']]
+    ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1]}
+    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
     fig = plt.figure(figsize=(10,10)) #set figsize
@@ -131,20 +133,20 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.legend()
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    plt.ylim([0.2,1])
+    plt.ylim(ylims[score])
     plt.xlabel('ML AA20 distance')
     plt.ylabel('lddt score')
     fig.savefig(outdir+name, format = 'png')
 
     #Scatterplot
     fig = plt.figure(figsize=(10,10)) #set figsize
-    plt.scatter(partial_merged['MLAAdist_straln'],partial_merged[score+aln_type],alpha = 0.2, color = 'b', s = 1)
+    plt.scatter(partial_merged['MLAAdist'+cardinality+aln_type],partial_merged[score+aln_type],alpha = 0.2, color = 'b', s = 1)
     plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Total RA')
     plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Average topology RA')
     plt.legend()
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    plt.ylim([0.2,1])
+    plt.ylim(ylims[score])
     plt.xlabel('ML AA20 distance')
     plt.ylabel(score)
     fig.savefig(outdir+'scatter_'+name, format = 'png')
@@ -160,7 +162,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.annotate('pval:'+str(np.round(pvalue,2)), (0.2, 0.01))
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    plt.ylim([-0.025,0.025])
+    plt.ylim(grad_ylims[score])
     plt.xlabel('ML AA20 distance')
     plt.ylabel(score+'gradients')
     fig.savefig(outdir+'gradients_'+name, format = 'png')
@@ -320,7 +322,6 @@ catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 topcounts = Counter(catdf['group'])
 vals = np.array([*topcounts.values()])
 num_tops_with10 = len(np.where(vals>9)[0]) #Get all topologies with at least 10 values
-pdb.set_trace()
 print('Fraction of topologies with at least 10 entries: '+str(num_tops_with10)+'/'+str(len(vals)),num_tops_with10/len(vals))
 topologies = np.array([*topcounts.keys()])
 topologies = topologies[np.where(vals>9)[0]]
@@ -330,6 +331,7 @@ topologies = topologies[np.where(vals>9)[0]]
 top_metrics = pd.DataFrame()
 top_metrics['Topology'] = topologies
 cardinality = '' #AA20
+
 for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
     for aln_type in ['_straln', '_seqaln']:
         avs_from_line = [] #save avs from line and pvals
@@ -337,8 +339,10 @@ for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         all_js = []
         all_avs = []
         gradients = []
+        toplens = []
         for top in topologies:
             df = catdf[catdf['group']==top]
+            toplens.append(len(df))
             av_from_line, pvalue, js, avs = dev_from_av(avdf, df, score, aln_type, cardinality, 6)
             avs_from_line.append(av_from_line)
             pvals.append(pvalue)
