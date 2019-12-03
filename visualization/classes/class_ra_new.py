@@ -78,7 +78,6 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
             av= np.median(cut_scores)
         avs.append(av)
         js.append(np.round(j-step/2,2))
-        total_avs[j-step] = av
         perc_points.append(len(below_df)/len(df)*100)
 
     #Include derivatives

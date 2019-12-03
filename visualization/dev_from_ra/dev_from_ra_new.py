@@ -4,6 +4,7 @@
 
 import matplotlib.pyplot as plt
 import matplotlib
+from matplotlib import cm
 import pandas as pd
 from collections import Counter
 import numpy as np
@@ -163,7 +164,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(grad_ylims[score])
     plt.xlabel('ML AA20 distance')
-    plt.ylabel(score+'gradients')
+    plt.ylabel(score+' gradients')
     fig.savefig(outdir+'gradients_'+name, format = 'png')
 
     #Close plots to avoid to many being open at the same time
@@ -247,11 +248,21 @@ def ttest_table(neg_sig, pos_sig, nonsig_df, features, score, aln_type):
     return None
 
 
-def three_sets_comparison(top_metrics, score, aln_type, cardinality):
+def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality):
     '''Compares positively, negatively and non-deviating groups in their
     deviation from the total running average.
     '''
 
+    #Plot deviation against average RCO in topology
+    cmap = cm.get_cmap('YlGn', 5)
+    sorted = top_metrics.sort_values(by=score+aln_type+'_av_dev', ascending=False)
+    barlist=plt.bar(sorted['Topology'], sorted[score+aln_type+'_av_dev'])
+    for i in range(0, len(barlist)):
+        barlist[i].set_color(cmap(sorted.iloc[i][score+aln_type+'_av_RCO']))
+
+    plt.show()
+    pdb.set_trace()
+    #hue = score+aln_type+'_av_RCO'
     #Get significant
     sig_df = top_metrics[top_metrics[score+aln_type+'_pval']<0.05/len(top_metrics)]
     #Get pos deviating>0
@@ -341,6 +352,7 @@ for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         all_avs = []
         gradients = []
         toplens = []
+        av_RCO = []
         for top in topologies:
             df = catdf[catdf['group']==top]
             toplens.append(len(df))
@@ -350,14 +362,15 @@ for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             all_js.append(js)
             all_avs.append(avs)
             gradients.append(np.gradient(avs))
+            av_RCO.append((np.average(df['RCO1'])+np.average(df['RCO1']))/2)
         top_metrics[score+aln_type+'_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
         top_metrics[score+aln_type+'_ra'] = all_avs
         top_metrics[score+aln_type+'_gradients'] = gradients
-
+        top_metrics[score+aln_type+'_av_RCO'] = av_RCO
         #Make plots
-        three_sets_comparison(top_metrics, score, aln_type, cardinality)
+        three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality)
 #Calculate ANOVA
 #anova(cat_dev)
 

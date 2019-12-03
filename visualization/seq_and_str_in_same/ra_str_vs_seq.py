@@ -49,6 +49,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
         cardinality = ''
     avs = [] #Save average score
     js = [] #Save dists
+    perc_points = []
 
     top_mldists = np.asarray(topdf['MLAAdist'+cardinality+aln_type])
     top_scores = np.asarray(topdf[score+aln_type])
@@ -63,7 +64,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     #Sort df by x-value
     df = df.sort_values(by=['MLAAdist'+cardinality+aln_type], ascending=True)
-    step = int(np.around(len(df)/100, decimals=0))
+    step = 0.1
 
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
@@ -78,13 +79,11 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
             av= np.median(cut_scores)
         avs.append(av)
         js.append(np.round(j-step/2,2))
-        total_avs[j-step] = av
         perc_points.append(len(below_df)/len(df)*100)
 
     #Include derivatives
     gradients = np.gradient(avs)
     #Plot RA
-    plt.scatter(js, avs, marker = '|', c = 'b', s= 100)
     plt.plot(js, avs, linewidth = 2, c = 'b', label = 'Running average')
     #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
     plt.scatter(top_mldists, top_scores, s = 1, c = 'k', alpha = 1.0, label = 'Dataset 3')
@@ -101,7 +100,6 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.show()
     fig.savefig(outdir+'running_'+suffix, format = 'svg')
     plt.close()
-    pdb.set_trace()
 
     #Plot gradients
     fig = plt.figure(figsize=(11,11)) #set figsize
@@ -127,6 +125,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     av_df['ML '+cardinality[1:]+' distance'] = js
     av_df[score+aln_type] = avs
+    pdb.set_trace()
     return av_df
 
 
