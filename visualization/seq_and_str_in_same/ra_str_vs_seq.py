@@ -65,16 +65,21 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     df = df.sort_values(by=['MLAAdist'+cardinality+aln_type], ascending=True)
     step = int(np.around(len(df)/100, decimals=0))
 
-    for x in range(0,len(df), step):
-        below_df = df.iloc[x:x+step] #Take step first points
+    mldists = np.append(top_mldists, hgroup_mldists)
+    scores = np.append(top_scores, hgroup_scores)
+
+    for j in np.arange(min(mldists)+step,max(mldists)+step,step):
+        below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
+        below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
         cut_scores = np.asarray(below_df[score+aln_type])
         if calc == 'average':
             av= np.average(cut_scores)
         if calc == 'median':
             av= np.median(cut_scores)
         avs.append(av)
-        js.append(np.round(np.average(below_df['MLAAdist'+cardinality+aln_type]),2))
-
+        js.append(np.round(j-step/2,2))
+        total_avs[j-step] = av
+        perc_points.append(len(below_df)/len(df)*100)
 
     #Include derivatives
     gradients = np.gradient(avs)
