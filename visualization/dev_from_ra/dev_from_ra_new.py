@@ -97,10 +97,10 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     '''
     topologies = [*partial_df['Topology']]
     ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1]}
-    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
+    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025], 'DIFFC':[-0.04, 0.04]}
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
-    fig = plt.figure(figsize=(10,10)) #set figsize
+    fig = plt.figure(figsize=(11,11)) #set figsize
     matplotlib.rcParams.update({'font.size': 22})
     #Plot RA per topology
     for i in range(len(partial_df)):
@@ -114,7 +114,6 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     total_top_js = []
     total_top_ra = []
     cardinality = ''
-    aln_type = '_straln'
     for j in np.arange(start+step,end+step,step):
         if np.round(j, 2) == end: #Make sure to get endpoints
             below_df = partial_merged[partial_merged['MLAAdist'+cardinality+aln_type]<=j]
@@ -135,11 +134,11 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(ylims[score])
     plt.xlabel('ML AA20 distance')
-    plt.ylabel('lddt score')
+    plt.ylabel(score)
     fig.savefig(outdir+name, format = 'png')
 
     #Scatterplot
-    fig = plt.figure(figsize=(10,10)) #set figsize
+    fig = plt.figure(figsize=(11,11)) #set figsize
     plt.scatter(partial_merged['MLAAdist'+cardinality+aln_type],partial_merged[score+aln_type],alpha = 0.2, color = 'b', s = 1)
     plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Total RA')
     plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Average topology RA')
@@ -153,13 +152,13 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
 
     #Plot gradients
     fig = plt.figure(figsize=(11,11)) #set figsize
-    plt.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Average topology gradient')
-    plt.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 3, label = 'Total RA gradients')
-    plt.legend()
     #T-test
     partial_avdf = avdf[avdf['ML  distance']<6]
     statistic, pvalue = stats.ttest_ind(np.gradient(total_top_ra), np.gradient(partial_avdf[score+aln_type]), equal_var = False)
-    plt.annotate('pval:'+str(np.round(pvalue,2)), (0.2, 0.01))
+    plt.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Average topology gradient\npval:'+str(np.round(pvalue,2)))
+    plt.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 3, label = 'Total RA gradients')
+    plt.legend()
+
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(grad_ylims[score])
@@ -167,7 +166,8 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.ylabel(score+'gradients')
     fig.savefig(outdir+'gradients_'+name, format = 'png')
 
-
+    #Close plots to avoid to many being open at the same time
+    plt.close()
     return None
 
 def class_percentages(df):
@@ -282,12 +282,13 @@ def three_sets_comparison(top_metrics, score, aln_type, cardinality):
     #Concat
     cat_dev = pd.concat([pos_sig_merged, neg_sig_merged])
     classes = ['Mainly Alpha', 'Mainly Beta', 'Alpha Beta', 'Few SS']
-    print('%pos sig', class_percentages(pos_sig_merged))
-    print('%neg sig', class_percentages(neg_sig_merged))
-    print('%nonsig', class_percentages(nonsig_df_merged))
+    print(score+aln_type)
+    #print('%pos sig', class_percentages(pos_sig_merged))
+    #print('%neg sig', class_percentages(neg_sig_merged))
+    #print('%nonsig', class_percentages(nonsig_df_merged))
     cat_dev = pd.concat([cat_dev, nonsig_df_merged])
     #Fraction of pairs retained
-    print('Fraction of pairs within topologies with at least 10 entries: '+str(len(cat_dev))+'/'+str(len(catdf)), len(cat_dev)/len(catdf))
+    #print('Fraction of pairs within topologies with at least 10 entries: '+str(len(cat_dev))+'/'+str(len(catdf)), len(cat_dev)/len(catdf))
     #Perform t-tests
     features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln']
     ttest_table(neg_sig_merged, pos_sig_merged, nonsig_df_merged, features, score, aln_type)
