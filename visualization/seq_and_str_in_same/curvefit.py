@@ -53,6 +53,8 @@ p = np.poly1d(z)
 z1 = np.polyfit(x1, y1, deg = 3)
 p1 = np.poly1d(z1)
 
+
+
 #Get onepairs
 #set random seed
 np.random.seed(42)
@@ -85,6 +87,13 @@ plt.xticks([0,1,2,3,4,5,6,7,8,9])
 plt.xlabel('ML AA20 distance')
 plt.ylabel('lDDT score')
 
-print(z)
-print(z1)
-plt.show()
+fig.savefig(outdir+'curvefit.png', format = 'png')
+print('Dataset 4',p)
+print('Dataset 5',p1)
+
+#Assess error towards polynomial
+e=np.average(np.absolute(p(np.array(catdf['MLAAdist_straln']))-np.array(catdf['lddt_scores_straln'])))
+pdb.set_trace()
+print('Average error Dataset 4:', e)
+e1=np.average(np.absolute(p1(np.array(catdf1['MLAAdist_straln']))-np.array(catdf1['lddt_scores_straln'])))
+print('Average error Dataset 5:', e1)
