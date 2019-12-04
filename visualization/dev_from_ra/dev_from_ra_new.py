@@ -254,8 +254,9 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality):
     '''
 
     #Plot deviation against average RCO in topology
-    cmap = cm.get_cmap('YlGn', 5)
+    cmap = cm.get_cmap('Blues', 10)
     sorted = top_metrics.sort_values(by=score+aln_type+'_av_dev', ascending=False)
+    sorted[score+aln_type+'_av_RCO'] = sorted[score+aln_type+'_av_RCO']/max(sorted[score+aln_type+'_av_RCO'])
     barlist=plt.bar(sorted['Topology'], sorted[score+aln_type+'_av_dev'])
     for i in range(0, len(barlist)):
         barlist[i].set_color(cmap(sorted.iloc[i][score+aln_type+'_av_RCO']))
@@ -362,7 +363,7 @@ for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             all_js.append(js)
             all_avs.append(avs)
             gradients.append(np.gradient(avs))
-            av_RCO.append((np.average(df['RCO1'])+np.average(df['RCO1']))/2)
+            av_RCO.append(np.average(np.absolute(df['RCO1']-0.29)))
         top_metrics[score+aln_type+'_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
