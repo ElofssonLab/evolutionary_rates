@@ -128,44 +128,53 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
 
         total_top_ra.append(np.average(cut_scores))
         total_top_js.append(np.round(j-step/2,2))
-    plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Average topology RA')
-    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Total RA')
+    plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Topology')
+    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Total')
     plt.legend()
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(ylims[score])
     plt.xlabel('ML AA20 distance')
-    plt.ylabel(score)
-    fig.savefig(outdir+name, format = 'png')
+    if score == 'lddt_scores':
+        plt.ylabel('lDDT score')
+    else:
+        plt.ylabel(score)
+    fig.savefig(outdir+name, format = 'svg')
 
     #Scatterplot
     fig = plt.figure(figsize=(11,11)) #set figsize
     plt.scatter(partial_merged['MLAAdist'+cardinality+aln_type],partial_merged[score+aln_type],alpha = 0.2, color = 'b', s = 1)
-    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Total RA')
-    plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Average topology RA')
+    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Total')
+    plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Topology')
     plt.legend()
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(ylims[score])
     plt.xlabel('ML AA20 distance')
-    plt.ylabel(score)
-    fig.savefig(outdir+'scatter_'+name, format = 'png')
+    if score == 'lddt_scores':
+        plt.ylabel('lDDT score')
+    else:
+        plt.ylabel(score)
+    fig.savefig(outdir+'scatter_'+name, format = 'svg')
 
     #Plot gradients
     fig = plt.figure(figsize=(11,11)) #set figsize
     #T-test
     partial_avdf = avdf[avdf['ML  distance']<6]
     statistic, pvalue = stats.ttest_ind(np.gradient(total_top_ra), np.gradient(partial_avdf[score+aln_type]), equal_var = False)
-    plt.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Average topology gradient\npval:'+str(np.round(pvalue,2)))
-    plt.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 3, label = 'Total RA gradients')
+    plt.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Topology\npval:'+str(np.round(pvalue,2)))
+    plt.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 3, label = 'Total')
     plt.legend()
 
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(grad_ylims[score])
     plt.xlabel('ML AA20 distance')
-    plt.ylabel(score+' gradients')
-    fig.savefig(outdir+'gradients_'+name, format = 'png')
+    if score == 'lddt_scores':
+        plt.ylabel('lDDT score gradients')
+    else:
+        plt.ylabel(score+' gradients')
+    fig.savefig(outdir+'gradients_'+name, format = 'svg')
 
     #Close plots to avoid to many being open at the same time
     plt.close()
@@ -290,9 +299,9 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality):
     sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type], nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, label = 'non')
 
     #Plot the RAs of the pos and neg sig groups
-    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality)
-    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality)
-    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality)
+    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.svg', score, aln_type, cardinality)
+    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.svg', score, aln_type, cardinality)
+    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.svg', score, aln_type, cardinality)
 
     #Concat
     cat_dev = pd.concat([pos_sig_merged, neg_sig_merged])

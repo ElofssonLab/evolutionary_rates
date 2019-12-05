@@ -38,10 +38,20 @@ default=sys.stdin, help = 'path to figure 8.')
 parser.add_argument('--fig9', nargs=1, type= str,
 default=sys.stdin, help = 'path to figure 9.')
 
+parser.add_argument('--fig10', nargs=1, type= str,
+default=sys.stdin, help = 'path to figure 10.')
+
+parser.add_argument('--fig11', nargs=1, type= str,
+default=sys.stdin, help = 'path to figure 11.')
+
+parser.add_argument('--fig12', nargs=1, type= str,
+default=sys.stdin, help = 'path to figure 12.')
+
+parser.add_argument('--fig13', nargs=1, type= str,
+default=sys.stdin, help = 'path to figure 13.')
+
 parser.add_argument('--outdir', nargs=1, type= str,
 default=sys.stdin, help = 'path to output directory.')
-
-
 
 
 def combine_svgs(figures, outdir):
@@ -62,49 +72,69 @@ fig6 = args.fig6[0]
 fig7 = args.fig7[0]
 fig8 = args.fig8[0]
 fig9 = args.fig9[0]
+fig10 = args.fig10[0]
+fig11 = args.fig11[0]
+fig12 = args.fig12[0]
+fig13 = args.fig13[0]
 outdir = args.outdir[0]
 
 #Plot main Figure 2
 #Write text after if moving/scaling
 fig = Figure("21cm", "21cm",
         Panel(
-             SVG(fig1).scale(0.5), #0.318 if 11x11
+             SVG(fig1).scale(0.3).move(20,0), #0.318 if 11x11
              Text("(a)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig2).scale(0.5),
+             SVG(fig2).scale(0.3).move(20,0),
              Text("(b)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig3).scale(0.5), #0.318 if 11x11
+             SVG(fig3).scale(0.3).move(20,0), #0.318 if 11x11
              Text("(c)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig4).scale(0.5), #0.318 if 11x11
+             SVG(fig4).scale(0.3).move(20,0), #0.318 if 11x11
              Text("(d)", 25, 20, size=14, weight='bold')
-            )).tile(2,2).save("figure2.svg")
+            ),
+        Panel(
+             SVG(fig5).scale(0.3).move(20,0), #0.318 if 11x11
+             Text("(e)", 25, 20, size=14, weight='bold')
+            ),
+        Panel(
+             SVG(fig6).scale(0.3).move(20,0),
+             Text("(f)", 25, 20, size=14, weight='bold')
+            ),
+        Panel(
+             SVG(fig7).scale(0.3).move(20,0), #0.318 if 11x11
+             Text("(g)", 25, 20, size=14, weight='bold')
+            ),
+        Panel(
+             SVG(fig8).scale(0.3).move(20,0), #0.318 if 11x11
+             Text("(h)", 25, 20, size=14, weight='bold')
+            ),
+         Panel(
+              SVG(fig9).scale(0.3).move(20,0), #0.318 if 11x11
+              Text("(i)", 25, 20, size=14, weight='bold')
+              )).tile(3,3).save("figure2.svg")
 
 
 #Plot main Figure 3
 #Write text after if moving/scaling
-fig = Figure("21cm", "21cm", SVG(fig5).scale(1.0)).save("figure3.svg")
-
-#Plot main Figure 4
-#Write text after if moving/scaling
 fig = Figure("21cm", "21cm",
         Panel(
-             SVG(fig6).scale(0.5), #0.318 if 11x11
+             SVG(fig10).scale(0.5), #0.318 if 11x11
              Text("(a)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig7).scale(0.5),
+             SVG(fig11).scale(0.5),
              Text("(b)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig8).scale(0.5).move(10,0), #0.318 if 11x11
+             SVG(fig12).scale(0.5), #0.318 if 11x11
              Text("(c)", 25, 20, size=14, weight='bold')
             ),
         Panel(
-             SVG(fig9).scale(0.5).move(10,0), #0.318 if 11x11
+             SVG(fig13).scale(0.5), #0.318 if 11x11
              Text("(d)", 25, 20, size=14, weight='bold')
-            )).tile(2,2).save("figure4.svg")
+            )).tile(2,2).save("figure3.svg")

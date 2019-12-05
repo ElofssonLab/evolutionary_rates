@@ -90,7 +90,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.scatter(hgroup_mldists, hgroup_scores, s = 1, c = 'r', alpha = 0.5, label = 'Dataset 1')
     plt.xlabel(xlabel)
     if score == 'lddt_scores':
-        plt.ylabel('lddt score')
+        plt.ylabel('lDDT score')
     else:
         plt.ylabel(score)
     plt.legend(markerscale=10)
@@ -110,7 +110,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     if score == 'lddt_scores':
-        plt.ylim([-0.04, 0.04])
+        plt.ylim([-0.025, 0.025])
     plt.xlabel(xlabel)
     plt.show()
     fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')

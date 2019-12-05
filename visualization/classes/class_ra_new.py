@@ -63,7 +63,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     #Sort df by x-value
     df = df.sort_values(by=['MLAAdist'+cardinality+aln_type], ascending=True)
-    step = int(np.around(len(df)/25, decimals=0))
+    step = 0.1
 
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
@@ -105,7 +105,7 @@ def make_plots(results, cardinality, outdir, suffix):
         #plt.scatter(mldists, scores, s = 1, c = colors[i], alpha = 0.5, label = classes[i])
         plt.xlabel(xlabel)
         if score == 'lddt_scores':
-            plt.ylabel('lddt score')
+            plt.ylabel('lDDT score')
         else:
             plt.ylabel(score)
         leg = plt.legend()
