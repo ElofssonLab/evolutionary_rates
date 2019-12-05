@@ -102,7 +102,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
     fig = plt.figure(figsize=(11,11)) #set figsize
-    matplotlib.rcParams.update({'font.size': 22})
+    matplotlib.rcParams.update({'font.size': 36})
     #Plot RA per topology
     for i in range(len(partial_df)):
         top = topologies[i]
@@ -254,15 +254,13 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality):
     '''
 
     #Plot deviation against average RCO in topology
-    cmap = cm.get_cmap('Blues', 10)
-    sorted = top_metrics.sort_values(by=score+aln_type+'_av_dev', ascending=False)
-    sorted[score+aln_type+'_av_RCO'] = sorted[score+aln_type+'_av_RCO']/max(sorted[score+aln_type+'_av_RCO'])
-    barlist=plt.bar(sorted['Topology'], sorted[score+aln_type+'_av_dev'])
-    for i in range(0, len(barlist)):
-        barlist[i].set_color(cmap(sorted.iloc[i][score+aln_type+'_av_RCO']))
+    # cmap = cm.get_cmap('Blues', 10)
+    # sorted = top_metrics.sort_values(by=score+aln_type+'_av_dev', ascending=False)
+    # sorted[score+aln_type+'_av_RCO'] = sorted[score+aln_type+'_av_RCO']/max(sorted[score+aln_type+'_av_RCO'])
+    # barlist=plt.bar(sorted['Topology'], sorted[score+aln_type+'_av_dev'])
+    # for i in range(0, len(barlist)):
+    #     barlist[i].set_color(cmap(sorted.iloc[i][score+aln_type+'_av_RCO']))
 
-    plt.show()
-    pdb.set_trace()
     #hue = score+aln_type+'_av_RCO'
     #Get significant
     sig_df = top_metrics[top_metrics[score+aln_type+'_pval']<0.05/len(top_metrics)]
@@ -285,6 +283,11 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality):
     #Get data from cat_df matching sig topologies
     nonsig_df_merged = pd.merge(nonsig_df, catdf, left_on='Topology', right_on='group', how='left')
     nonsig_df['Significance'] = 'Non-significant'
+
+    #Plot distributions of seq and str scores
+    sns.kdeplot(pos_sig_merged['MLAAdist'+aln_type], pos_sig_merged[score+aln_type], shade=True, shade_lowest = False, label = 'pos')
+    sns.kdeplot(neg_sig_merged['MLAAdist'+aln_type], neg_sig_merged[score+aln_type], shade=True, shade_lowest = False, label = 'neg')
+    sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type], nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, label = 'non')
 
     #Plot the RAs of the pos and neg sig groups
     plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality)
@@ -327,8 +330,7 @@ hgroupdf['C.A.T.'] = tops
 hgroupdf = hgroupdf.rename(columns={'group':'H_group'})
 hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
 catdf = pd.concat([topdf, hgroupdf])
-#select below 6
-catdf = catdf[catdf['MLAAdist_straln']<=6]
+
 #The ones should actually be zeros
 catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
@@ -347,6 +349,8 @@ cardinality = '' #AA20
 
 for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
     for aln_type in ['_straln', '_seqaln']:
+        #select below 6 using seq or str
+        catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
         avs_from_line = [] #save avs from line and pvals
         pvals = []
         all_js = []
@@ -355,7 +359,7 @@ for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         toplens = []
         av_RCO = []
         for top in topologies:
-            df = catdf[catdf['group']==top]
+            df = catdf_s[catdf_s['group']==top]
             toplens.append(len(df))
             av_from_line, pvalue, js, avs = dev_from_av(avdf, df, score, aln_type, cardinality, 6)
             avs_from_line.append(av_from_line)
@@ -371,7 +375,7 @@ for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         top_metrics[score+aln_type+'_gradients'] = gradients
         top_metrics[score+aln_type+'_av_RCO'] = av_RCO
         #Make plots
-        three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality)
+        three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality)
 #Calculate ANOVA
 #anova(cat_dev)
 
