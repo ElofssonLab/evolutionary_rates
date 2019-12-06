@@ -102,7 +102,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
     fig = plt.figure(figsize=(11,11)) #set figsize
-    matplotlib.rcParams.update({'font.size': 36})
+    matplotlib.rcParams.update({'font.size': 22})
     #Plot RA per topology
     for i in range(len(partial_df)):
         top = topologies[i]
@@ -129,7 +129,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
         total_top_ra.append(np.average(cut_scores))
         total_top_js.append(np.round(j-step/2,2))
     plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Topology')
-    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Total')
+    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Broad dataset')
     plt.legend()
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
@@ -139,13 +139,14 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
         plt.ylabel('lDDT score')
     else:
         plt.ylabel(score)
-    fig.savefig(outdir+name, format = 'svg')
+    fig.savefig(outdir+name, format = 'png')
 
     #Scatterplot
     fig = plt.figure(figsize=(11,11)) #set figsize
     plt.scatter(partial_merged['MLAAdist'+cardinality+aln_type],partial_merged[score+aln_type],alpha = 0.2, color = 'b', s = 1)
-    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Total')
     plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Topology')
+    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Broad dataset')
+
     plt.legend()
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
@@ -155,7 +156,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
         plt.ylabel('lDDT score')
     else:
         plt.ylabel(score)
-    fig.savefig(outdir+'scatter_'+name, format = 'svg')
+    fig.savefig(outdir+'scatter_'+name, format = 'png')
 
     #Plot gradients
     fig = plt.figure(figsize=(11,11)) #set figsize
@@ -163,7 +164,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     partial_avdf = avdf[avdf['ML  distance']<6]
     statistic, pvalue = stats.ttest_ind(np.gradient(total_top_ra), np.gradient(partial_avdf[score+aln_type]), equal_var = False)
     plt.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Topology\npval:'+str(np.round(pvalue,2)))
-    plt.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 3, label = 'Total')
+    plt.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 3, label = 'Broad dataset')
     plt.legend()
 
     plt.xlim([0,9.1])
@@ -174,7 +175,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
         plt.ylabel('lDDT score gradients')
     else:
         plt.ylabel(score+' gradients')
-    fig.savefig(outdir+'gradients_'+name, format = 'svg')
+    fig.savefig(outdir+'gradients_'+name, format = 'png')
 
     #Close plots to avoid to many being open at the same time
     plt.close()
@@ -239,9 +240,15 @@ def ttest_table(neg_sig, pos_sig, nonsig_df, features, score, aln_type):
     '''
 
     f = open(score+aln_type+'_ttests.tsv', 'w')
-    f.write('Feature\tNeg tstat\tPositive tstat\tNeg Z\tPositive Z\n')
+    f.write('Feature\tNeg Av\tPos Av\tNonsig Av\tNeg tstat\tPositive tstat\tNeg Z\tPositive Z\n')
     for feature in features:
         f.write(feature+'\t')
+        #Average
+        f.write(str(np.round(np.average(neg_sig[feature]),2))+'\t')
+        f.write(str(np.round(np.average(pos_sig[feature]),2))+'\t')
+        f.write(str(np.round(np.average(nonsig_df[feature]),2))+'\t')
+
+        #t-stat
         statistic, pvalue = stats.ttest_ind(neg_sig[feature], nonsig_df[feature], equal_var = False)
         f.write(str(np.round(statistic,2))+'\t')
         statistic, pvalue = stats.ttest_ind(pos_sig[feature], nonsig_df[feature], equal_var = False)
@@ -252,6 +259,8 @@ def ttest_table(neg_sig, pos_sig, nonsig_df, features, score, aln_type):
         f.write(str(np.round(z,2))+'\t')
         z = (np.average(pos_sig[feature])-np.average(nonsig_df[feature]))/(np.std(nonsig_df[feature])/np.sqrt(len(pos_sig)))
         f.write(str(np.round(z,2))+'\n')
+
+
     f.close()
 
     return None
@@ -294,14 +303,14 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality):
     nonsig_df['Significance'] = 'Non-significant'
 
     #Plot distributions of seq and str scores
-    sns.kdeplot(pos_sig_merged['MLAAdist'+aln_type], pos_sig_merged[score+aln_type], shade=True, shade_lowest = False, label = 'pos')
-    sns.kdeplot(neg_sig_merged['MLAAdist'+aln_type], neg_sig_merged[score+aln_type], shade=True, shade_lowest = False, label = 'neg')
-    sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type], nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, label = 'non')
+    #sns.kdeplot(pos_sig_merged['MLAAdist'+aln_type], pos_sig_merged[score+aln_type], shade=True, shade_lowest = False, label = 'pos')
+    #sns.kdeplot(neg_sig_merged['MLAAdist'+aln_type], neg_sig_merged[score+aln_type], shade=True, shade_lowest = False, label = 'neg')
+    #sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type], nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, label = 'non')
 
     #Plot the RAs of the pos and neg sig groups
-    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.svg', score, aln_type, cardinality)
-    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.svg', score, aln_type, cardinality)
-    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.svg', score, aln_type, cardinality)
+    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality)
+    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality)
+    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality)
 
     #Concat
     cat_dev = pd.concat([pos_sig_merged, neg_sig_merged])
