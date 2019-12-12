@@ -37,9 +37,9 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     '''Produce running average plots for df using 100 steps with an equal amount of points in each
     '''
 
-    matplotlib.rcParams.update({'font.size': 22})
+    #Double column = 183 mm, maxfont = 8
+    matplotlib.rcParams.update({'font.size': 7})
     suffix = calc+'_'+score+cardinality+aln_type+'_'+'.svg'
-    colors = {'_seqaln': 'k', '_straln': 'r'}
     xlabel = 'ML '+cardinality[1:]+' distance'
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
 
@@ -48,8 +48,11 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     if cardinality == '_AA20':
         cardinality = ''
     avs = [] #Save average score
+    stds = [] #Save std deviation
     js = [] #Save dists
-    perc_points = []
+    perc_points = [] #Save percentage of points within seqdist interval
+    perc_within_acc = []
+    perc_within_std = []
 
     top_mldists = np.asarray(topdf['MLAAdist'+cardinality+aln_type])
     top_scores = np.asarray(topdf[score+aln_type])
@@ -59,7 +62,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
     df = pd.concat([topdf, hgroupdf])
-    fig = plt.figure(figsize=(10,10)) #set figsize
+    fig = plt.figure(figsize=(9/2.54,9/2.54)) #set figsize
 
 
     #Sort df by x-value
@@ -78,31 +81,60 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
         if calc == 'median':
             av= np.median(cut_scores)
         avs.append(av)
+        std = np.std(cut_scores)
+        stds.append(std)
         js.append(np.round(j-step/2,2))
         perc_points.append(len(below_df)/len(df)*100)
-
+        #Get % points within 0.05
+        outside = np.where(cut_scores<av-0.05)[0].size+np.where(cut_scores>av+0.05)[0].size
+        perc_within_acc.append((cut_scores.size-outside)/cut_scores.size)
+        #Get % points within std
+        outside_std = np.where(cut_scores<av-std)[0].size+np.where(cut_scores>av+std)[0].size
+        perc_within_std.append((cut_scores.size-outside_std)/cut_scores.size)
     #Include derivatives
     gradients = np.gradient(avs)
+    #Fit polyline
+    z = np.polyfit(js, avs, deg = 3)
+    p = np.poly1d(z)
     #Plot RA
-    plt.plot(js, avs, linewidth = 2, c = 'b', label = 'Running average')
+    plt.plot(js, avs, linewidth = 1, c = 'g', label = 'Running average')
     #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
-    plt.scatter(top_mldists, top_scores, s = 1, c = 'k', alpha = 1.0, label = 'Dataset 3')
-    plt.scatter(hgroup_mldists, hgroup_scores, s = 1, c = 'r', alpha = 0.5, label = 'Dataset 1')
+    plt.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = 'Dataset 1')
+    plt.scatter(top_mldists, top_scores, s = 0.1, c = 'b', alpha = 1.0, label = 'Dataset 3')
+    #plot stddev
+    plt.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
+    plt.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
+    #Plot polynomial fit
+    plt.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'indigo')
     plt.xlabel(xlabel)
     if score == 'lddt_scores':
         plt.ylabel('lDDT score')
     else:
         plt.ylabel(score)
-    plt.legend(markerscale=10)
+    plt.legend(markerscale=5)
     plt.ylim(ylim)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    plt.show()
+    #pdb.set_trace()
     fig.savefig(outdir+'running_'+suffix, format = 'svg')
     plt.close()
 
+    fig = plt.figure(figsize=(9/2.54,4.5/2.54))
+    #Plot Percent within accurac
+    plt.plot(js,np.round(np.array(perc_wihtin_std)*100,2), linewidth = 1, c= 'g',  label = 'Within 1 Standard Deviation')
+    plt.plot(js,np.round(np.array(perc_wihtin_acc)*100,2), linewidth = 1, c= 'b', label = 'Within 0.05 lDDT')
+    plt.plot(js,[68.27]*len(js),'--', linewidth = 1, c= 'lightseagreen', label = 'Normal Distribution')
+    plt.xlabel(xlabel)
+    plt.ylabel('%')
+    plt.legend()
+    plt.ylim([0,100])
+    plt.xticks([0,10,20,30,40,50,60,70,80,90,100])
+    plt.xlim([0,9.1])
+    plt.xticks([0,1,2,3,4,5,6,7,8,9])
+    pdb.set_trace()
+
     #Plot gradients
-    fig = plt.figure(figsize=(11,11)) #set figsize
+    fig = plt.figure(figsize=(9/2.54,9/2.54)) #set figsize
     plt.scatter(js, gradients,s=20)
     plt.plot(js, gradients, linewidth = 3)
     plt.ylabel('gradient')
@@ -112,10 +144,9 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     if score == 'lddt_scores':
         plt.ylim([-0.025, 0.025])
     plt.xlabel(xlabel)
-    plt.show()
     fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
     #Plot Point distribution
-    fig = plt.figure(figsize=(10,10)) #set figsize
+    fig = plt.figure(figsize=(9/2.54,9/2.54)) #set figsize
     plt.plot(js, perc_points, linewidth = 4)
     plt.xlabel(xlabel)
     plt.ylabel('% of points')
@@ -125,7 +156,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     av_df['ML '+cardinality[1:]+' distance'] = js
     av_df[score+aln_type] = avs
-    pdb.set_trace()
+    av_df[score+aln_type+'_std'] = stds
     return av_df
 
 
@@ -138,7 +169,7 @@ calc = args.calc[0]
 get_one = bool(args.get_one[0])
 
 aln_types = ['_straln','_seqaln']
-ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1]}
+ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1], 'TMscore': [0.2,1.0]}
 
 #set random seed
 np.random.seed(42)
@@ -155,9 +186,14 @@ if get_one == True:
 
     hgroupdf = one_pair_df
 
+
+#rename TMscore cols
+hgroupdf = hgroupdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
+topdf = topdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
+
 cardinality = '_AA20'
 av_df = pd.DataFrame()
-for score in [ 'lddt_scores','DIFFC', 'RMSD','DIFFSS', 'DIFF_ACC']:
+for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD','DIFFSS', 'DIFF_ACC']:
     for aln_type in aln_types:
         ylim = ylims[score]
         av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir, av_df)

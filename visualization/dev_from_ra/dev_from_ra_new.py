@@ -93,12 +93,12 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
 
     return np.average(avdevs), pvalue, js, avs
 
-def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality):
+def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality, title, gradient_table):
     '''RA plots of partial dfs and the total RA
     '''
     topologies = [*partial_df['Topology']]
-    ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1]}
-    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025], 'DIFFC':[-0.04, 0.04]}
+    ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1], 'TMscore': [0.2,1.0]}
+    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025], 'DIFFC':[-0.04, 0.04], 'TMscore':[-0.025, 0.025]}
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
     fig = plt.figure(figsize=(11,11)) #set figsize
@@ -131,14 +131,15 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Topology')
     plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Broad dataset')
     plt.legend()
+    plt.title(title, fontsize=42)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(ylims[score])
-    plt.xlabel('ML AA20 distance')
+    plt.xlabel('ML AA20 distance', fontsize=32)
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score')
+        plt.ylabel('lDDT score', fontsize=32)
     else:
-        plt.ylabel(score)
+        plt.ylabel(score, fontsize=32)
     fig.savefig(outdir+name, format = 'png')
 
     #Scatterplot
@@ -151,11 +152,11 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(ylims[score])
-    plt.xlabel('ML AA20 distance')
+    plt.xlabel('ML AA20 distance', fontsize=32)
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score')
+        plt.ylabel('lDDT score', fontsize=32)
     else:
-        plt.ylabel(score)
+        plt.ylabel(score, fontsize=32)
     fig.savefig(outdir+'scatter_'+name, format = 'png')
 
     #Plot gradients
@@ -170,15 +171,18 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(grad_ylims[score])
-    plt.xlabel('ML AA20 distance')
+    plt.xlabel('ML AA20 distance', fontsize=32)
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score gradients')
+        plt.ylabel('lDDT score gradients', fontsize=22)
     else:
-        plt.ylabel(score+' gradients')
+        plt.ylabel(score+' gradients', fontsize=22)
     fig.savefig(outdir+'gradients_'+name, format = 'png')
 
     #Close plots to avoid to many being open at the same time
     plt.close()
+
+    #Write gradient comparisons to file
+    gradient_table.write(str(np.round(pvalue,2))+'\t')
     return None
 
 def class_percentages(df):
@@ -266,7 +270,7 @@ def ttest_table(neg_sig, pos_sig, nonsig_df, features, score, aln_type):
     return None
 
 
-def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality):
+def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, gradient_table):
     '''Compares positively, negatively and non-deviating groups in their
     deviation from the total running average.
     '''
@@ -308,10 +312,11 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality):
     #sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type], nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, label = 'non')
 
     #Plot the RAs of the pos and neg sig groups
-    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality)
-    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality)
-    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality)
-
+    gradient_table.write(score+aln_type+'\t')
+    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Postively significant', gradient_table)
+    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Negatively significant', gradient_table)
+    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Non-significant', gradient_table)
+    gradient_table.write('\n')
     #Concat
     cat_dev = pd.concat([pos_sig_merged, neg_sig_merged])
     classes = ['Mainly Alpha', 'Mainly Beta', 'Alpha Beta', 'Few SS']
@@ -347,6 +352,11 @@ hgroupdf['C.A.T.'] = tops
 #rename col
 hgroupdf = hgroupdf.rename(columns={'group':'H_group'})
 hgroupdf = hgroupdf.rename(columns={'C.A.T.':'group'})
+
+#rename TMscore cols
+hgroupdf = hgroupdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
+topdf = topdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
+
 catdf = pd.concat([topdf, hgroupdf])
 
 #The ones should actually be zeros
@@ -365,7 +375,9 @@ top_metrics = pd.DataFrame()
 top_metrics['Topology'] = topologies
 cardinality = '' #AA20
 
-for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
+gradient_table = open('gradient_comparisons.tsv', 'w')
+gradient_table.write('Score\tPos\tNon\tNeg\n')
+for score in ['TMscore', 'lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
     for aln_type in ['_straln', '_seqaln']:
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
@@ -393,7 +405,8 @@ for score in ['lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         top_metrics[score+aln_type+'_gradients'] = gradients
         top_metrics[score+aln_type+'_av_RCO'] = av_RCO
         #Make plots
-        three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality)
+        three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, gradient_table)
+gradient_table.close()
 #Calculate ANOVA
 #anova(cat_dev)
 
