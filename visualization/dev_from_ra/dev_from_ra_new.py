@@ -382,7 +382,7 @@ cardinality = '' #AA20
 
 gradient_table = open('gradient_comparisons.tsv', 'w')
 gradient_table.write('Score\tPos\tNon\tNeg\n')
-for score in ['TMscore', 'lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
+for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
     for aln_type in ['_straln', '_seqaln']:
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
@@ -411,7 +411,12 @@ for score in ['TMscore', 'lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         top_metrics[score+aln_type+'_ra'] = all_avs
         top_metrics[score+aln_type+'_gradients'] = gradients
         top_metrics[score+aln_type+'_av_RCO'] = av_RCO
-        top_metrics[score+aln_type+'sizes'] = sizes
+        top_metrics[score+aln_type+'_sizes'] = sizes
+
+        #plt.scatter(top_metrics['lddt_scores_straln_sizes'], top_metrics['lddt_scores_straln_av_dev'], s= 5)
+        sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
+        plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
+
         pdb.set_trace()
         #Make plots
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, gradient_table)
