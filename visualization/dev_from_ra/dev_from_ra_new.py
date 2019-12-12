@@ -102,7 +102,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
     fig = plt.figure(figsize=(11,11)) #set figsize
-    matplotlib.rcParams.update({'font.size': 22})
+    matplotlib.rcParams.update({'font.size': 7})
     #Plot RA per topology
     for i in range(len(partial_df)):
         top = topologies[i]
@@ -131,15 +131,16 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Topology')
     plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Broad dataset')
     plt.legend()
-    plt.title(title, fontsize=42)
+    plt.title(title)
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(ylims[score])
-    plt.xlabel('ML AA20 distance', fontsize=32)
+    plt.xlabel('ML AA20 distance')
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score', fontsize=32)
+        plt.ylabel('lDDT score')
     else:
-        plt.ylabel(score, fontsize=32)
+        plt.ylabel(score)
+    pdb.set_trace()
     fig.savefig(outdir+name, format = 'png')
 
     #Scatterplot
@@ -152,11 +153,11 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(ylims[score])
-    plt.xlabel('ML AA20 distance', fontsize=32)
+    plt.xlabel('ML AA20 distance')
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score', fontsize=32)
+        plt.ylabel('lDDT score')
     else:
-        plt.ylabel(score, fontsize=32)
+        plt.ylabel(score)
     fig.savefig(outdir+'scatter_'+name, format = 'png')
 
     #Plot gradients
@@ -171,11 +172,11 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     plt.xlim([0,9.1])
     plt.xticks([0,1,2,3,4,5,6,7,8,9])
     plt.ylim(grad_ylims[score])
-    plt.xlabel('ML AA20 distance', fontsize=32)
+    plt.xlabel('ML AA20 distance')
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score gradients', fontsize=22)
+        plt.ylabel('lDDT score gradients')
     else:
-        plt.ylabel(score+' gradients', fontsize=22)
+        plt.ylabel(score+' gradients')
     fig.savefig(outdir+'gradients_'+name, format = 'png')
 
     #Close plots to avoid to many being open at the same time
@@ -311,6 +312,10 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, grad
     #sns.kdeplot(neg_sig_merged['MLAAdist'+aln_type], neg_sig_merged[score+aln_type], shade=True, shade_lowest = False, label = 'neg')
     #sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type], nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, label = 'non')
 
+    #Plot all RAs per top group
+    top_metrics_merged = pd.merge(top_metrics, catdf, left_on='Topology', right_on='group', how='left')
+    plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', gradient_table)
+
     #Plot the RAs of the pos and neg sig groups
     gradient_table.write(score+aln_type+'\t')
     plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Postively significant', gradient_table)
@@ -388,6 +393,7 @@ for score in ['TMscore', 'lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         gradients = []
         toplens = []
         av_RCO = []
+        sizes = [] #group sizes
         for top in topologies:
             df = catdf_s[catdf_s['group']==top]
             toplens.append(len(df))
@@ -398,14 +404,18 @@ for score in ['TMscore', 'lddt_scores', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             all_avs.append(avs)
             gradients.append(np.gradient(avs))
             av_RCO.append(np.average(np.absolute(df['RCO1']-0.29)))
+            sizes.append(len(df))
         top_metrics[score+aln_type+'_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
         top_metrics[score+aln_type+'_ra'] = all_avs
         top_metrics[score+aln_type+'_gradients'] = gradients
         top_metrics[score+aln_type+'_av_RCO'] = av_RCO
+        top_metrics[score+aln_type+'sizes'] = sizes
+        pdb.set_trace()
         #Make plots
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, gradient_table)
+
 gradient_table.close()
 #Calculate ANOVA
 #anova(cat_dev)
