@@ -266,9 +266,9 @@ def ttest_features(df, catdf, score, aln_type):
         if feature == 'RCO':
             x = np.concatenate((np.array(df['RCO1']), np.array(df['RCO2'])))
             y = np.concatenate((np.array(catdf['RCO1']), np.array(catdf['RCO2'])))
-        if feature == 'l':
-            x = np.concatenate((np.array(df['l1']), np.array(df['l2'])))
-            y = np.concatenate((np.array(catdf['l1']), np.array(catdf['l2'])))
+        elif feature == 'l':
+            x = np.concatenate((np.array(df['l1'+aln_type]), np.array(df['l2'+aln_type]))) #the lengths for the sequence alignments represents the picked up consensus from hhsearch
+            y = np.concatenate((np.array(catdf['l1'+aln_type]), np.array(catdf['l2'+aln_type])))
         else:
             x = df[feature]
             y = catdf[feature]
@@ -277,7 +277,7 @@ def ttest_features(df, catdf, score, aln_type):
         #Z-scores
         z = (np.average(x)-np.average(y))/(np.std(x)/np.sqrt(len(df)))
 
-        results[feature] = pvalue #[statisic, pvalue, z]
+        results[feature] = [statistic, pvalue, z]
 
     return results
 
@@ -293,15 +293,16 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features):
         neg = len(neg_sig[neg_sig[key+'_pval']<0.05/total])
         non = len(nonsig_df[nonsig_df[key+'_pval']<0.05/total])
         #Plot
-        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
         ax.bar(x, [pos, neg, non], label='Men')
         ax.set_xticks(x)
         ax.set_xticklabels(['Pos', 'Neg', 'Non'])
         ax.set_xlabel(key)
         ax.set_ylabel('Count')
-        #ax.set_ylim([0,1.0])
+        ax.set_ylim([0,400])
         fig.tight_layout()
-        plt.show()
+        fig.savefig(outdir+feature+'_'+score+aln_type+'_count.png', format = 'svg')
+        plt.close()
 
         fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
         ax.bar(x, [100*pos/len(pos_sig), 100*neg/len(neg_sig), 100*non/len(nonsig_df)], label='Men')
@@ -311,13 +312,12 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features):
         ax.set_ylabel('%')
         ax.set_ylim([0,100])
         fig.tight_layout()
-        plt.show()
-        pdb.set_trace()
+        fig.savefig(outdir+feature+'_'+score+aln_type+'.png', format = 'svg')
 
     return None
 
 
-def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, features):
+def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features):
     '''Compares positively, negatively and non-deviating groups in their
     deviation from the total running average.
     '''
@@ -347,10 +347,10 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, feat
     nonsig_df = top_metrics[top_metrics[score+aln_type+'_ra_pval']>=0.05/len(top_metrics)]
 
     #Get data from cat_df matching sig topologies
-    pos_sig_merged = pd.merge(pos_sig, catdf, left_on='Topology', right_on='group', how='left')
-    neg_sig_merged = pd.merge(neg_sig, catdf, left_on='Topology', right_on='group', how='left')
+    pos_sig_merged = pd.merge(pos_sig, catdf_s, left_on='Topology', right_on='group', how='left')
+    neg_sig_merged = pd.merge(neg_sig, catdf_s, left_on='Topology', right_on='group', how='left')
     #Get data from cat_df matching sig topologies
-    nonsig_df_merged = pd.merge(nonsig_df, catdf, left_on='Topology', right_on='group', how='left')
+    nonsig_df_merged = pd.merge(nonsig_df, catdf_s, left_on='Topology', right_on='group', how='left')
     nonsig_df['Significance'] = 'Non-significant'
 
     #Calculate percentages of sig for each feature in each set
@@ -358,7 +358,7 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, feat
 
 
     #Plot all RAs per top group
-    top_metrics_merged = pd.merge(top_metrics, catdf, left_on='Topology', right_on='group', how='left')
+    top_metrics_merged = pd.merge(top_metrics, catdf_s, left_on='Topology', right_on='group', how='left')
     plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10')
 
     #Plot the RAs of the pos and neg sig groups
@@ -428,7 +428,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             stat_results = {}
             features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type]
             for key in features:
-                stat_results[key] = []
+                stat_results[key] = np.zeros((555,3))
 
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
@@ -440,8 +440,6 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         toplens = []
         av_RCO = []
         sizes = [] #group sizes
-
-
 
         for top in topologies:
             df = catdf_s[catdf_s['group']==top]
@@ -459,7 +457,8 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
                 #Test for deviating features within group
                 results = ttest_features(df, catdf_s, score, aln_type)
                 for key in results: #each key is a feature
-                    stat_results[key].append(results[key]) #statisic, pvalue, z
+                    stat_results[key][len(all_avs)-1] = results[key] #statisic, pvalue, z
+            pdb.set_trace()
 
         if score == 'lddt_scores':
             for key in features:
