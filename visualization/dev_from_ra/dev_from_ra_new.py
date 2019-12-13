@@ -15,7 +15,11 @@ from scipy import stats
 import researchpy as rp
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
-
+'''
+When using statsmodels in scientific publication, please consider using the following citation:
+Seabold, Skipper, and Josef Perktold. “Statsmodels: Econometric and statistical modeling with python.”
+Proceedings of the 9th Python in Science Conference. 2010.
+'''
 import pdb
 
 #Arguments for argparse module:
@@ -93,7 +97,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
 
     return np.average(avdevs), pvalue, js, avs
 
-def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality, title, gradient_table):
+def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality, title):
     '''RA plots of partial dfs and the total RA
     '''
     topologies = [*partial_df['Topology']]
@@ -102,12 +106,12 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
     stds = np.array(avdf[score+aln_type+'_std']) #std dev for total ra
-    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     matplotlib.rcParams.update({'font.size': 7})
     #Plot RA per topology
     for i in range(len(partial_df)):
         top = topologies[i]
-        plt.plot(mldists[i],scores[i], alpha = 0.1, color = 'b', linewidth =2)
+        ax.plot(mldists[i],scores[i], alpha = 0.1, color = 'b', linewidth =1)
 
     #Plot total RA for topologies
     step = 0.1
@@ -129,8 +133,8 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
 
         total_top_ra.append(np.average(cut_scores))
         total_top_js.append(np.round(j-step/2,2))
-    ax.plot(total_top_js, total_top_ra, color = 'b', linewidth = 1, label = 'Topology', alpha = 0.5)
-    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 2, label = 'Broad dataset')
+    ax.plot(total_top_js, total_top_ra, color = 'b', linewidth = 1.5, label = 'Topology', alpha = 0.7)
+    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 1.5, label = 'Broad dataset')
     #plot stddev
     ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
     ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
@@ -148,7 +152,6 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
-    plt.show()
     fig.savefig(outdir+name, format = 'png')
 
     # #Scatterplot
@@ -169,7 +172,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     # fig.savefig(outdir+'scatter_'+name, format = 'png')
 
     #Plot gradients
-    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     #T-test
     partial_avdf = avdf[avdf['ML  distance']<6]
     statistic, pvalue = stats.ttest_ind(np.gradient(total_top_ra), np.gradient(partial_avdf[score+aln_type]), equal_var = False)
@@ -193,8 +196,6 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     #Close plots to avoid to many being open at the same time
     plt.close()
 
-    #Write gradient comparisons to file
-    gradient_table.write(str(np.round(pvalue,2))+'\t')
     return None
 
 def class_percentages(df):
@@ -214,11 +215,13 @@ def anova(cat_dev):
     '''Perform anova
     '''
 
+    features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type]
+    dependent_variable = score+aln_type+'_ra' #Running average for topology grouping
     #Make violinplots
-    features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln', 'percent_aligned_straln']
+
     for feature in features:
         matplotlib.rcParams.update({'font.size': 7})
-        fig = plt.figure(figsize=(9,9)) #set figsize
+        fig = plt.figure(figsize=(9/2.54,9/2.54)) #set figsize
         sns.violinplot(data = cat_dev, x = 'Significance', y = feature)
         fig.savefig(outdir+feature+aln_type+score+'.png', format = 'png')
     #Calculate fraction retained
@@ -226,8 +229,9 @@ def anova(cat_dev):
     omega_sq = []
     Pr = []
 
-    #Fit ANOVA
+    #Fit ANOVA, using all features simultaneously
     for column in features:
+
         test_str = column+' ~ C(Significance)'
         results = ols(test_str, data=cat_dev).fit()
         aov_table = sm.stats.anova_lm(results, typ=2)
@@ -251,40 +255,69 @@ def anova_table(aov):
     aov = aov[cols]
     return aov
 
-def ttest_table(neg_sig, pos_sig, nonsig_df, features, score, aln_type):
-    '''Perform t-tests for features
-    THIS IS A REALLY BAD IDEA!
-    THE FEATURES MAY NOT BE INDEPENDENT
+def ttest_features(df, catdf, score, aln_type):
+    '''Perform t-tests for features - looking into differences btw groups
     '''
 
-    f = open(score+aln_type+'_ttests.tsv', 'w')
-    f.write('Feature\tNeg Av\tPos Av\tNonsig Av\tNeg tstat\tPositive tstat\tNeg Z\tPositive Z\n')
+    features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type]
+
+    results = {}
     for feature in features:
-        f.write(feature+'\t')
-        #Average
-        f.write(str(np.round(np.average(neg_sig[feature]),2))+'\t')
-        f.write(str(np.round(np.average(pos_sig[feature]),2))+'\t')
-        f.write(str(np.round(np.average(nonsig_df[feature]),2))+'\t')
+        if feature == 'RCO':
+            x = np.concatenate((np.array(df['RCO1']), np.array(df['RCO2'])))
+            y = np.concatenate((np.array(catdf['RCO1']), np.array(catdf['RCO2'])))
+        if feature == 'l':
+            x = np.concatenate((np.array(df['l1']), np.array(df['l2'])))
+            y = np.concatenate((np.array(catdf['l1']), np.array(catdf['l2'])))
+        else:
+            x = df[feature]
+            y = catdf[feature]
 
-        #t-stat
-        statistic, pvalue = stats.ttest_ind(neg_sig[feature], nonsig_df[feature], equal_var = False)
-        f.write(str(np.round(statistic,2))+'\t')
-        statistic, pvalue = stats.ttest_ind(pos_sig[feature], nonsig_df[feature], equal_var = False)
-        f.write(str(np.round(statistic,2))+'\t')
-
+        statistic, pvalue = stats.ttest_ind(x,y, equal_var = False)
         #Z-scores
-        z = (np.average(neg_sig[feature])-np.average(nonsig_df[feature]))/(np.std(nonsig_df[feature])/np.sqrt(len(neg_sig)))
-        f.write(str(np.round(z,2))+'\t')
-        z = (np.average(pos_sig[feature])-np.average(nonsig_df[feature]))/(np.std(nonsig_df[feature])/np.sqrt(len(pos_sig)))
-        f.write(str(np.round(z,2))+'\n')
+        z = (np.average(x)-np.average(y))/(np.std(x)/np.sqrt(len(df)))
 
+        results[feature] = pvalue #[statisic, pvalue, z]
 
-    f.close()
+    return results
+
+def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features):
+    '''Calculate % sig in each set for different features
+    Divide into pos, neg and nondeviating
+    '''
+
+    total = len(pos_sig)+ len(nonsig_df) + len(neg_sig)
+    x = [0,1,2]
+    for key in features:
+        pos = len(pos_sig[pos_sig[key+'_pval']<0.05/total])
+        neg = len(neg_sig[neg_sig[key+'_pval']<0.05/total])
+        non = len(nonsig_df[nonsig_df[key+'_pval']<0.05/total])
+        #Plot
+        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        ax.bar(x, [pos, neg, non], label='Men')
+        ax.set_xticks(x)
+        ax.set_xticklabels(['Pos', 'Neg', 'Non'])
+        ax.set_xlabel(key)
+        ax.set_ylabel('Count')
+        #ax.set_ylim([0,1.0])
+        fig.tight_layout()
+        plt.show()
+
+        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+        ax.bar(x, [100*pos/len(pos_sig), 100*neg/len(neg_sig), 100*non/len(nonsig_df)], label='Men')
+        ax.set_xticks(x)
+        ax.set_xticklabels(['Pos', 'Neg', 'Non'])
+        ax.set_xlabel(key)
+        ax.set_ylabel('%')
+        ax.set_ylim([0,100])
+        fig.tight_layout()
+        plt.show()
+        pdb.set_trace()
 
     return None
 
 
-def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, gradient_table):
+def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, features):
     '''Compares positively, negatively and non-deviating groups in their
     deviation from the total running average.
     '''
@@ -299,7 +332,7 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, grad
 
     #hue = score+aln_type+'_av_RCO'
     #Get significant
-    sig_df = top_metrics[top_metrics[score+aln_type+'_pval']<0.05/len(top_metrics)]
+    sig_df = top_metrics[top_metrics[score+aln_type+'_ra_pval']<0.05/len(top_metrics)]
     #Get pos deviating>0
     pos_sig = sig_df[sig_df[score+aln_type+'_av_dev']>0]
     pos_sig['Significance'] = 'Positive'
@@ -311,7 +344,7 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, grad
         pdb.set_trace()
 
     #Get non significant
-    nonsig_df = top_metrics[top_metrics[score+aln_type+'_pval']>=0.05/len(top_metrics)]
+    nonsig_df = top_metrics[top_metrics[score+aln_type+'_ra_pval']>=0.05/len(top_metrics)]
 
     #Get data from cat_df matching sig topologies
     pos_sig_merged = pd.merge(pos_sig, catdf, left_on='Topology', right_on='group', how='left')
@@ -320,21 +353,19 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, grad
     nonsig_df_merged = pd.merge(nonsig_df, catdf, left_on='Topology', right_on='group', how='left')
     nonsig_df['Significance'] = 'Non-significant'
 
-    #Plot distributions of seq and str scores
-    #sns.kdeplot(pos_sig_merged['MLAAdist'+aln_type], pos_sig_merged[score+aln_type], shade=True, shade_lowest = False, label = 'pos')
-    #sns.kdeplot(neg_sig_merged['MLAAdist'+aln_type], neg_sig_merged[score+aln_type], shade=True, shade_lowest = False, label = 'neg')
-    #sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type], nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, label = 'non')
+    #Calculate percentages of sig for each feature in each set
+    percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features)
+
 
     #Plot all RAs per top group
     top_metrics_merged = pd.merge(top_metrics, catdf, left_on='Topology', right_on='group', how='left')
-    plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', gradient_table)
+    plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10')
 
     #Plot the RAs of the pos and neg sig groups
-    gradient_table.write(score+aln_type+'\t')
-    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Postively significant', gradient_table)
-    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Negatively significant', gradient_table)
-    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Non-significant', gradient_table)
-    gradient_table.write('\n')
+    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Postively significant')
+    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Negatively significant')
+    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Non-significant')
+
     #Concat
     cat_dev = pd.concat([pos_sig_merged, neg_sig_merged])
     classes = ['Mainly Alpha', 'Mainly Beta', 'Alpha Beta', 'Few SS']
@@ -343,10 +374,7 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, grad
     #print('%neg sig', class_percentages(neg_sig_merged))
     #print('%nonsig', class_percentages(nonsig_df_merged))
     cat_dev = pd.concat([cat_dev, nonsig_df_merged])
-    #Fraction of pairs retained
-    #print('Fraction of pairs within topologies with at least 10 entries: '+str(len(cat_dev))+'/'+str(len(catdf)), len(cat_dev)/len(catdf))
-    #Perform t-tests BAD IDEA - DO ANOVA INSTEAD
-    features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln']
+
 
 
 #####MAIN#####
@@ -387,16 +415,21 @@ print('Fraction of topologies with at least 10 entries: '+str(num_tops_with10)+'
 topologies = np.array([*topcounts.keys()])
 topologies = topologies[np.where(vals>9)[0]]
 
-
 #Save pvalues
 top_metrics = pd.DataFrame()
 top_metrics['Topology'] = topologies
 cardinality = '' #AA20
 
-gradient_table = open('gradient_comparisons.tsv', 'w')
-gradient_table.write('Score\tPos\tNon\tNeg\n')
+
 for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
     for aln_type in ['_straln', '_seqaln']:
+        if score == 'lddt_scores':
+            #Save statistical assessment - this only has to be done for 1 score (but both alntypes) - will be the same in groups
+            stat_results = {}
+            features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type]
+            for key in features:
+                stat_results[key] = []
+
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
         avs_from_line = [] #save avs from line and pvals
@@ -407,6 +440,9 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         toplens = []
         av_RCO = []
         sizes = [] #group sizes
+
+
+
         for top in topologies:
             df = catdf_s[catdf_s['group']==top]
             toplens.append(len(df))
@@ -418,7 +454,17 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             gradients.append(np.gradient(avs))
             av_RCO.append(np.average(np.absolute(df['RCO1']-0.29)))
             sizes.append(len(df))
-        top_metrics[score+aln_type+'_pval'] = pvals
+
+            if score == 'lddt_scores':
+                #Test for deviating features within group
+                results = ttest_features(df, catdf_s, score, aln_type)
+                for key in results: #each key is a feature
+                    stat_results[key].append(results[key]) #statisic, pvalue, z
+
+        if score == 'lddt_scores':
+            for key in features:
+                top_metrics[key+'_pval'] = stat_results[key]
+        top_metrics[score+aln_type+'_ra_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
         top_metrics[score+aln_type+'_ra'] = all_avs
@@ -430,9 +476,9 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
-        three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, gradient_table)
+        three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features)
 
-gradient_table.close()
+
 #Calculate ANOVA
 anova(cat_dev)
 
