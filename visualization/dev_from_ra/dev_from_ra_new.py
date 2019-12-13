@@ -101,7 +101,8 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025], 'DIFFC':[-0.04, 0.04], 'TMscore':[-0.025, 0.025]}
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
-    fig = plt.figure(figsize=(11,11)) #set figsize
+    stds = np.array(avdf[score+aln_type+'_std']) #std dev for total ra
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
     matplotlib.rcParams.update({'font.size': 7})
     #Plot RA per topology
     for i in range(len(partial_df)):
@@ -128,19 +129,26 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
 
         total_top_ra.append(np.average(cut_scores))
         total_top_js.append(np.round(j-step/2,2))
-    plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Topology')
-    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Broad dataset')
-    plt.legend()
-    plt.title(title)
-    plt.xlim([0,9.1])
-    plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    plt.ylim(ylims[score])
-    plt.xlabel('ML AA20 distance')
+    ax.plot(total_top_js, total_top_ra, color = 'b', linewidth = 1, label = 'Topology', alpha = 0.5)
+    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 2, label = 'Broad dataset')
+    #plot stddev
+    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
+    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
+    ax.legend()
+    ax.set_title(title)
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_ylim(ylims[score])
+    ax.set_xlabel('ML AA20 distance')
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score')
+        ax.set_ylabel('lDDT score')
     else:
-        plt.ylabel(score)
-    pdb.set_trace()
+        ax.set_ylabel(score)
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
+    plt.show()
     fig.savefig(outdir+name, format = 'png')
 
     # #Scatterplot
@@ -161,22 +169,25 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     # fig.savefig(outdir+'scatter_'+name, format = 'png')
 
     #Plot gradients
-    fig = plt.figure(figsize=(11,11)) #set figsize
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
     #T-test
     partial_avdf = avdf[avdf['ML  distance']<6]
     statistic, pvalue = stats.ttest_ind(np.gradient(total_top_ra), np.gradient(partial_avdf[score+aln_type]), equal_var = False)
-    plt.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Topology\npval:'+str(np.round(pvalue,2)))
-    plt.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 3, label = 'Broad dataset')
-    plt.legend()
+    ax.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Topology\npval:'+str(np.round(pvalue,2)))
+    ax.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 3, label = 'Broad dataset')
+    ax.legend()
 
-    plt.xlim([0,9.1])
-    plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    plt.ylim(grad_ylims[score])
-    plt.xlabel('ML AA20 distance')
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_ylim(grad_ylims[score])
+    ax.set_xlabel('ML AA20 distance')
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score gradients')
+        ax.set_ylabel('lDDT score gradients')
     else:
-        plt.ylabel(score+' gradients')
+        ax.set_ylabel(score+' gradients')
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
     fig.savefig(outdir+'gradients_'+name, format = 'png')
 
     #Close plots to avoid to many being open at the same time
@@ -242,6 +253,8 @@ def anova_table(aov):
 
 def ttest_table(neg_sig, pos_sig, nonsig_df, features, score, aln_type):
     '''Perform t-tests for features
+    THIS IS A REALLY BAD IDEA!
+    THE FEATURES MAY NOT BE INDEPENDENT
     '''
 
     f = open(score+aln_type+'_ttests.tsv', 'w')
@@ -332,9 +345,9 @@ def three_sets_comparison(catdf, top_metrics, score, aln_type, cardinality, grad
     cat_dev = pd.concat([cat_dev, nonsig_df_merged])
     #Fraction of pairs retained
     #print('Fraction of pairs within topologies with at least 10 entries: '+str(len(cat_dev))+'/'+str(len(catdf)), len(cat_dev)/len(catdf))
-    #Perform t-tests
+    #Perform t-tests BAD IDEA - DO ANOVA INSTEAD
     features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln']
-    ttest_table(neg_sig_merged, pos_sig_merged, nonsig_df_merged, features, score, aln_type)
+
 
 #####MAIN#####
 args = parser.parse_args()
@@ -414,10 +427,8 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         top_metrics[score+aln_type+'_sizes'] = sizes
 
         #plt.scatter(top_metrics['lddt_scores_straln_sizes'], top_metrics['lddt_scores_straln_av_dev'], s= 5)
-        sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
-        plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
-
-        pdb.set_trace()
+        #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
+        #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, gradient_table)
 
