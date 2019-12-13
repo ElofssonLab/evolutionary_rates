@@ -143,22 +143,22 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     pdb.set_trace()
     fig.savefig(outdir+name, format = 'png')
 
-    #Scatterplot
-    fig = plt.figure(figsize=(11,11)) #set figsize
-    plt.scatter(partial_merged['MLAAdist'+cardinality+aln_type],partial_merged[score+aln_type],alpha = 0.2, color = 'b', s = 1)
-    plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Topology')
-    plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Broad dataset')
-
-    plt.legend()
-    plt.xlim([0,9.1])
-    plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    plt.ylim(ylims[score])
-    plt.xlabel('ML AA20 distance')
-    if score == 'lddt_scores':
-        plt.ylabel('lDDT score')
-    else:
-        plt.ylabel(score)
-    fig.savefig(outdir+'scatter_'+name, format = 'png')
+    # #Scatterplot
+    # fig = plt.figure(figsize=(11,11)) #set figsize
+    # plt.scatter(partial_merged['MLAAdist'+cardinality+aln_type],partial_merged[score+aln_type],alpha = 0.2, color = 'b', s = 1)
+    # plt.plot(total_top_js, total_top_ra, color = 'b', linewidth = 3, label = 'Topology')
+    # plt.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'r', linewidth = 3, label = 'Broad dataset')
+    #
+    # plt.legend()
+    # plt.xlim([0,9.1])
+    # plt.xticks([0,1,2,3,4,5,6,7,8,9])
+    # plt.ylim(ylims[score])
+    # plt.xlabel('ML AA20 distance')
+    # if score == 'lddt_scores':
+    #     plt.ylabel('lDDT score')
+    # else:
+    #     plt.ylabel(score)
+    # fig.savefig(outdir+'scatter_'+name, format = 'png')
 
     #Plot gradients
     fig = plt.figure(figsize=(11,11)) #set figsize
@@ -206,8 +206,8 @@ def anova(cat_dev):
     #Make violinplots
     features = ['RCO1', 'RCO2', 'aln_len_straln', 'l1_straln', 'l2_straln', 'percent_aligned_straln']
     for feature in features:
-        matplotlib.rcParams.update({'font.size': 22})
-        fig = plt.figure(figsize=(10,10)) #set figsize
+        matplotlib.rcParams.update({'font.size': 7})
+        fig = plt.figure(figsize=(9,9)) #set figsize
         sns.violinplot(data = cat_dev, x = 'Significance', y = feature)
         fig.savefig(outdir+feature+aln_type+score+'.png', format = 'png')
     #Calculate fraction retained
@@ -423,7 +423,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
 
 gradient_table.close()
 #Calculate ANOVA
-#anova(cat_dev)
+anova(cat_dev)
 
 
 #top_metrics.to_csv(outdir+'top_metrics.csv')

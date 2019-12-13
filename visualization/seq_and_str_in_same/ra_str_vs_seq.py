@@ -11,6 +11,7 @@ import numpy as np
 import seaborn as sns
 import sys
 import argparse
+from scipy import ndimage
 
 import pdb
 
@@ -77,7 +78,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     matplotlib.rcParams.update({'font.size': 7})
     suffix = calc+'_'+score+cardinality+aln_type+'_'+'.svg'
     xlabel = 'ML '+cardinality[1:]+' distance'
-    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
+    grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025], 'DIFFC':[-0.04, 0.04], 'TMscore':[-0.025, 0.025]}
 
 
     #Plot total average for cardinality
@@ -100,7 +101,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
     df = pd.concat([topdf, hgroupdf])
-    fig = plt.figure(figsize=(9/2.54,9/2.54)) #set figsize
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54)) #set figsize
 
 
     #Sort df by x-value
@@ -139,25 +140,27 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     z = np.polyfit(js, avs, deg = 3)
     p = np.poly1d(z)
     #Plot RA
-    plt.plot(js, avs, linewidth = 1, c = 'g', label = 'Running average')
+    ax.plot(js, avs, linewidth = 1, c = 'g', label = 'Running average')
     #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
-    plt.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = 'Dataset 1')
-    plt.scatter(top_mldists, top_scores, s = 0.1, c = 'b', alpha = 1.0, label = 'Dataset 3')
+    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = 'Dataset 1')
+    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'b', alpha = 1.0, label = 'Dataset 3')
     #plot stddev
-    plt.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
-    plt.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
+    ax.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
+    ax.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
     #Plot polynomial fit
-    plt.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'indigo')
-    plt.xlabel(xlabel)
+    ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'indigo')
+    ax.set_xlabel(xlabel)
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score')
+        ax.set_ylabel('lDDT score')
     else:
-        plt.ylabel(score)
-    plt.legend(markerscale=5)
-    plt.ylim(ylim)
-    plt.xlim([0,9.1])
-    plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    #pdb.set_trace()
+        ax.set_ylabel(score)
+    ax.legend(markerscale=5)
+    ax.set_ylim(ylim)
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
     fig.savefig(outdir+'running_'+suffix, format = 'svg')
     plt.close()
 
@@ -166,59 +169,76 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #ridge_plot(spread_df)
 
     #Plot Percent within accuracy and std
-    fig = plt.figure(figsize=(9/2.54,4.5/2.54))
-    plt.plot(js,np.round(np.array(perc_within_std)*100,2), linewidth = 1, c= 'g',  label = 'Within 1 Standard Deviation')
-    plt.plot(js,np.round(np.array(perc_within_acc)*100,2), linewidth = 1, c= 'b', label = 'Within 0.05 lDDT')
-    plt.plot(js,[68.27]*len(js),'--', linewidth = 1, c= 'lightseagreen', label = 'Normal Distribution')
-    plt.ylabel('%')
-    plt.legend()
-    plt.ylim([20,100])
-    plt.yticks([20,30,40,50,60,70,80,90,100])
-    plt.xlim([0,9.1])
-    plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    plt.xlabel(xlabel)
+    fig, ax = plt.subplots(figsize=(9/2.54,4.5/2.54))
+    ax.plot(js,np.round(np.array(perc_within_std)*100,2), linewidth = 1, c= 'g',  label = 'Within 1 Std')
+    ax.plot(js,np.round(np.array(perc_within_acc)*100,2), linewidth = 1, c= 'b', label = 'Within 0.05 lDDT')
+    ax.plot(js,[68.27]*len(js),'--', linewidth = 1, c= 'lightseagreen')
+    ax.set_ylabel('%')
+    ax.legend()
+    ax.set_ylim([20,100])
+    ax.set_yticks([20,30,40,50,60,70,80,90,100])
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlabel(xlabel)
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
     fig.savefig(outdir+'within_dev_'+suffix, format = 'svg')
     plt.close()
 
 
     #Plot std against sequence distnace
-    fig = plt.figure(figsize=(9/2.54,4.5/2.54))
-    plt.plot(js,stds, linewidth = 1, c= 'g', label = 'Standard Deviation')
-    plt.plot(js,[0.05]*len(js),'--', linewidth = 1, c= 'b')
+    fig, ax = plt.subplots(figsize=(9/2.54,4.5/2.54))
+    ax.plot(js,stds, linewidth = 1, c= 'g', label = 'Standard Deviation')
+    ax.plot(js,[0.05]*len(js),'--', linewidth = 1, c= 'b')
     if score == 'lddt_scores':
-        plt.ylabel('lDDT score')
+        ax.set_ylabel('lDDT score')
     else:
-        plt.ylabel(score)
-    plt.legend()
-    plt.ylim([0,0.16])
-    plt.yticks(np.arange(0,0.17,0.01))
-    plt.xlim([0,9.1])
-    plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    plt.xlabel(xlabel)
+        ax.set_ylabel(score)
+    ax.legend()
+    ax.set_ylim([0,0.16])
+    ax.set_yticks(np.arange(0,0.17,0.02))
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlabel(xlabel)
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
     fig.savefig(outdir+'seqdist_std'+suffix, format = 'svg')
     plt.close()
 
     #Plot gradients
-    fig = plt.figure(figsize=(11/2.54,9/2.54)) #set figsize
-    plt.scatter(js, gradients,s=20)
-    plt.plot(js, gradients, linewidth = 1)
-    plt.plot(js,np.gradient(p(js)), '3 dg polynomial fit',linewidth = 1, c= 'indigo') #Plot gradients of polyline
-    plt.ylabel('gradient')
+    fig, ax = plt.subplots(figsize=(9/2.54,4.5/2.54))
+    ax.scatter(js, gradients,s=2)
+    ax.plot(js, gradients, linewidth = 1)
+    smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
+    ax.plot(js, smoothed_grads, label = '1D Gaussian KDE',linewidth = 1, c= 'indigo') #Plot gradients of polyline
+    ax.set_ylabel('gradient')
     #plt.ylim(grad_ylims[score])
-    plt.xlim([0,9.1])
-    plt.xticks([0,1,2,3,4,5,6,7,8,9])
-    if score == 'lddt_scores':
-        plt.ylim([-0.025, 0.025])
-    plt.xlabel(xlabel)
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_ylim(grad_ylims[score])
+    ax.set_xlabel(xlabel)
+    ax.legend()
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
     fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
+    plt.close()
 
     #Plot Point distribution
-    fig = plt.figure(figsize=(9/2.54,9/2.54)) #set figsize
-    plt.plot(js, perc_points, linewidth = 4)
-    plt.xlabel(xlabel)
-    plt.ylabel('% of points')
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54)) #set figsize
+    ax.plot(js, perc_points, linewidth = 2)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel('% of points')
     #plt.xlim([2,10])
     #plt.xticks([2,3,4,5,6,7,8,9,10])
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
     fig.savefig(outdir+'perc_points_running_'+suffix, format = 'svg')
 
     av_df['ML '+cardinality[1:]+' distance'] = js
