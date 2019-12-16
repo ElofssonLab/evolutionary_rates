@@ -458,11 +458,13 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
                 results = ttest_features(df, catdf_s, score, aln_type)
                 for key in results: #each key is a feature
                     stat_results[key][len(all_avs)-1] = results[key] #statisic, pvalue, z
-            pdb.set_trace()
+
 
         if score == 'lddt_scores':
             for key in features:
-                top_metrics[key+'_pval'] = stat_results[key]
+                top_metrics[key+'_tstat'] = stat_results[key][:,0]
+                top_metrics[key+'_pval'] = stat_results[key][:,1]
+                top_metrics[key+'_z'] = stat_results[key][:,2]
         top_metrics[score+aln_type+'_ra_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
