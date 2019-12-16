@@ -289,7 +289,7 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     total = len(pos_sig)+ len(nonsig_df) + len(neg_sig)
     x = np.arange(3)
     w = 1/4 #width of bar
-    titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% aligned'}
+    titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned'}
     for key in features:
         #Pos
         pos = pos_sig[pos_sig[key+'_pval']<0.05/total]
@@ -340,6 +340,14 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
         fig.savefig(results_dir+key+'_'+score+aln_type+'.png', format = 'png')
         plt.close()
 
+    #Plot size distributions
+    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+    sns.distplot(pos_sig[score+aln_type+'_sizes'], label = 'Pos')
+    sns.distplot(nonsig_df[score+aln_type+'_sizes'], label = 'Non')
+    sns.distplot(neg_sig[score+aln_type+'_sizes'], label = 'Neg')
+    plt.legend()
+    plt.xscale("log")
+    plt.show()
     return None
 
 
@@ -385,6 +393,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     except:
         print('Dir '+outdir+score+aln_type+'/'+' exists')
 
+    pdb.set_trace()
     percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type)
 
 
@@ -450,7 +459,6 @@ topologies = topologies[np.where(vals>9)[0]]
 top_metrics = pd.DataFrame()
 top_metrics['Topology'] = topologies
 cardinality = '' #AA20
-
 
 for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
     for aln_type in ['_straln', '_seqaln']:
