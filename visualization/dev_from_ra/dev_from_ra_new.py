@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
+import os
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
@@ -97,7 +97,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
 
     return np.average(avdevs), pvalue, js, avs
 
-def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality, title):
+def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality, title, results_dir):
     '''RA plots of partial dfs and the total RA
     '''
     topologies = [*partial_df['Topology']]
@@ -152,7 +152,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
-    fig.savefig(outdir+name, format = 'png')
+    fig.savefig(results_dir+name, format = 'png')
 
     # #Scatterplot
     # fig = plt.figure(figsize=(11,11)) #set figsize
@@ -169,17 +169,16 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     #     plt.ylabel('lDDT score')
     # else:
     #     plt.ylabel(score)
-    # fig.savefig(outdir+'scatter_'+name, format = 'png')
+    # fig.savefig(results_dir+'scatter_'+name, format = 'png')
 
     #Plot gradients
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     #T-test
     partial_avdf = avdf[avdf['ML  distance']<6]
     statistic, pvalue = stats.ttest_ind(np.gradient(total_top_ra), np.gradient(partial_avdf[score+aln_type]), equal_var = False)
-    ax.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 3, label = 'Topology\npval:'+str(np.round(pvalue,2)))
-    ax.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 3, label = 'Broad dataset')
+    ax.plot(total_top_js, np.gradient(total_top_ra), color = 'b', linewidth = 1.5, label = 'Topology\npval:'+str(np.round(pvalue,2)))
+    ax.plot(avdf['ML  distance'], np.gradient(avdf[score+aln_type]), color = 'r', linewidth = 1.5, label = 'Broad dataset')
     ax.legend()
-
     ax.set_xlim([0,9.1])
     ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
     ax.set_ylim(grad_ylims[score])
@@ -191,7 +190,8 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    fig.savefig(outdir+'gradients_'+name, format = 'png')
+    fig.tight_layout()
+    fig.savefig(results_dir+'gradients_'+name, format = 'png')
 
     #Close plots to avoid to many being open at the same time
     plt.close()
@@ -211,7 +211,7 @@ def class_percentages(df):
 
     return percentages
 
-def anova(cat_dev):
+def anova(cat_dev, results_dir):
     '''Perform anova
     '''
 
@@ -223,7 +223,7 @@ def anova(cat_dev):
         matplotlib.rcParams.update({'font.size': 7})
         fig = plt.figure(figsize=(9/2.54,9/2.54)) #set figsize
         sns.violinplot(data = cat_dev, x = 'Significance', y = feature)
-        fig.savefig(outdir+feature+aln_type+score+'.png', format = 'png')
+        fig.savefig(results_dir+feature+aln_type+score+'.png', format = 'png')
     #Calculate fraction retained
     eta_sq = []
     omega_sq = []
@@ -281,43 +281,69 @@ def ttest_features(df, catdf, score, aln_type):
 
     return results
 
-def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features):
+def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_type):
     '''Calculate % sig in each set for different features
     Divide into pos, neg and nondeviating
     '''
-
+    matplotlib.rcParams.update({'font.size': 7})
     total = len(pos_sig)+ len(nonsig_df) + len(neg_sig)
-    x = [0,1,2]
+    x = np.arange(3)
+    w = 1/4 #width of bar
+    titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% aligned'}
     for key in features:
-        pos = len(pos_sig[pos_sig[key+'_pval']<0.05/total])
-        neg = len(neg_sig[neg_sig[key+'_pval']<0.05/total])
-        non = len(nonsig_df[nonsig_df[key+'_pval']<0.05/total])
+        #Pos
+        pos = pos_sig[pos_sig[key+'_pval']<0.05/total]
+        pos_pos = len(pos[pos[key+'_tstat']>0])
+        pos_neg = len(pos[pos[key+'_tstat']<0])
+        pos_non = len(pos_sig)-(pos_pos+pos_neg)
+        #Neg
+        neg = neg_sig[neg_sig[key+'_pval']<0.05/total]
+        neg_pos = len(neg[neg[key+'_tstat']>0])
+        neg_neg = len(neg[neg[key+'_tstat']<0])
+        neg_non = len(neg_sig)-(neg_pos+neg_neg)
+        #Non
+        non = nonsig_df[nonsig_df[key+'_pval']<0.05/total]
+        non_pos = len(non[non[key+'_tstat']>0])
+        non_neg = len(non[non[key+'_tstat']<0])
+        non_non = len(nonsig_df)-(non_pos+non_neg)
         #Plot
-        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-        ax.bar(x, [pos, neg, non], label='Men')
-        ax.set_xticks(x)
-        ax.set_xticklabels(['Pos', 'Neg', 'Non'])
-        ax.set_xlabel(key)
-        ax.set_ylabel('Count')
-        ax.set_ylim([0,400])
-        fig.tight_layout()
-        fig.savefig(outdir+feature+'_'+score+aln_type+'_count.png', format = 'svg')
-        plt.close()
+        # fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+        # ax.bar(x, [pos_pos, non_pos, neg_pos],w, label='Pos '+key)
+        # ax.bar(x+w, [pos_non, non_non, neg_non],w, label='Non '+key)
+        # ax.bar(x+2*w, [pos_neg, non_neg, neg_neg],w, label='Neg '+key)
+        # ax.set_xticks(x+w)
+        # ax.set_xticklabels(['Pos', 'Non', 'Neg'])
+        # ax.set_xlabel(key)
+        # ax.set_ylabel('Count')
+        # ax.set_ylim([0,400])
+        # plt.legend()
+        # fig.tight_layout()
+        # fig.savefig(results_dir+key+'_'+score+aln_type+'_count.png', format = 'png')
+        # plt.close()
+
 
         fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-        ax.bar(x, [100*pos/len(pos_sig), 100*neg/len(neg_sig), 100*non/len(nonsig_df)], label='Men')
-        ax.set_xticks(x)
-        ax.set_xticklabels(['Pos', 'Neg', 'Non'])
-        ax.set_xlabel(key)
-        ax.set_ylabel('%')
+        ax.bar(x, [100*pos_pos/len(pos_sig), 100*non_pos/len(nonsig_df), 100*neg_pos/len(neg_sig)],w, label='Pos')
+        ax.bar(x+w, [100*pos_non/len(pos_sig), 100*non_non/len(nonsig_df), 100*neg_non/len(neg_sig)],w, label='Non')
+        ax.bar(x+2*w, [100*pos_neg/len(pos_sig), 100*non_neg/len(nonsig_df), 100*neg_neg/len(neg_sig)],w, label='Neg')
+        ax.set_title(titles[key])
+        ax.set_xticks(x+w)
+        ax.set_xticklabels(['Pos ', 'Non', 'Neg'])
+        ax.set_xlabel('Running average set')
+        ax.set_ylabel('% in each set')
         ax.set_ylim([0,100])
+        # Hide the right and top spines
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
         fig.tight_layout()
-        fig.savefig(outdir+feature+'_'+score+aln_type+'.png', format = 'svg')
+        plt.legend()
+        fig.savefig(results_dir+key+'_'+score+aln_type+'.png', format = 'png')
+        plt.close()
 
     return None
 
 
-def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features):
+def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, outdir):
     '''Compares positively, negatively and non-deviating groups in their
     deviation from the total running average.
     '''
@@ -354,17 +380,22 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     nonsig_df['Significance'] = 'Non-significant'
 
     #Calculate percentages of sig for each feature in each set
-    percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features)
+    try:
+        os.mkdir(outdir+score+aln_type)
+    except:
+        print('Dir '+outdir+score+aln_type+'/'+' exists')
+
+    percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type)
 
 
     #Plot all RAs per top group
     top_metrics_merged = pd.merge(top_metrics, catdf_s, left_on='Topology', right_on='group', how='left')
-    plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10')
+    plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', outdir+'/'+score+aln_type+'/')
 
     #Plot the RAs of the pos and neg sig groups
-    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Postively significant')
-    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Negatively significant')
-    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Non-significant')
+    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Postively significant', outdir+'/'+score+aln_type+'/')
+    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Negatively significant', outdir+'/'+score+aln_type+'/')
+    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Non-significant', outdir+'/'+score+aln_type+'/')
 
     #Concat
     cat_dev = pd.concat([pos_sig_merged, neg_sig_merged])
@@ -477,11 +508,11 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
-        three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features)
+        three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, outdir)
 
 
 #Calculate ANOVA
-anova(cat_dev)
+#anova(cat_dev)
 
 
 #top_metrics.to_csv(outdir+'top_metrics.csv')

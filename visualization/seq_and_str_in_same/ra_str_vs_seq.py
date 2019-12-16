@@ -142,8 +142,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #Plot RA
     ax.plot(js, avs, linewidth = 1, c = 'g', label = 'Running average')
     #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
-    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = 'Dataset 1')
-    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'b', alpha = 1.0, label = 'Dataset 3')
+    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = '95% Dataset')
+    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'b', alpha = 1.0, label = 'Topology Dataset')
     #plot stddev
     ax.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
     ax.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
@@ -162,6 +162,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.savefig(outdir+'running_'+suffix, format = 'svg')
+    fig.savefig(outdir+'running_'+suffix+'.png', format = 'png')
     plt.close()
 
     #Plot spread within each interval in ridgelpot
@@ -173,7 +174,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.plot(js,np.round(np.array(perc_within_std)*100,2), linewidth = 1, c= 'g',  label = 'Within 1 Std')
     ax.plot(js,np.round(np.array(perc_within_acc)*100,2), linewidth = 1, c= 'b', label = 'Within 0.05 lDDT')
     ax.plot(js,[68.27]*len(js),'--', linewidth = 1, c= 'lightseagreen')
-    ax.set_ylabel('%')
+    ax.set_ylabel('% of Pairs')
     ax.legend()
     ax.set_ylim([20,100])
     ax.set_yticks([20,30,40,50,60,70,80,90,100])
@@ -185,6 +186,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
     fig.savefig(outdir+'within_dev_'+suffix, format = 'svg')
+    fig.savefig(outdir+'within_dev_'+suffix+'.png', format = 'png')
     plt.close()
 
 
@@ -207,6 +209,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
     fig.savefig(outdir+'seqdist_std'+suffix, format = 'svg')
+    fig.savefig(outdir+'seqdist_std'+suffix+'.png', format = 'png')
     plt.close()
 
     #Plot gradients
@@ -227,6 +230,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
     fig.savefig(outdir+'gradient_running_'+suffix, format = 'svg')
+    fig.savefig(outdir+'gradient_running_'+suffix+'.png', format = 'png')
     plt.close()
 
     #Plot Point distribution
@@ -240,6 +244,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.savefig(outdir+'perc_points_running_'+suffix, format = 'svg')
+    fig.savefig(outdir+'perc_points_running_'+suffix+'.png', format = 'png')
 
     av_df['ML '+cardinality[1:]+' distance'] = js
     av_df[score+aln_type] = avs
