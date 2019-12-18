@@ -358,6 +358,8 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     fig.savefig(results_dir+'sizes_'+score+aln_type+'.png', format = 'png')
     plt.close()
     plt.close()
+
+    #Look at H, L, S
     #plt.show()
     return None
 
