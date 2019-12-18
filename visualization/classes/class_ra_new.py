@@ -11,6 +11,7 @@ import seaborn as sns
 import sys
 import argparse
 from scipy import stats
+from mpl_toolkits.mplot3d import Axes3D
 import pdb
 
 #Arguments for argparse module:
@@ -88,33 +89,43 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
 def make_plots(results, cardinality, outdir, suffix):
     '''Make the plots'''
-    matplotlib.rcParams.update({'font.size': 22})
+    matplotlib.rcParams.update({'font.size': 7})
     classes = {1.:'Mainly Alpha', 2.: 'Mainly Beta', 3.: 'Alpha Beta', 4.: 'Few SS'}
     colors = {1.: 'royalblue', 2.: 'k', 3.: 'green', 4.: 'violet'}
     cmaps = {1.: 'Blues', 2.: 'Greys', 3.: 'Greens', 4.: 'Purples'}
     xlabel = 'ML '+cardinality[1:]+' distance'
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
-    plt.rc('axes', titlesize=10) #set title and label text sizes
-    fig = plt.figure(figsize=(10,10)) #set figsize
 
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
+    ax = Axes3D(fig)
     for i in [1.,2.,3.,4.]:
         js, avs, perc_points, mldists, scores, gradients = results[i]
         #Plot RA
-        plt.plot(js, avs, linewidth = 2, c = colors[i], label = classes[i])
-        sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = cmaps[i])
+        #ax.plot(js, avs,zs=i, linewidth = 2, c = colors[i], label = classes[i])
+        ax.scatter3D(mldists, [i]*len(mldists),scores, c = colors[i], s = 0.05)
+
+        #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = cmaps[i])
         #plt.scatter(mldists, scores, s = 1, c = colors[i], alpha = 0.5, label = classes[i])
-        plt.xlabel(xlabel)
-        if score == 'lddt_scores':
-            plt.ylabel('lDDT score')
-        else:
-            plt.ylabel(score)
-        leg = plt.legend()
-        for line in leg.get_lines():
-            line.set_linewidth(10)
-        plt.ylim(ylim)
-        plt.xlim([0,9.1])
-        plt.xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlabel(xlabel)
+    if score == 'lddt_scores':
+        ax.set_zlabel('lDDT score')
+    else:
+        plt.ylabel(score)
+    leg = plt.legend()
+    for line in leg.get_lines():
+        line.set_linewidth(3)
+    ax.set_zlim(ylim)
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_yticks([1.,2.,3.,4.])
+    ax.set_yticklabels(['Mainly Alpha','Mainly Beta', 'Alpha Beta', 'Few SS'])
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
+    plt.show()
     fig.savefig(outdir+'class_running_'+suffix, format = 'svg')
+    fig.savefig(outdir+'class_running_'+suffix+'.png', format = 'png')
     plt.close()
 
     return None

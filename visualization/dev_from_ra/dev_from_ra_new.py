@@ -97,7 +97,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
 
     return np.average(avdevs), pvalue, js, avs
 
-def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality, title, results_dir):
+def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality, title, results_dir, color):
     '''RA plots of partial dfs and the total RA
     '''
     topologies = [*partial_df['Topology']]
@@ -111,7 +111,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     #Plot RA per topology
     for i in range(len(partial_df)):
         top = topologies[i]
-        ax.plot(mldists[i],scores[i], alpha = 0.1, color = 'b', linewidth =1)
+        ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
 
     #Plot total RA for topologies
     step = 0.1
@@ -133,7 +133,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
 
         total_top_ra.append(np.average(cut_scores))
         total_top_js.append(np.round(j-step/2,2))
-    ax.plot(total_top_js, total_top_ra, color = 'b', linewidth = 1.5, label = 'Topology', alpha = 0.7)
+    ax.plot(total_top_js, total_top_ra, color = color, linewidth = 1.5, label = 'Topology', alpha = 0.7)
     ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 1.5, label = 'Broad dataset')
     #plot stddev
     ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
@@ -281,7 +281,7 @@ def ttest_features(df, catdf, score, aln_type):
 
     return results
 
-def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_type):
+def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_type, colors):
     '''Calculate % sig in each set for different features
     Divide into pos, neg and nondeviating
     '''
@@ -323,13 +323,13 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
 
 
         fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-        ax.bar(x, [100*pos_pos/len(pos_sig), 100*non_pos/len(nonsig_df), 100*neg_pos/len(neg_sig)],w, label='Pos')
-        ax.bar(x+w, [100*pos_non/len(pos_sig), 100*non_non/len(nonsig_df), 100*neg_non/len(neg_sig)],w, label='Non')
-        ax.bar(x+2*w, [100*pos_neg/len(pos_sig), 100*non_neg/len(nonsig_df), 100*neg_neg/len(neg_sig)],w, label='Neg')
+        ax.bar(x, [100*pos_pos/len(pos_sig), 100*pos_non/len(pos_sig), 100*pos_neg/len(pos_sig)],w, label='Set A', color = colors[0])
+        ax.bar(x+w, [100*non_pos/len(nonsig_df), 100*non_non/len(nonsig_df), 100*non_neg/len(nonsig_df)],w, label='Set B', color = colors[2])
+        ax.bar(x+2*w, [100*neg_pos/len(neg_sig), 100*neg_non/len(neg_sig), 100*neg_neg/len(neg_sig)],w, label='Set C', color = colors[1])
         ax.set_title(titles[key])
         ax.set_xticks(x+w)
-        ax.set_xticklabels(['Pos ', 'Non', 'Neg'])
-        ax.set_xlabel('Running average set')
+        ax.set_xticklabels(['Pos', 'Non', 'Neg'])
+        ax.set_xlabel('Feature significance')
         ax.set_ylabel('% in each set')
         ax.set_ylim([0,100])
         # Hide the right and top spines
@@ -342,12 +342,23 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
 
     #Plot size distributions
     fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-    sns.distplot(pos_sig[score+aln_type+'_sizes'], label = 'Pos')
-    sns.distplot(nonsig_df[score+aln_type+'_sizes'], label = 'Non')
-    sns.distplot(neg_sig[score+aln_type+'_sizes'], label = 'Neg')
+    ax.hist(pos_sig[score+aln_type+'_sizes'],  label='Set A', density = True, color = colors[0], bins = 100, alpha=0.4 )
+    ax.hist(nonsig_df[score+aln_type+'_sizes'],  label='Set B', density = True, color = colors[2], bins = 100, alpha=0.4)
+    ax.hist(neg_sig[score+aln_type+'_sizes'], label='Set C', density = True, color = colors[1], bins = 100, alpha=0.4)
     plt.legend()
     plt.xscale("log")
-    plt.show()
+    ax.set_ylim([0,0.02])
+    ax.set_yticks(np.arange(0,0.025,0.005))
+    ax.set_xlabel('log Group size')
+    ax.set_title('Group size')
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(results_dir+'sizes_'+score+aln_type+'.png', format = 'png')
+    plt.close()
+    plt.close()
+    #plt.show()
     return None
 
 
@@ -393,18 +404,19 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     except:
         print('Dir '+outdir+score+aln_type+'/'+' exists')
 
-    pdb.set_trace()
-    percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type)
+    colors = ['darkblue','darkorchid','cornflowerblue']
+    percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type, colors)
 
 
     #Plot all RAs per top group
     top_metrics_merged = pd.merge(top_metrics, catdf_s, left_on='Topology', right_on='group', how='left')
-    plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', outdir+'/'+score+aln_type+'/')
+    plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', outdir+'/'+score+aln_type+'/', 'b')
 
     #Plot the RAs of the pos and neg sig groups
-    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Postively significant', outdir+'/'+score+aln_type+'/')
-    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Negatively significant', outdir+'/'+score+aln_type+'/')
-    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Non-significant', outdir+'/'+score+aln_type+'/')
+    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Set A', outdir+'/'+score+aln_type+'/', colors[0])
+    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Set B', outdir+'/'+score+aln_type+'/', colors[2])
+    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Set C', outdir+'/'+score+aln_type+'/', colors[1])
+
 
     #Concat
     cat_dev = pd.concat([pos_sig_merged, neg_sig_merged])

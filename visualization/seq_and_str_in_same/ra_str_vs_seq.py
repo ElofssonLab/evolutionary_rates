@@ -10,6 +10,7 @@ from collections import Counter
 import numpy as np
 import seaborn as sns
 import sys
+import os
 import argparse
 from scipy import ndimage
 
@@ -65,7 +66,6 @@ def ridge_plot(df):
     g.set_titles("")
     g.set(yticks=[])
     g.despine(bottom=True, left=True)
-    plt.show()
     pdb.set_trace()
 
     return None
@@ -123,7 +123,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
         std = np.std(cut_scores)
         stds.append(std)
         js.append(np.round(j-step/2,2))
-        perc_points.append(len(below_df)/len(df)*100)
+        perc_points.append(len(below_df)/len(df))
         #Get % points within 0.05
         outside = np.where(cut_scores<av-0.05)[0].size+np.where(cut_scores>av+0.05)[0].size
         perc_within_acc.append((cut_scores.size-outside)/cut_scores.size)
@@ -140,7 +140,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     z = np.polyfit(js, avs, deg = 3)
     p = np.poly1d(z)
     #Plot RA
-    ax.plot(js, avs, linewidth = 1, c = 'g', label = 'Running average')
+    ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
     #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
     ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = '95% Dataset')
     ax.scatter(top_mldists, top_scores, s = 0.1, c = 'b', alpha = 1.0, label = 'Topology Dataset')
@@ -148,14 +148,14 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
     ax.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
     #Plot polynomial fit
-    ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'indigo')
-    ax.set_xlabel(xlabel)
+    #ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'indigo')
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score')
     else:
         ax.set_ylabel(score)
     ax.legend(markerscale=5)
     ax.set_ylim(ylim)
+    ax.set_xlabel(xlabel)
     ax.set_xlim([0,9.1])
     ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
     # Hide the right and top spines
@@ -169,8 +169,52 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #spread_df = pd.DataFrame(list(zip(js_per_interval, scores_per_interval)), columns = ['ML distance', 'lDDT score'])
     #ridge_plot(spread_df)
 
+    #Plot polynomial fit
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightgreen', alpha = 0.5, label = '95% Dataset')
+    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'forestgreen', alpha = 1.0, label = 'Topology Dataset')
+    ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
+    ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'b')
+    ax.legend(markerscale=5)
+    ax.set_ylim(ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.savefig(outdir+'polynomial_'+suffix, format = 'svg')
+    fig.savefig(outdir+'polynomial_'+suffix+'.png', format = 'png')
+    plt.close()
+
+    #Plot histograms of x and y vals
+    #str score
+    fig, ax = plt.subplots(figsize=(3/2.54,9/2.54))
+    ax.hist(topdf[score+aln_type], color = 'b', orientation = 'horizontal', density = True, alpha = 0.8, bins = 20)
+    ax.hist(hgroupdf[score+aln_type], color = 'lightseagreen', orientation = 'horizontal', density = True, alpha = 0.5, bins = 20)
+    ax.set_xlabel(xlabel)
+    ax.set_ylim(ylim)
+    ax.invert_xaxis()
+    ax.axis('off')
+    #fig.tight_layout()
+    fig.savefig(outdir+'strhist_'+suffix, format = 'svg')
+    fig.savefig(outdir+'strhist_'+suffix+'.png', format = 'png')
+    plt.close()
+    #seqdist
+    fig, ax = plt.subplots(figsize=(9/2.54,3/2.54))
+    ax.hist(topdf['MLAAdist'+cardinality+aln_type], color = 'b', density = True, alpha = 0.8, bins = 20)
+    ax.hist(hgroupdf['MLAAdist'+cardinality+aln_type], color = 'lightseagreen', density = True, alpha = 0.5, bins = 20)
+    ax.set_xlabel(xlabel)
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.invert_yaxis()
+    ax.axis('off')
+    #fig.tight_layout()
+    fig.savefig(outdir+'seqhist_'+suffix, format = 'svg')
+    fig.savefig(outdir+'seqhist_'+suffix+'.png', format = 'png')
+    plt.close()
     #Plot Percent within accuracy and std
-    fig, ax = plt.subplots(figsize=(9/2.54,4.5/2.54))
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     ax.plot(js,np.round(np.array(perc_within_std)*100,2), linewidth = 1, c= 'g',  label = 'Within 1 Std')
     ax.plot(js,np.round(np.array(perc_within_acc)*100,2), linewidth = 1, c= 'b', label = 'Within 0.05 lDDT')
     ax.plot(js,[68.27]*len(js),'--', linewidth = 1, c= 'lightseagreen')
@@ -191,7 +235,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
 
     #Plot std against sequence distnace
-    fig, ax = plt.subplots(figsize=(9/2.54,4.5/2.54))
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     ax.plot(js,stds, linewidth = 1, c= 'g', label = 'Standard Deviation')
     ax.plot(js,[0.05]*len(js),'--', linewidth = 1, c= 'b')
     if score == 'lddt_scores':
@@ -212,8 +256,27 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     fig.savefig(outdir+'seqdist_std'+suffix+'.png', format = 'png')
     plt.close()
 
+    #Plot relative std (std/mean) against sequence distnace
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    ax.plot(js,np.array(stds)/np.array(avs), linewidth = 1, c= 'g', label = 'Relative Standard Deviation')
+    ax.plot(js,[0.05]*len(js),'--', linewidth = 1, c= 'b')
+    ax.set_ylabel('Std/Mean')
+    ax.legend()
+    ax.set_ylim([0,0.24])
+    ax.set_yticks(np.arange(0,0.25,0.02))
+    ax.set_xlim([0,9.1])
+    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlabel(xlabel)
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(outdir+'seqdist_rel_std'+suffix, format = 'svg')
+    fig.savefig(outdir+'seqdist_rel_std'+suffix+'.png', format = 'png')
+    plt.close()
+
     #Plot gradients
-    fig, ax = plt.subplots(figsize=(9/2.54,4.5/2.54))
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     ax.scatter(js, gradients,s=2)
     ax.plot(js, gradients, linewidth = 1)
     smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
@@ -287,6 +350,10 @@ cardinality = '_AA20'
 av_df = pd.DataFrame()
 for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD','DIFFSS', 'DIFF_ACC']:
     for aln_type in aln_types:
+        try:
+            os.mkdir(outdir+score+aln_type)
+        except:
+            print('Directory exists')
         ylim = ylims[score]
-        av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir, av_df)
+        av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir+score+aln_type+'/', av_df)
 av_df.to_csv(outdir+'av_df.csv')
