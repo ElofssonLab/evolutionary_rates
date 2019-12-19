@@ -280,17 +280,27 @@ def ttest_features(df, catdf, score, aln_type):
 
         results[feature] = [statistic, pvalue, z]
 
+    #Compare AA6 distributions on topology group level
+    for key in ['P', 'C', 'K', 'T', 'D', 'Y', '-']:
+        x = np.concatenate((np.array(df[key+'1'+aln_type]), np.array(df[key+'2'+aln_type]))) #the lengths for the sequence alignments represents the picked up consensus from hhsearch
+        y = np.concatenate((np.array(catdf[key+'1'+aln_type]), np.array(catdf[key+'2'+aln_type])))
+        statistic, pvalue = stats.ttest_ind(x,y, equal_var = False)
+        #Z-scores
+        z = (np.average(x)-np.average(y))/(np.std(x)/np.sqrt(len(df)))
+
+        results[key] = [statistic, pvalue, z]
     return results
 
-def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_type, colors):
+def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_type, perc_keys, colors):
     '''Calculate % sig in each set for different features
-    Divide into pos, neg and nondeviating
+    Divide into pos, neg and non-deviating
     '''
     matplotlib.rcParams.update({'font.size': 7})
     total = len(pos_sig)+ len(nonsig_df) + len(neg_sig)
     x = np.arange(3)
     w = 1/4 #width of bar
-    titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned'}
+    titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
+    'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'-'}
     for key in features:
         #Pos
         pos = pos_sig[pos_sig[key+'_pval']<0.05/total]
@@ -307,21 +317,6 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
         non_pos = len(non[non[key+'_tstat']>0])
         non_neg = len(non[non[key+'_tstat']<0])
         non_non = len(nonsig_df)-(non_pos+non_neg)
-        #Plot
-        # fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-        # ax.bar(x, [pos_pos, non_pos, neg_pos],w, label='Pos '+key)
-        # ax.bar(x+w, [pos_non, non_non, neg_non],w, label='Non '+key)
-        # ax.bar(x+2*w, [pos_neg, non_neg, neg_neg],w, label='Neg '+key)
-        # ax.set_xticks(x+w)
-        # ax.set_xticklabels(['Pos', 'Non', 'Neg'])
-        # ax.set_xlabel(key)
-        # ax.set_ylabel('Count')
-        # ax.set_ylim([0,400])
-        # plt.legend()
-        # fig.tight_layout()
-        # fig.savefig(results_dir+key+'_'+score+aln_type+'_count.png', format = 'png')
-        # plt.close()
-
 
         fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
         ax.bar(x, [100*pos_pos/len(pos_sig), 100*pos_non/len(pos_sig), 100*pos_neg/len(pos_sig)],w, label='Set A', color = colors[0])
@@ -351,6 +346,7 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     ax.set_ylim([0,0.02])
     ax.set_yticks(np.arange(0,0.025,0.005))
     ax.set_xlabel('log Group size')
+    ax.set_ylabel('Density')
     ax.set_title('Group size')
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
@@ -359,6 +355,9 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     fig.savefig(results_dir+'sizes_'+score+aln_type+'.png', format = 'png')
     plt.close()
     plt.close()
+
+    #Compare AA6 percentages
+
 
     #Look at H, L, S
 
@@ -413,7 +412,7 @@ def AA6_distribution(df, aln_type):
     for key in percentage_dict:
         df[key] = percentage_dict[key]
 
-    return df
+    return df, percentage_dict.keys()
 
 def percent_ss(df):
     '''Calculate % H,L and S in aligned structures
@@ -422,7 +421,7 @@ def percent_ss(df):
     return None
 
 
-def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, outdir):
+def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features,  perc_keys, outdir):
     '''Compares positively, negatively and non-deviating groups in their
     deviation from the total running average.
     '''
@@ -465,7 +464,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
         print('Dir '+outdir+score+aln_type+'/'+' exists')
 
     colors = ['darkblue','darkorchid','cornflowerblue']
-    percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type, colors)
+    percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type,  perc_keys, colors)
 
 
     #Plot all RAs per top group
@@ -537,14 +536,13 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         if score == 'lddt_scores':
             #Save statistical assessment - this only has to be done for 1 score (but both alntypes) - will be the same in groups
             stat_results = {}
-            features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type]
+            features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type,'P', 'C', 'K', 'T', 'D', 'Y', '-']
             for key in features:
                 stat_results[key] = np.zeros((555,3))
 
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
-        catdf_s = AA6_distribution(catdf_s, aln_type)
-        pdb.set_trace()
+        catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type)
         avs_from_line = [] #save avs from line and pvals
         pvals = []
         all_js = []
@@ -578,6 +576,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
                 top_metrics[key+'_tstat'] = stat_results[key][:,0]
                 top_metrics[key+'_pval'] = stat_results[key][:,1]
                 top_metrics[key+'_z'] = stat_results[key][:,2]
+        pdb.set_trace()
         top_metrics[score+aln_type+'_ra_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
@@ -590,7 +589,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
-        three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, outdir)
+        three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, perc_keys, outdir)
 
 
 #Calculate ANOVA
