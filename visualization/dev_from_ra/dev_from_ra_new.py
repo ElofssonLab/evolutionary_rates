@@ -110,9 +110,24 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     matplotlib.rcParams.update({'font.size': 7})
     #Plot RA per topology
+    #Percent within std
+    percent_within_std = pd.DataFrame(list(zip(np.arange(0.05,6,0.1), np.zeros(60),  np.zeros(60))),columns = ['seqdist', 'within','total'])
+    percent_within_std['seqdist'] = np.round(percent_within_std['seqdist'], 2)
     for i in range(len(partial_df)):
         top = topologies[i]
         ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
+        #Get percentage within 1 std
+        for j in range(len(mldists[i])):
+            sel = avdf[avdf['ML  distance']==mldists[i][j]]
+            s = sel[score+aln_type].values[0]
+            std = sel[score+aln_type+'_std'].values[0]
+            d = scores[i][j]
+            ind = percent_within_std[percent_within_std['seqdist']==mldists[i][j]].index[0]
+            percent_within_std['total'][ind]+=1 #Add count
+            if d > s-std and d <s+std: #If within std
+                percent_within_std['within'][ind]+=1 #Add count
+    pdb.set_trace()
+
 
     #Plot total RA for topologies
     step = 0.1
@@ -134,6 +149,8 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
 
         total_top_ra.append(np.average(cut_scores))
         total_top_js.append(np.round(j-step/2,2))
+
+    pdb.set_trace()
     ax.plot(total_top_js, total_top_ra, color = color, linewidth = 1.5, label = 'Topology', alpha = 0.7)
     ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 1.5, label = 'Broad dataset')
     #plot stddev
@@ -338,13 +355,14 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
 
     #Plot size distributions
     fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-    ax.hist(pos_sig[score+aln_type+'_sizes'],  label='Set A', density = True, color = colors[0], bins = 100, alpha=0.4 )
-    ax.hist(nonsig_df[score+aln_type+'_sizes'],  label='Set B', density = True, color = colors[2], bins = 100, alpha=0.4)
-    ax.hist(neg_sig[score+aln_type+'_sizes'], label='Set C', density = True, color = colors[1], bins = 100, alpha=0.4)
+    sns.distplot(pos_sig[score+aln_type+'_sizes'],  label='Set A', hist = False, color = colors[0])
+    sns.distplot(nonsig_df[score+aln_type+'_sizes'],  label='Set B', hist = False, color = colors[2])
+    sns.distplot(neg_sig[score+aln_type+'_sizes'], label='Set C', hist = False, color = colors[1])
     plt.legend()
     plt.xscale("log")
     ax.set_ylim([0,0.02])
     ax.set_yticks(np.arange(0,0.025,0.005))
+    ax.set_xticks([10,100,1000])
     ax.set_xlabel('log Group size')
     ax.set_ylabel('Density')
     ax.set_title('Group size')
@@ -354,9 +372,6 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     fig.tight_layout()
     fig.savefig(results_dir+'sizes_'+score+aln_type+'.png', format = 'png')
     plt.close()
-    plt.close()
-
-    #Compare AA6 percentages
 
 
     #Look at H, L, S
@@ -426,15 +441,22 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     deviation from the total running average.
     '''
 
-    #Plot deviation against average RCO in topology
-    # cmap = cm.get_cmap('Blues', 10)
-    # sorted = top_metrics.sort_values(by=score+aln_type+'_av_dev', ascending=False)
-    # sorted[score+aln_type+'_av_RCO'] = sorted[score+aln_type+'_av_RCO']/max(sorted[score+aln_type+'_av_RCO'])
-    # barlist=plt.bar(sorted['Topology'], sorted[score+aln_type+'_av_dev'])
-    # for i in range(0, len(barlist)):
-    #     barlist[i].set_color(cmap(sorted.iloc[i][score+aln_type+'_av_RCO']))
+    #Plot size against average deviation
+    matplotlib.rcParams.update({'font.size': 7})
+    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+    plt.scatter(top_metrics['lddt_scores_straln_sizes'],top_metrics['lddt_scores_straln_av_dev'],s=0.5)
+    ax.set_ylim([-0.2,0.2])
+    ax.set_xticks(np.arange(0,5000,2000))
+    ax.set_xlabel('Group size')
+    ax.set_ylabel('Deviation')
+    ax.set_title('Size and Deviation')
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(outdir+score+aln_type+'/'+'size_dev_'+score+aln_type+'.png', format = 'png')
+    plt.close()
 
-    #hue = score+aln_type+'_av_RCO'
     #Get significant
     sig_df = top_metrics[top_metrics[score+aln_type+'_ra_pval']<0.05/len(top_metrics)]
     #Get pos deviating>0
@@ -576,7 +598,6 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
                 top_metrics[key+'_tstat'] = stat_results[key][:,0]
                 top_metrics[key+'_pval'] = stat_results[key][:,1]
                 top_metrics[key+'_z'] = stat_results[key][:,2]
-        pdb.set_trace()
         top_metrics[score+aln_type+'_ra_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
