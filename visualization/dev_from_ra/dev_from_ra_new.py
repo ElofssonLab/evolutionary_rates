@@ -15,6 +15,7 @@ from scipy import stats
 import researchpy as rp
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
+import time
 '''
 When using statsmodels in scientific publication, please consider using the following citation:
 Seabold, Skipper, and Josef Perktold. “Statsmodels: Econometric and statistical modeling with python.”
@@ -388,23 +389,31 @@ def AA6_distribution(df, aln_type):
 
     #reset index
     df = df.reset_index()
+    t1 = time.time()
     for i in range(len(df)):
         row = df.iloc[i]
         l1 = len(row['AA6_1_straln'])
         l2 = len(row['AA6_2_straln'])
         s1 = Counter(row['AA6_1_straln'])
-        s2 = Counter(row['AA6_2_seqaln'])
+        s2 = Counter(row['AA6_2_straln'])
 
-        #Get s1 percentages
-        for key in s1:
-            percentage_dict[key+'1'+aln_type].append(s1[key]/l1)
-        #Get s2 percentages
-        for key in s2:
-            percentage_dict[key+'2'+aln_type].append(s2[key]/l2)
+        #Get s1 ad s2 percentages
+        for key in ['P', 'C', 'K', 'T', 'D', 'Y', '-']:
+            try:
+                percentage_dict[key+'1'+aln_type].append(s1[key]/l1)
+            except:
+                percentage_dict[key+'1'+aln_type].append(0)
+            try:
+                percentage_dict[key+'2'+aln_type].append(s2[key]/l2)
+            except:
+                percentage_dict[key+'2'+aln_type].append(0)
 
-        pdb.set_trace()
+    print('Calculating AA6',time.time()-t1,'s')
 
-    pdb.set_trace()
+    for key in percentage_dict:
+        df[key] = percentage_dict[key]
+
+    return df
 
 def percent_ss(df):
     '''Calculate % H,L and S in aligned structures
@@ -534,7 +543,8 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
 
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
-        AA6_distribution(catdf_s, aln_type)
+        catdf_s = AA6_distribution(catdf_s, aln_type)
+        pdb.set_trace()
         avs_from_line = [] #save avs from line and pvals
         pvals = []
         all_js = []
