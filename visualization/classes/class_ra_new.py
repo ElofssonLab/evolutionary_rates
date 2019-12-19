@@ -96,38 +96,59 @@ def make_plots(results, cardinality, outdir, suffix):
     xlabel = 'ML '+cardinality[1:]+' distance'
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
 
-    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
-    ax = Axes3D(fig)
+    for i in [1.,2.,3.,4.]:
+        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        js, avs, perc_points, mldists, scores, gradients = results[i]
+
+        #ax.scatter3D(mldists, [i]*len(mldists),scores, c = colors[i], s = 0.05)
+
+        sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = cmaps[i])
+        #Plot RA
+        ax.plot(js, avs, linewidth = 2, c = colors[i], label = 'Running average')
+        #plt.scatter(mldists, scores, s = 0.05, c = colors[i], alpha = 0.7)
+        plt.title(classes[i])
+        ax.set_xlabel(xlabel)
+        if score == 'lddt_scores':
+            ax.set_ylabel('lDDT score')
+        else:
+            plt.ylabel(score)
+        ax.set_ylim(ylim)
+        ax.set_xlim([0,9.1])
+        ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+        # Hide the right and top spines
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.legend(markerscale=7, fancybox=True, framealpha=0.5)
+        fig.tight_layout()
+        fig.savefig(outdir+'class_'+str(i)+'_running_'+suffix, format = 'svg')
+        fig.savefig(outdir+'class_'+str(i)+'_running_'+suffix+'.png', format = 'png')
+        plt.close()
+
+
+
+    #Plot all together
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     for i in [1.,2.,3.,4.]:
         js, avs, perc_points, mldists, scores, gradients = results[i]
         #Plot RA
-        #ax.plot(js, avs,zs=i, linewidth = 2, c = colors[i], label = classes[i])
-        ax.scatter3D(mldists, [i]*len(mldists),scores, c = colors[i], s = 0.05)
-
-        #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = cmaps[i])
-        #plt.scatter(mldists, scores, s = 1, c = colors[i], alpha = 0.5, label = classes[i])
+        ax.plot(js, avs, linewidth = 2, c = colors[i], label = classes[i])
     ax.set_xlabel(xlabel)
     if score == 'lddt_scores':
-        ax.set_zlabel('lDDT score')
+        ax.set_ylabel('lDDT score')
     else:
         plt.ylabel(score)
-    leg = plt.legend()
-    for line in leg.get_lines():
-        line.set_linewidth(3)
-    ax.set_zlim(ylim)
+    plt.title('Broad Dataset')
+    ax.set_ylim(ylim)
     ax.set_xlim([0,9.1])
     ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
-    ax.set_yticks([1.,2.,3.,4.])
-    ax.set_yticklabels(['Mainly Alpha','Mainly Beta', 'Alpha Beta', 'Few SS'])
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
+    ax.legend(markerscale=7, fancybox=True, framealpha=0.5)
     fig.tight_layout()
-    plt.show()
-    fig.savefig(outdir+'class_running_'+suffix, format = 'svg')
-    fig.savefig(outdir+'class_running_'+suffix+'.png', format = 'png')
+    fig.savefig(outdir+'all_classes_running_'+suffix, format = 'svg')
+    fig.savefig(outdir+'all_classes_running_'+suffix+'.png', format = 'png')
     plt.close()
-
     return None
 
 def compare_classes(avdf, outfile):

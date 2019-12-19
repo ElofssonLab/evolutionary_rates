@@ -153,7 +153,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
         ax.set_ylabel('lDDT score')
     else:
         ax.set_ylabel(score)
-    ax.legend(markerscale=5)
+    ax.legend(markerscale=5,fancybox=True, framealpha=0.5)
     ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
     ax.set_xlim([0,9.1])
@@ -171,11 +171,11 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     #Plot polynomial fit
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightgreen', alpha = 0.5, label = '95% Dataset')
+    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightgreen', alpha = 0.8, label = '95% Dataset')
     ax.scatter(top_mldists, top_scores, s = 0.1, c = 'forestgreen', alpha = 1.0, label = 'Topology Dataset')
     ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
     ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'b')
-    ax.legend(markerscale=5)
+    ax.legend(markerscale=7, fancybox=True, framealpha=0.5)
     ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
     ax.set_xlim([0,9.1])
@@ -190,8 +190,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #Plot histograms of x and y vals
     #str score
     fig, ax = plt.subplots(figsize=(3/2.54,9/2.54))
-    ax.hist(topdf[score+aln_type], color = 'b', orientation = 'horizontal', density = True, alpha = 0.8, bins = 20)
-    ax.hist(hgroupdf[score+aln_type], color = 'lightseagreen', orientation = 'horizontal', density = True, alpha = 0.5, bins = 20)
+    ax.hist(topdf[score+aln_type], color = 'b', orientation = 'horizontal', density = True, alpha = 0.8, bins = 30)
+    ax.hist(hgroupdf[score+aln_type], color = 'lightseagreen', orientation = 'horizontal', density = True, alpha = 0.5, bins = 30)
     ax.set_xlabel(xlabel)
     ax.set_ylim(ylim)
     ax.invert_xaxis()
@@ -202,8 +202,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.close()
     #seqdist
     fig, ax = plt.subplots(figsize=(9/2.54,3/2.54))
-    ax.hist(topdf['MLAAdist'+cardinality+aln_type], color = 'b', density = True, alpha = 0.8, bins = 20)
-    ax.hist(hgroupdf['MLAAdist'+cardinality+aln_type], color = 'lightseagreen', density = True, alpha = 0.5, bins = 20)
+    ax.hist(topdf['MLAAdist'+cardinality+aln_type], color = 'b', density = True, alpha = 0.8, bins = 30)
+    ax.hist(hgroupdf['MLAAdist'+cardinality+aln_type], color = 'lightseagreen', density = True, alpha = 0.5, bins = 30)
     ax.set_xlabel(xlabel)
     ax.set_xlim([0,9.1])
     ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
