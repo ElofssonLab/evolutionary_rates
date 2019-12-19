@@ -89,7 +89,7 @@ def encode3(seq):
     return aa3seq
 
 def encode6(seq):
-    '''Encode aa sequence to K/D/Y/T/C
+    '''Encode aa sequence to K/D/Y/T/C/P
     '''
     AA6 = {
     'K':'K',

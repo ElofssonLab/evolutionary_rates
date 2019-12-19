@@ -360,7 +360,56 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     plt.close()
 
     #Look at H, L, S
+
     #plt.show()
+    return None
+def AA6_distribution(df, aln_type):
+    '''Calculate AA6 distribution in sequence (gaps have their own state as well)
+    Groupings: K=[KR],D=[DE],Y=[YWFH],T=[TSQN],C=[CVMLIA], P=[PG], "-"="-"
+    '''
+    #Save percentages:
+    percentage_dict = {
+    'K1'+aln_type:[],
+    'K2'+aln_type:[],
+    'D1'+aln_type:[],
+    'D2'+aln_type:[],
+    'Y1'+aln_type:[],
+    'Y2'+aln_type:[],
+    'T1'+aln_type:[],
+    'T2'+aln_type:[],
+    'C1'+aln_type:[],
+    'C2'+aln_type:[],
+    'P1'+aln_type:[],
+    'P2'+aln_type:[],
+    '-1'+aln_type:[],
+    '-2'+aln_type:[]
+    }
+
+
+    #reset index
+    df = df.reset_index()
+    for i in range(len(df)):
+        row = df.iloc[i]
+        l1 = len(row['AA6_1_straln'])
+        l2 = len(row['AA6_2_straln'])
+        s1 = Counter(row['AA6_1_straln'])
+        s2 = Counter(row['AA6_2_seqaln'])
+
+        #Get s1 percentages
+        for key in s1:
+            percentage_dict[key+'1'+aln_type].append(s1[key]/l1)
+        #Get s2 percentages
+        for key in s2:
+            percentage_dict[key+'2'+aln_type].append(s2[key]/l2)
+
+        pdb.set_trace()
+
+    pdb.set_trace()
+
+def percent_ss(df):
+    '''Calculate % H,L and S in aligned structures
+    '''
+
     return None
 
 
@@ -485,6 +534,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
 
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
+        AA6_distribution(catdf_s, aln_type)
         avs_from_line = [] #save avs from line and pvals
         pvals = []
         all_js = []

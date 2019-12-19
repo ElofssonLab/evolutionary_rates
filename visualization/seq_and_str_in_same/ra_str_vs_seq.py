@@ -147,8 +147,6 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #plot stddev
     ax.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
     ax.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
-    #Plot polynomial fit
-    #ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'indigo')
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score')
     else:
@@ -161,6 +159,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
+    fig.tight_layout()
     fig.savefig(outdir+'running_'+suffix, format = 'svg')
     fig.savefig(outdir+'running_'+suffix+'.png', format = 'png')
     plt.close()
@@ -175,6 +174,11 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.scatter(top_mldists, top_scores, s = 0.1, c = 'forestgreen', alpha = 1.0, label = 'Topology Dataset')
     ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
     ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'b')
+    plt.title('Broad Dataset')
+    if score == 'lddt_scores':
+        ax.set_ylabel('lDDT score')
+    else:
+        ax.set_ylabel(score)
     ax.legend(markerscale=7, fancybox=True, framealpha=0.5)
     ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
@@ -183,6 +187,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
+    fig.tight_layout()
     fig.savefig(outdir+'polynomial_'+suffix, format = 'svg')
     fig.savefig(outdir+'polynomial_'+suffix+'.png', format = 'png')
     plt.close()
