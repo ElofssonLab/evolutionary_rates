@@ -126,7 +126,6 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
             percent_within_std['total'][ind]+=1 #Add count
             if d > s-std and d <s+std: #If within std
                 percent_within_std['within'][ind]+=1 #Add count
-    pdb.set_trace()
 
 
     #Plot total RA for topologies
@@ -214,7 +213,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     #Close plots to avoid to many being open at the same time
     plt.close()
 
-    return None
+    return percent_within_std
 
 def class_percentages(df):
     '''Calculate class percentages
@@ -444,7 +443,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     #Plot size against average deviation
     matplotlib.rcParams.update({'font.size': 7})
     fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-    plt.scatter(top_metrics['lddt_scores_straln_sizes'],top_metrics['lddt_scores_straln_av_dev'],s=0.5)
+    ax.scatter(top_metrics['lddt_scores_straln_sizes'],top_metrics['lddt_scores_straln_av_dev'],s=0.5)
     ax.set_ylim([-0.2,0.2])
     ax.set_xticks(np.arange(0,5000,2000))
     ax.set_xlabel('Group size')
@@ -491,13 +490,28 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
 
     #Plot all RAs per top group
     top_metrics_merged = pd.merge(top_metrics, catdf_s, left_on='Topology', right_on='group', how='left')
-    plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', outdir+'/'+score+aln_type+'/', 'b')
+    total_within_std = plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', outdir+'/'+score+aln_type+'/', 'b')
 
     #Plot the RAs of the pos and neg sig groups
-    plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Set A', outdir+'/'+score+aln_type+'/', colors[0])
-    plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Set B', outdir+'/'+score+aln_type+'/', colors[2])
-    plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Set C', outdir+'/'+score+aln_type+'/', colors[1])
+    pos_within_std = plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Set A', outdir+'/'+score+aln_type+'/', colors[0])
+    non_within_std = plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Set B', outdir+'/'+score+aln_type+'/', colors[2])
+    neg_within_std = plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Set C', outdir+'/'+score+aln_type+'/', colors[1])
 
+    #Plot percent within std
+    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+    ax.plot(total_within_std['seqdist'],total_within_std['within']/total_within_std['total'], label = 'Total', color = 'g', linewidth = 2)
+    ax.plot(pos_within_std['seqdist'],pos_within_std['within']/pos_within_std['total'], label = 'Set A', color = colors[0], linewidth = 2)
+    ax.plot(non_within_std['seqdist'],non_within_std['within']/non_within_std['total'], label = 'Set B', color = colors[2], linewidth = 2)
+    ax.plot(neg_within_std['seqdist'],neg_within_std['within']/neg_within_std['total'], label = 'Set C', color = colors[1], linewidth = 2)
+    ax.set_xlabel('ML AA20 Distance')
+    ax.set_ylabel('%')
+    ax.set_title('Size and Deviation')
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(outdir+score+aln_type+'/'+'within_std'+score+aln_type+'.png', format = 'png')
+    plt.close()
 
     #Concat
     cat_dev = pd.concat([pos_sig_merged, neg_sig_merged])
