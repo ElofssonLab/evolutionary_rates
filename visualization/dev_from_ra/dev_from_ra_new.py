@@ -227,8 +227,8 @@ def class_percentages(df):
 
     return percentages
 
-def anova(cat_dev, features, aln_type, results_dir, colors):
-    '''Perform anova
+def anova(top_metrics_sig , features, aln_type, results_dir, colors):
+    '''Perform anova and plot violinplots
     '''
 
     #features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type]
@@ -236,37 +236,16 @@ def anova(cat_dev, features, aln_type, results_dir, colors):
     #Make violinplots
     titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap'}
-    ylabels = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
+    ylabels = {'RCO':'Average RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'%','D':'%','Y':'%','T':'%','C':'%', 'P':'%', '-':'%'}
     matplotlib.rcParams.update({'font.size': 7})
     for feature in features:
         fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-        if feature == 'RCO': #Plot RCO1 and 2 in same
-            x = np.concatenate((np.array(cat_dev['Significance']), np.array(cat_dev['Significance'])))
-            y = np.concatenate((np.array(cat_dev['RCO1']), np.array(cat_dev['RCO2'])))
-            partial_df = pd.DataFrame()
-            partial_df['Significance'] = x
-            partial_df['RCO'] = y
-            sns.violinplot(data = partial_df, x = 'Significance', y = feature, palette=colors, order=['+','Non', '-'])
-
-        elif feature == 'aln_len'+aln_type or feature=='percent_aligned'+aln_type:
-            sns.violinplot(data = cat_dev, x = 'Significance', y = feature, palette=colors, order=['+','Non', '-'])
-
-        else:
-            x = np.concatenate((np.array(cat_dev['Significance']), np.array(cat_dev['Significance'])))
-            y = np.concatenate((np.array(cat_dev[feature+'1'+aln_type]), np.array(cat_dev[feature+'2'+aln_type])))
-            partial_df = pd.DataFrame()
-            partial_df['Significance'] = x
-            partial_df[feature] = y
-            sns.violinplot(data = partial_df, x = 'Significance', y = feature, palette=colors, order=['+','Non', '-'])
-
-
-
-
+        sns.violinplot(data = top_metrics_sig, x = 'Significance', y = feature+'_av', palette=colors, order=['+','Non', '-'])
         # Hide the right and top spines
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.set_ylabel(ylabels[feature])
+        ax.set_ylabel('Topology Average')
         ax.set_title(titles[feature])
         fig.tight_layout()
         fig.savefig(results_dir+'volin_'+feature+'_'+score+aln_type+'.png', format = 'png')
@@ -278,18 +257,23 @@ def anova(cat_dev, features, aln_type, results_dir, colors):
     Pr = []
 
     #Fit ANOVA, using all features simultaneously
-    for column in features:
-
-        test_str = column+'1 ~ C(Significance)'
-        results = ols(test_str, data=cat_dev).fit()
+    anova_cols = []
+    #Rename gap cols
+    top_metrics_sig = top_metrics_sig.rename(columns={'-_av':'gap_av'})
+    for feature in features:
+        if feature == '-':
+            feature = 'gap'
+        test_str = feature+'_av ~ C(Significance)'
+        results = ols(test_str, data=top_metrics_sig).fit()
         aov_table = sm.stats.anova_lm(results, typ=2)
         outp = anova_table(aov_table)
         eta_sq.append(outp.iloc[0]['eta_sq'])
         omega_sq.append(outp.iloc[0]['omega_sq'])
         Pr.append(outp.iloc[0]['PR(>F)'])
+        anova_cols.append(feature)
 
-    anova_df =  pd.DataFrame(data = {'Feature': features, 'eta_sq': eta_sq, 'omega_sq':omega_sq, 'PR(>F)':Pr})
-
+    anova_df =  pd.DataFrame(data = {'Feature': anova_cols, 'eta_sq': eta_sq, 'omega_sq':omega_sq, 'PR(>F)':Pr})
+    anova_df.to_csv(results_dir+'anova_tests.csv')
     return anova_df
 
 def anova_table(aov):
@@ -324,8 +308,9 @@ def ttest_features(df, catdf, score, aln_type):
         statistic, pvalue = stats.ttest_ind(x,y, equal_var = False)
         #Z-scores
         z = (np.average(x)-np.average(y))/(np.std(x)/np.sqrt(len(df)))
-
-        results[feature] = [statistic, pvalue, z]
+        #Average
+        av = np.average(x)
+        results[feature] = [statistic, pvalue, z, av]
 
     #Compare AA6 distributions on topology group level
     for key in ['P', 'C', 'K', 'T', 'D', 'Y', '-']:
@@ -334,8 +319,9 @@ def ttest_features(df, catdf, score, aln_type):
         statistic, pvalue = stats.ttest_ind(x,y, equal_var = False)
         #Z-scores
         z = (np.average(x)-np.average(y))/(np.std(x)/np.sqrt(len(df)))
-
-        results[key] = [statistic, pvalue, z]
+        #Average
+        av = np.average(x)
+        results[key] = [statistic, pvalue, z, av]
     return results
 
 def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_type, perc_keys, colors):
@@ -471,7 +457,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     '''Compares positively, negatively and non-deviating groups in their
     deviation from the total running average.
     '''
-
+    colors = ['royalblue', 'cadetblue', 'cornflowerblue']
     #Plot size against average deviation
     matplotlib.rcParams.update({'font.size': 7})
     fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
@@ -509,6 +495,10 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     #Get data from cat_df matching sig topologies
     nonsig_df_merged = pd.merge(nonsig_df, catdf_s, left_on='Topology', right_on='group', how='left')
 
+    #Calculate ANOVA
+    top_metrics_sig = pd.concat([pos_sig, neg_sig])
+    top_metrics_sig = pd.concat([top_metrics_sig, nonsig_df])
+    anova_df = anova(top_metrics_sig, features, aln_type, outdir+'/'+score+aln_type+'/', colors)
 
     #Calculate percentages of sig for each feature in each set
     try:
@@ -516,7 +506,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     except:
         print('Dir '+outdir+score+aln_type+'/'+' exists')
 
-    colors = ['royalblue', 'cadetblue', 'cornflowerblue']
+
     percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type,  perc_keys, colors)
 
 
@@ -556,8 +546,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     #print('%nonsig', class_percentages(nonsig_df_merged))
     cat_dev = pd.concat([cat_dev, nonsig_df_merged])
 
-    #Calculate ANOVA
-    anova_df = anova(cat_dev, features, aln_type, outdir+'/'+score+aln_type+'/', colors)
+
 
     return None
 
@@ -611,7 +600,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             stat_results = {}
             features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type,'P', 'C', 'K', 'T', 'D', 'Y', '-']
             for key in features:
-                stat_results[key] = np.zeros((555,3))
+                stat_results[key] = np.zeros((555,4))
 
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
@@ -634,7 +623,6 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             all_js.append(js)
             all_avs.append(avs)
             gradients.append(np.gradient(avs))
-            av_RCO.append(np.average(np.absolute(df['RCO1']-0.29)))
             sizes.append(len(df))
 
             if score == 'lddt_scores':
@@ -649,12 +637,12 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
                 top_metrics[key+'_tstat'] = stat_results[key][:,0]
                 top_metrics[key+'_pval'] = stat_results[key][:,1]
                 top_metrics[key+'_z'] = stat_results[key][:,2]
+                top_metrics[key+'_av'] = stat_results[key][:,3]
         top_metrics[score+aln_type+'_ra_pval'] = pvals
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
         top_metrics[score+aln_type+'_ra'] = all_avs
         top_metrics[score+aln_type+'_gradients'] = gradients
-        top_metrics[score+aln_type+'_av_RCO'] = av_RCO
         top_metrics[score+aln_type+'_sizes'] = sizes
 
         #plt.scatter(top_metrics['lddt_scores_straln_sizes'], top_metrics['lddt_scores_straln_av_dev'], s= 5)
