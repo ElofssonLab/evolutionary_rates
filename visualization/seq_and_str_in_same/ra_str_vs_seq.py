@@ -282,7 +282,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     #Plot gradients
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-    ax.scatter(js, gradients,s=2)
+    #ax.scatter(js, gradients,s=2)
     ax.plot(js, gradients, linewidth = 1)
     smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
     ax.plot(js, smoothed_grads, label = '1D Gaussian KDE',linewidth = 1, c= 'indigo') #Plot gradients of polyline
