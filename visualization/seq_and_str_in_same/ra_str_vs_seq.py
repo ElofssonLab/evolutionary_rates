@@ -143,7 +143,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
     #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
     ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = '95% Dataset')
-    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'b', alpha = 1.0, label = 'Topology Dataset')
+    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'royalblue', alpha = 1.0, label = 'Topology Dataset')
     #plot stddev
     ax.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
     ax.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
@@ -170,11 +170,11 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     #Plot polynomial fit
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightgreen', alpha = 0.8, label = '95% Dataset')
-    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'forestgreen', alpha = 1.0, label = 'Topology Dataset')
+    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.8, label = '95% Dataset')
+    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'royalblue', alpha = 1.0, label = 'Topology Dataset')
     ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
     ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'b')
-    plt.title('Broad Dataset')
+    plt.title('Balanced Broad Dataset')
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score')
     else:
@@ -195,7 +195,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #Plot histograms of x and y vals
     #str score
     fig, ax = plt.subplots(figsize=(3/2.54,9/2.54))
-    ax.hist(topdf[score+aln_type], color = 'b', orientation = 'horizontal', density = True, alpha = 0.8, bins = 30)
+    ax.hist(topdf[score+aln_type], color = 'royalblue', orientation = 'horizontal', density = True, alpha = 0.8, bins = 30)
     ax.hist(hgroupdf[score+aln_type], color = 'lightseagreen', orientation = 'horizontal', density = True, alpha = 0.5, bins = 30)
     ax.set_xlabel(xlabel)
     ax.set_ylim(ylim)
@@ -207,7 +207,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.close()
     #seqdist
     fig, ax = plt.subplots(figsize=(9/2.54,3/2.54))
-    ax.hist(topdf['MLAAdist'+cardinality+aln_type], color = 'b', density = True, alpha = 0.8, bins = 30)
+    ax.hist(topdf['MLAAdist'+cardinality+aln_type], color = 'royalblue', density = True, alpha = 0.8, bins = 30)
     ax.hist(hgroupdf['MLAAdist'+cardinality+aln_type], color = 'lightseagreen', density = True, alpha = 0.5, bins = 30)
     ax.set_xlabel(xlabel)
     ax.set_xlim([0,9.1])
