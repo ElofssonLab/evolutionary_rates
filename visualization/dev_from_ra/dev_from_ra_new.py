@@ -240,7 +240,7 @@ def anova(top_metrics_sig , features, aln_type, results_dir, colors):
     'K':'%','D':'%','Y':'%','T':'%','C':'%', 'P':'%', '-':'%'}
     matplotlib.rcParams.update({'font.size': 7})
     for feature in features:
-        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
         sns.violinplot(data = top_metrics_sig, x = 'Significance', y = feature+'_av', palette=colors, order=['+','Non', '-'])
         # Hide the right and top spines
         ax.spines['right'].set_visible(False)
@@ -352,9 +352,9 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
         non_non = len(nonsig_df)-(non_pos+non_neg)
 
         fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-        ax.bar(x, [100*pos_pos/len(pos_sig), 100*pos_non/len(pos_sig), 100*pos_neg/len(pos_sig)],w, label='Set A', color = colors[0])
-        ax.bar(x+w, [100*non_pos/len(nonsig_df), 100*non_non/len(nonsig_df), 100*non_neg/len(nonsig_df)],w, label='Set B', color = colors[1])
-        ax.bar(x+2*w, [100*neg_pos/len(neg_sig), 100*neg_non/len(neg_sig), 100*neg_neg/len(neg_sig)],w, label='Set C', color = colors[2])
+        ax.bar(x, [100*pos_pos/len(pos_sig), 100*pos_non/len(pos_sig), 100*pos_neg/len(pos_sig)],w, label='+', color = colors[0])
+        ax.bar(x+w, [100*non_pos/len(nonsig_df), 100*non_non/len(nonsig_df), 100*non_neg/len(nonsig_df)],w, label='Non', color = colors[1])
+        ax.bar(x+2*w, [100*neg_pos/len(neg_sig), 100*neg_non/len(neg_sig), 100*neg_neg/len(neg_sig)],w, label='-', color = colors[2])
         ax.set_title(titles[key])
         ax.set_xticks(x+w)
         ax.set_xticklabels(['Pos', 'Non', 'Neg'])
@@ -371,9 +371,9 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
 
     #Plot size distributions
     fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-    sns.distplot(pos_sig[score+aln_type+'_sizes'],  label='Set A', hist = False, color = colors[0])
-    sns.distplot(nonsig_df[score+aln_type+'_sizes'],  label='Set B', hist = False, color = colors[1])
-    sns.distplot(neg_sig[score+aln_type+'_sizes'], label='Set C', hist = False, color = colors[2])
+    sns.distplot(pos_sig[score+aln_type+'_sizes'],  label='+', hist = False, color = colors[0])
+    sns.distplot(nonsig_df[score+aln_type+'_sizes'],  label='Non', hist = False, color = colors[1])
+    sns.distplot(neg_sig[score+aln_type+'_sizes'], label='-', hist = False, color = colors[2])
     plt.legend()
     plt.xscale("log")
     ax.set_ylim([0,0.02])
@@ -458,6 +458,10 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     deviation from the total running average.
     '''
     colors = ['royalblue', 'cadetblue', 'cornflowerblue']
+    try:
+        os.mkdir(outdir+score+aln_type)
+    except:
+        print('Dir '+outdir+score+aln_type+'/'+' exists')
     #Plot size against average deviation
     matplotlib.rcParams.update({'font.size': 7})
     fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
@@ -500,11 +504,19 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     top_metrics_sig = pd.concat([top_metrics_sig, nonsig_df])
     anova_df = anova(top_metrics_sig, features, aln_type, outdir+'/'+score+aln_type+'/', colors)
 
+    #Plot violin of size distributions
+    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+    sns.violinplot(data = top_metrics_sig, x = 'Significance', y = score+aln_type+'_sizes', palette=colors, order=['+','Non', '-'])
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_ylabel('Topology Size')
+    ax.set_title('Group Size')
+    fig.tight_layout()
+    fig.savefig(results_dir+'volin_sizes_'+score+aln_type+'.png', format = 'png')
+
+    plt.close()
     #Calculate percentages of sig for each feature in each set
-    try:
-        os.mkdir(outdir+score+aln_type)
-    except:
-        print('Dir '+outdir+score+aln_type+'/'+' exists')
 
 
     percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type,  perc_keys, colors)
@@ -515,9 +527,9 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     total_within_std = plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', outdir+'/'+score+aln_type+'/', 'b')
 
     #Plot the RAs of the pos and neg sig groups
-    pos_within_std = plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Set A', outdir+'/'+score+aln_type+'/', colors[0])
-    non_within_std = plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Set B', outdir+'/'+score+aln_type+'/', colors[1])
-    neg_within_std = plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Set C', outdir+'/'+score+aln_type+'/', colors[2])
+    pos_within_std = plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Pos. set', outdir+'/'+score+aln_type+'/', colors[0])
+    non_within_std = plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Non. set', outdir+'/'+score+aln_type+'/', colors[1])
+    neg_within_std = plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Neg. set', outdir+'/'+score+aln_type+'/', colors[2])
 
     #Plot percent within std
     fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
