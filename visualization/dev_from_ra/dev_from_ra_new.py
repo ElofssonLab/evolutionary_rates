@@ -235,7 +235,9 @@ def anova(cat_dev, features, aln_type, results_dir, colors):
     dependent_variable = score+aln_type+'_ra' #Running average for topology grouping
     #Make violinplots
     titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
-    'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'-'}
+    'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap'}
+    ylabels = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
+    'K':'%','D':'%','Y':'%','T':'%','C':'%', 'P':'%', '-':'%'}
     matplotlib.rcParams.update({'font.size': 7})
     for feature in features:
         fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
@@ -245,23 +247,26 @@ def anova(cat_dev, features, aln_type, results_dir, colors):
             partial_df = pd.DataFrame()
             partial_df['Significance'] = x
             partial_df['RCO'] = y
-            sns.violinplot(data = partial_df, x = 'Significance', y = feature, palette=colors)
+            sns.violinplot(data = partial_df, x = 'Significance', y = feature, palette=colors, order=['+','Non', '-'])
 
-        elif feature == 'l':
-            x = np.concatenate((np.array(cat_dev['Significance']), np.array(cat_dev['Significance'])))
-            y = np.concatenate((np.array(cat_dev['l1'+aln_type]), np.array(cat_dev['l2'+aln_type])))
-            partial_df = pd.DataFrame()
-            partial_df['Significance'] = x
-            partial_df['Length'] = y
-            sns.violinplot(data = partial_df, x = 'Significance', y = 'Length', palette=colors)
+        elif feature == 'aln_len'+aln_type or feature=='percent_aligned'+aln_type:
+            sns.violinplot(data = cat_dev, x = 'Significance', y = feature, palette=colors, order=['+','Non', '-'])
 
         else:
-            sns.violinplot(data = cat_dev, x = 'Significance', y = feature, palette=colors)
+            x = np.concatenate((np.array(cat_dev['Significance']), np.array(cat_dev['Significance'])))
+            y = np.concatenate((np.array(cat_dev[feature+'1'+aln_type]), np.array(cat_dev[feature+'2'+aln_type])))
+            partial_df = pd.DataFrame()
+            partial_df['Significance'] = x
+            partial_df[feature] = y
+            sns.violinplot(data = partial_df, x = 'Significance', y = feature, palette=colors, order=['+','Non', '-'])
+
+
 
 
         # Hide the right and top spines
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
+        ax.set_ylabel(ylabels[feature])
         ax.set_title(titles[feature])
         fig.tight_layout()
         fig.savefig(results_dir+'volin_'+feature+'_'+score+aln_type+'.png', format = 'png')
@@ -275,7 +280,7 @@ def anova(cat_dev, features, aln_type, results_dir, colors):
     #Fit ANOVA, using all features simultaneously
     for column in features:
 
-        test_str = column+' ~ C(Significance)'
+        test_str = column+'1 ~ C(Significance)'
         results = ols(test_str, data=cat_dev).fit()
         aov_table = sm.stats.anova_lm(results, typ=2)
         outp = anova_table(aov_table)
