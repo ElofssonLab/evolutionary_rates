@@ -37,43 +37,8 @@ default=sys.stdin, help = 'either median or average.')
 parser.add_argument('--get_one', nargs=1, type= int,
 default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
 
-def ridge_plot(df):
-    '''Create a ridgeplot in pd
-    'ML distance', 'Average', 'Interval scores'
-    '''
-    #fig = plt.figure(figsize=(9/2.54,9/2.54))
-    sns.set(style="white", rc={"axes.facecolor": (0, 0, 0, 0), 'figure.figsize':(9/2.54,9/2.54)})
-    # Initialize the FacetGrid object
-    pal = sns.cubehelix_palette(10, rot=-.25, light=.7)
-    g = sns.FacetGrid(df, row="ML distance", hue="ML distance", aspect=15, height=0.5, palette=pal)
 
-    # Draw the densities in a few steps
-    g.map(sns.kdeplot, "lDDT score", clip_on=False, shade=True, alpha=1, lw=1.5, bw=.2)
-    g.map(sns.kdeplot, "lDDT score", clip_on=False, color="w", lw=2, bw=.2)
-    g.map(plt.axhline, y=0, lw=2, clip_on=False)
-
-
-    # Define and use a simple function to label the plot in axes coordinates
-    def label(x, color, label):
-        ax = plt.gca()
-        ax.text(0, .2, label, fontweight="bold", color=color,
-                ha="left", va="center", transform=ax.transAxes)
-
-
-    g.map(label, "lDDT score")
-
-    # Set the subplots to overlap
-    g.fig.subplots_adjust(hspace=-.25)
-
-    # Remove axes details that don't play well with overlap
-    g.set_titles("")
-    g.set(yticks=[])
-    g.despine(bottom=True, left=True)
-    pdb.set_trace()
-
-    return None
-
-def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir+score+aln_type+'/'):
+def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir):
     '''Produce running average plots for df using 0.1 seqdist interval
     '''
 
@@ -81,7 +46,7 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir+
     matplotlib.rcParams.update({'font.size': 7})
     suffix = calc+'_'+score+cardinality+aln_type+'_'+'.svg'
     xlabel = 'ML '+cardinality[1:]+' distance'
-    grad_ylims = {'RMSD':[-0.1,0.1]}
+    grad_ylims = {'RMSD':[-0.15,0.15]}
 
 
     #Plot total average for cardinality
@@ -90,8 +55,8 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir+
 
     cat_avs = [] #Save average score
     cat_stds = [] #Save std deviation
-    cat_avs = [] #Save average score
-    cat_stds = [] #Save std deviation
+    eps_avs = [] #Save average score
+    eps_stds = [] #Save std deviation
 
 
     js = [] #Save dists
@@ -100,7 +65,7 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir+
     cat_mldists = np.asarray(catdf['MLAAdist'+cardinality+aln_type])
     cat_scores = np.asarray(catdf[score+aln_type])
     eps_mldists = np.asarray(epsdf['MLAAdist'+cardinality+aln_type])
-    hgroup_scores = np.asarray(epsdf[score+aln_type])
+    eps_scores = np.asarray(epsdf[score+aln_type])
 
     mldists = np.append(cat_mldists, eps_mldists)
     scores = np.append(cat_scores, eps_scores)
@@ -126,7 +91,7 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir+
             epsav= np.median(cut_eps_scores)
 
         cat_avs.append(catav)
-        eps_avs.append(apsav)
+        eps_avs.append(epsav)
 
         cat_std = np.std(cut_cat_scores)
         eps_std = np.std(cut_eps_scores)
@@ -135,20 +100,19 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir+
 
         js.append(np.round(j-step/2,2))
 
-    #Include derivatives
-    gradients = np.gradient(eps_avs)
-
+    #Scatter
+    ax.scatter(cat_mldists, cat_scores, c = 'cornflowerblue', s=0.1, linewidth = 2, label = 'Broad Dataset', alpha = 0.2)
+    ax.scatter(eps_mldists, eps_scores, c = 'lightcoral',  s=0.1, linewidth = 2, label = '2009', alpha = 0.5)
     #Plot RA
-    ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
-    #plot stddev
-    ax.plot(js, eps_avs, '--', c = 'g', linewidth = 1)
-    ax.plot(js, cat_avs, '--', c = 'g', linewidth = 1)
+    ax.plot(js, cat_avs, c = 'b', linewidth = 2, label = 'Broad Dataset')
+    ax.plot(js, eps_avs, c = 'r', linewidth = 2, label = '2009')
+
     ax.set_ylabel(score)
     ax.legend(markerscale=5,fancybox=True, framealpha=0.5)
     ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -159,15 +123,21 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir+
 
 
     #Plot gradients
-    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-    #ax.scatter(js, gradients,s=2)
-    ax.plot(js, gradients, linewidth = 1)
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
+    gradients = np.gradient(eps_avs)
+    ax.plot(js, gradients, linewidth = 1, c='r', label = '2009')
     smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
-    ax.plot(js, smoothed_grads, label = '1D Gaussian KDE',linewidth = 1, c= 'indigo') #Plot gradients of polyline
+    ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= 'r') #Plot gradients of gaussian kde
+
+    gradients = np.gradient(cat_avs)
+    ax.plot(js, gradients, linewidth = 1, c='b', label = 'Broad Dataset')
+    smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
+    ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= 'b') #Plot gradients of gaussian kde
+
     ax.set_ylabel('gradient')
     #plt.ylim(grad_ylims[score])
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_ylim(grad_ylims[score])
     ax.set_xlabel(xlabel)
     ax.legend()
@@ -187,7 +157,7 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir+
 args = parser.parse_args()
 topdf = pd.read_csv(args.topdf[0])
 hgroupdf = pd.read_csv(args.hgroupdf[0])
-epsdf = pd.read_csv(args.hgroupdf[0])
+epsdf = pd.read_csv(args.epsdf[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
 get_one = bool(args.get_one[0])

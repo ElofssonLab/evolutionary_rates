@@ -501,7 +501,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
         print('Dir '+outdir+score+aln_type+'/'+' exists')
     #Plot size against average deviation
     matplotlib.rcParams.update({'font.size': 7})
-    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     ax.scatter(top_metrics['lddt_scores_straln_sizes_av'],top_metrics['lddt_scores_straln_av_dev'],s=0.5)
     ax.set_ylim([-0.2,0.2])
     ax.set_xticks(np.arange(0,5000,2000))
@@ -555,8 +555,8 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     neg_within_std = plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Neg. set', outdir+'/'+score+aln_type+'/', colors[2])
 
     #Plot percent within std
-    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-    ax.plot(total_within_std['seqdist'],total_within_std['within']/total_within_std['total'], label = 'Total', color = 'g', linewidth = 2)
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    ax.plot(total_within_std['seqdist'],100*total_within_std['within']/total_within_std['total'], label = 'Total', color = 'g', linewidth = 2)
     #ax.plot(pos_within_std['seqdist'],pos_within_std['within']/pos_within_std['total'], label = 'Set A', color = colors[0], linewidth = 2)
     #ax.plot(non_within_std['seqdist'],non_within_std['within']/non_within_std['total'], label = 'Set B', color = colors[2], linewidth = 2)
     #ax.plot(neg_within_std['seqdist'],neg_within_std['within']/neg_within_std['total'], label = 'Set C', color = colors[1], linewidth = 2)
@@ -565,7 +565,8 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     ax.set_title('Within 1 Std')
     ax.set_xticks(np.arange(0,9.1,1))
     ax.set_xlabel('ML AA20 distance')
-    ax.set_ylim([0,1.0])
+    ax.set_ylim([60,100])
+    ax.set_yticks([60,70,80,90,100])
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -693,6 +694,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
+        pdb.set_trace()
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, perc_keys, outdir)
 
 
