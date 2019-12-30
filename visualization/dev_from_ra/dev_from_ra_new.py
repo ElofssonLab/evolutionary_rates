@@ -513,7 +513,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     ax.set_ylabel('Topology Size')
     ax.set_title('Group Size')
     fig.tight_layout()
-    fig.savefig(results_dir+'volin_sizes_'+score+aln_type+'.png', format = 'png')
+    fig.savefig(outdir+score+aln_type+'/'+'volin_sizes_'+score+aln_type+'.png', format = 'png')
 
     plt.close()
     #Calculate percentages of sig for each feature in each set
@@ -541,6 +541,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     ax.set_ylabel('%')
     ax.set_title('Within 1 Std')
     ax.set_xticks(np.arange(0,9.1,1))
+    ax.set_xlabel('ML AA20 distance')
     ax.set_ylim([0,1.0])
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
@@ -600,6 +601,7 @@ print('Fraction of topologies with at least 10 entries: '+str(num_tops_with10)+'
 topologies = np.array([*topcounts.keys()])
 topologies = topologies[np.where(vals>9)[0]]
 
+pdb.set_trace()
 #Save pvalues
 top_metrics = pd.DataFrame()
 top_metrics['Topology'] = topologies
