@@ -21,6 +21,9 @@ When using statsmodels in scientific publication, please consider using the foll
 Seabold, Skipper, and Josef Perktold. “Statsmodels: Econometric and statistical modeling with python.”
 Proceedings of the 9th Python in Science Conference. 2010.
 '''
+
+#Custom
+from percent_ss import parse_ss
 import pdb
 
 #Arguments for argparse module:
@@ -230,14 +233,16 @@ def class_percentages(df):
 def anova(top_metrics_sig , features, aln_type, results_dir, colors):
     '''Perform anova and plot violinplots
     '''
+    #Add class and size
+    features.append(score+aln_type+'classes')
+    features.append(score+aln_type+'sizes')
 
-    #features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type]
-    dependent_variable = score+aln_type+'_ra' #Running average for topology grouping
     #Make violinplots
     titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
-    'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap'}
+    'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix',
+    score+aln_type+'classes':'Class', score+aln_type+'sizes':'Group size'}
     ylabels = {'RCO':'Average RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
-    'K':'%','D':'%','Y':'%','T':'%','C':'%', 'P':'%', '-':'%'}
+    'K':'%','D':'%','Y':'%','T':'%','C':'%', 'P':'%', '-':'%', 'L':'%', 'S':'%', 'H':'%'}
     matplotlib.rcParams.update({'font.size': 7})
     for feature in features:
         fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
@@ -255,6 +260,7 @@ def anova(top_metrics_sig , features, aln_type, results_dir, colors):
     eta_sq = []
     omega_sq = []
     Pr = []
+
 
     #Fit ANOVA, using all features simultaneously
     anova_cols = []
@@ -312,8 +318,8 @@ def ttest_features(df, catdf, score, aln_type):
         av = np.average(x)
         results[feature] = [statistic, pvalue, z, av]
 
-    #Compare AA6 distributions on topology group level
-    for key in ['P', 'C', 'K', 'T', 'D', 'Y', '-']:
+    #Compare AA6 distributions and secondary structure elements on topology group level
+    for key in ['P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H' ]:
         x = np.concatenate((np.array(df[key+'1'+aln_type]), np.array(df[key+'2'+aln_type]))) #the lengths for the sequence alignments represents the picked up consensus from hhsearch
         y = np.concatenate((np.array(catdf[key+'1'+aln_type]), np.array(catdf[key+'2'+aln_type])))
         statistic, pvalue = stats.ttest_ind(x,y, equal_var = False)
@@ -504,22 +510,8 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     top_metrics_sig = pd.concat([top_metrics_sig, nonsig_df])
     anova_df = anova(top_metrics_sig, features, aln_type, outdir+'/'+score+aln_type+'/', colors)
 
-    #Plot violin of size distributions
-    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-    sns.violinplot(data = top_metrics_sig, x = 'Significance', y = score+aln_type+'_sizes', palette=colors, order=['+','Non', '-'])
-    # Hide the right and top spines
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_ylabel('Topology Size')
-    ax.set_title('Group Size')
-    fig.tight_layout()
-    fig.savefig(outdir+score+aln_type+'/'+'volin_sizes_'+score+aln_type+'.png', format = 'png')
-
-    plt.close()
     #Calculate percentages of sig for each feature in each set
-
-
-    percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type,  perc_keys, colors)
+    #percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type,  perc_keys, colors)
 
 
     #Plot all RAs per top group
@@ -590,6 +582,8 @@ hgroupdf = hgroupdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'
 topdf = topdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 
 catdf = pd.concat([topdf, hgroupdf])
+#Rename class column
+catdf = catdf.rename(columns={'C._x':'Class'})
 
 #The ones should actually be zeros
 catdf['RCO1']=catdf['RCO1'].replace([1], 0)
@@ -609,16 +603,19 @@ cardinality = '' #AA20
 
 for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
     for aln_type in ['_straln', '_seqaln']:
-        if score == 'lddt_scores':
-            #Save statistical assessment - this only has to be done for 1 score (but both alntypes) - will be the same in groups
-            stat_results = {}
-            features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type,'P', 'C', 'K', 'T', 'D', 'Y', '-']
-            for key in features:
-                stat_results[key] = np.zeros((555,4))
+
 
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
-        catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type)
+        if score == 'lddt_scores':
+            #Save statistical assessment - this only has to be done for 1 score (but both alntypes) - will be the same in groups
+            stat_results = {}
+            features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type,'P', 'C', 'K', 'T', 'D', 'Y',
+            '-', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix
+            for key in features:
+                stat_results[key] = np.zeros((555,4))
+            catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies
+            catdf_s = parse_ss(catdf_s, aln_type) #Get % ss
         avs_from_line = [] #save avs from line and pvals
         pvals = []
         all_js = []
@@ -627,6 +624,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         toplens = []
         av_RCO = []
         sizes = [] #group sizes
+        classes = []
 
         for top in topologies:
             df = catdf_s[catdf_s['group']==top]
@@ -638,6 +636,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             all_avs.append(avs)
             gradients.append(np.gradient(avs))
             sizes.append(len(df))
+            classes.append(df['Class'].values[0]) #append class
 
             if score == 'lddt_scores':
                 #Test for deviating features within group
@@ -658,11 +657,13 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         top_metrics[score+aln_type+'_ra'] = all_avs
         top_metrics[score+aln_type+'_gradients'] = gradients
         top_metrics[score+aln_type+'_sizes'] = sizes
+        top_metrics[score+aln_type+'_classes'] = classes
 
         #plt.scatter(top_metrics['lddt_scores_straln_sizes'], top_metrics['lddt_scores_straln_av_dev'], s= 5)
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
+        pdb.set_trace()
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, perc_keys, outdir)
 
 
