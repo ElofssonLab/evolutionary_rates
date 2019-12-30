@@ -233,14 +233,13 @@ def class_percentages(df):
 def anova(top_metrics_sig , features, aln_type, results_dir, colors):
     '''Perform anova and plot violinplots
     '''
-    #Add class and size
-    features.append(score+aln_type+'classes')
-    features.append(score+aln_type+'sizes')
+    #Add size
+    features.append(score+aln_type+'_sizes')
 
     #Make violinplots
     titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix',
-    score+aln_type+'classes':'Class', score+aln_type+'sizes':'Group size'}
+    score+aln_type+'classes':'Class', score+aln_type+'_sizes':'Group size'}
     ylabels = {'RCO':'Average RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'%','D':'%','Y':'%','T':'%','C':'%', 'P':'%', '-':'%', 'L':'%', 'S':'%', 'H':'%'}
     matplotlib.rcParams.update({'font.size': 7})
@@ -256,6 +255,38 @@ def anova(top_metrics_sig , features, aln_type, results_dir, colors):
         fig.savefig(results_dir+'volin_'+feature+'_'+score+aln_type+'.png', format = 'png')
 
         plt.close()
+
+    #Plot class distributions
+    features.append(score+aln_type+'_classes')
+    class_freq = pd.DataFrame()
+    cs = []
+    sigs = []
+    percs = []
+    for sig in ['+', 'Non', '-']:
+        sel = top_metrics_sig[top_metrics_sig['Significance']==sig]
+        counts = Counter(sel[score+aln_type+'_classes_av'])
+        cs.extend(['α', 'β', 'αβ', 'Few SS'])
+        sigs.extend([sig]*4)
+        for key in [1.,2.,3.,4.]:
+            try:
+                percs.append(counts[key]/len(sel))
+            except:
+                percs.append(0)
+
+    class_freq['Significance'] = sigs
+    class_freq['Percentage'] = percs
+    class_freq['Class'] = cs
+    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+    sns.barplot(data=class_freq, x='Class',y='Percentage',hue='Significance', palette = colors)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_ylabel('Percentage')
+    ax.set_title('Class')
+    fig.tight_layout()
+    fig.savefig(results_dir+'volin_class_'+score+aln_type+'.png', format = 'png')
+
+
+
     #Calculate fraction retained
     eta_sq = []
     omega_sq = []
@@ -471,7 +502,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     #Plot size against average deviation
     matplotlib.rcParams.update({'font.size': 7})
     fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-    ax.scatter(top_metrics['lddt_scores_straln_sizes'],top_metrics['lddt_scores_straln_av_dev'],s=0.5)
+    ax.scatter(top_metrics['lddt_scores_straln_sizes_av'],top_metrics['lddt_scores_straln_av_dev'],s=0.5)
     ax.set_ylim([-0.2,0.2])
     ax.set_xticks(np.arange(0,5000,2000))
     ax.set_xlabel('Group size')
@@ -595,7 +626,6 @@ print('Fraction of topologies with at least 10 entries: '+str(num_tops_with10)+'
 topologies = np.array([*topcounts.keys()])
 topologies = topologies[np.where(vals>9)[0]]
 
-pdb.set_trace()
 #Save pvalues
 top_metrics = pd.DataFrame()
 top_metrics['Topology'] = topologies
@@ -656,14 +686,13 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         top_metrics[score+aln_type+'_seqdists'] = all_js
         top_metrics[score+aln_type+'_ra'] = all_avs
         top_metrics[score+aln_type+'_gradients'] = gradients
-        top_metrics[score+aln_type+'_sizes'] = sizes
-        top_metrics[score+aln_type+'_classes'] = classes
+        top_metrics[score+aln_type+'_sizes_av'] = sizes
+        top_metrics[score+aln_type+'_classes_av'] = classes
 
         #plt.scatter(top_metrics['lddt_scores_straln_sizes'], top_metrics['lddt_scores_straln_av_dev'], s= 5)
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
-        pdb.set_trace()
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, perc_keys, outdir)
 
 
