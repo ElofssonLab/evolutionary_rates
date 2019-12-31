@@ -501,7 +501,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
         print('Dir '+outdir+score+aln_type+'/'+' exists')
     #Plot size against average deviation
     matplotlib.rcParams.update({'font.size': 7})
-    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    fig, ax = plt.subplots(figsize=(12/2.54,6/2.54))
     ax.scatter(top_metrics['lddt_scores_straln_sizes_av'],top_metrics['lddt_scores_straln_av_dev'],s=0.5)
     ax.set_ylim([-0.2,0.2])
     ax.set_xticks(np.arange(0,5000,2000))
@@ -694,7 +694,6 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
-        pdb.set_trace()
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, perc_keys, outdir)
 
 

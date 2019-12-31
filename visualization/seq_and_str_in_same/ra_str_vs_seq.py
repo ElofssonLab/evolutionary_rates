@@ -95,6 +95,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     top_mldists = np.asarray(topdf['MLAAdist'+cardinality+aln_type])
     top_scores = np.asarray(topdf[score+aln_type])
+
     hgroup_mldists = np.asarray(hgroupdf['MLAAdist'+cardinality+aln_type])
     hgroup_scores = np.asarray(hgroupdf[score+aln_type])
 
@@ -107,9 +108,6 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #Sort df by x-value
     df = df.sort_values(by=['MLAAdist'+cardinality+aln_type], ascending=True)
     step = 0.1
-
-    mldists = np.append(top_mldists, hgroup_mldists)
-    scores = np.append(top_scores, hgroup_scores)
 
     for j in np.arange(min(mldists)+step,max(mldists)+step,step):
         below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
@@ -351,6 +349,7 @@ if get_one == True:
 hgroupdf = hgroupdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 topdf = topdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 
+pdb.set_trace()
 cardinality = '_AA20'
 av_df = pd.DataFrame()
 for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD','DIFFSS', 'DIFF_ACC']:
