@@ -504,7 +504,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     fig, ax = plt.subplots(figsize=(12/2.54,6/2.54))
     ax.scatter(top_metrics['lddt_scores_straln_sizes_av'],top_metrics['lddt_scores_straln_av_dev'],s=0.5)
     ax.set_ylim([-0.2,0.2])
-    ax.set_xticks(np.arange(0,5000,2000))
+    ax.set_xticks(np.arange(0,5000,1000))
     ax.set_xlabel('Group size')
     ax.set_ylabel('Deviation')
     ax.set_title('Size and Deviation')
