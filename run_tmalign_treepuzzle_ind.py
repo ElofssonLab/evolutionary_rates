@@ -105,8 +105,7 @@ def run_TMalign(indir, outdir, fastadir, TMalign):
 	return measures, status
 
 def parse_tm(tmalign_out):
-	'''A function that gets the uids and the corresponding scores
-	and prints them in tsv.
+	'''A function that parses TMalign output.
 	'''
 
 	tmalign_out = tmalign_out.decode("utf-8")

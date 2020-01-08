@@ -4,15 +4,12 @@
 
 import pandas as pd
 from collections import Counter
+import subprocess
 import numpy as np
 import sys
 import os
 import argparse
 import pdb
-
-#custom imports
-sys.path.insert(1, '/home/pbryant/evolutionary_rates')
-from conversions import make_phylip
 
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that parses the 2009 alignments and returns
@@ -39,8 +36,8 @@ def parse(infile):
             line = line.rstrip()
             if '= vs =' in line:
                 line = line.split('=')
-                uid1.append(line[13].strip().rstrip('_'))
-                uid2.append(line[23].strip().rstrip('_'))
+                uid1.append(line[13].strip()) #some contain '_' in end, this should apparently be there
+                uid2.append(line[23].strip())
             if '>Ali1_AA' == line:
                 get_next = True
                 index = 0
@@ -55,12 +52,36 @@ def parse(infile):
                 alignments[index].append(line)
                 get_next = False
 
-        pdb.set_trace()
 
+    df = pd.DataFrame()
+    df['uid1'] = uid1
+    df['uid2'] = uid2
+    df['aln1'] = alignments[0]
+    df['aln2'] = alignments[1]
+    df.to_csv('alignment_df.csv')
 
+    uids = uid1+uid2
+    return df, uids
+
+def get_pdbs(uids):
+    '''A script for getting pdb files
+    '''
+
+    base='https://scop.berkeley.edu/downloads/pdbstyle/pdbstyle-1.75/'
+    for uid in uids:
+        if not os.path.isfile(uid+'.ent'):
+            outp = subprocess.check_output('wget '+base+uid[2:4]+'/'+uid+'.ent', shell=True)
 
 #####MAIN#####
 args = parser.parse_args()
 infile = args.infile[0]
 
-parse(infile)
+df, uids = parse(infile)
+#Get unique uids
+uids = [*Counter(uids).keys()]
+with open('uids.txt', 'w') as f:
+    for id in uids:
+        f.write(id+'\n')
+print('Parsed')
+
+get_pdbs(uids)
