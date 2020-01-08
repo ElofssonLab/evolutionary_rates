@@ -28,6 +28,9 @@ default=sys.stdin, help = 'path to df.')
 parser.add_argument('--epsdf', nargs=1, type= str,
 default=sys.stdin, help = 'path to df.')
 
+parser.add_argument('--realigndf', nargs=1, type= str,
+default=sys.stdin, help = 'path to df.')
+
 parser.add_argument('--outdir', nargs=1, type= str,
 default=sys.stdin, help = 'path to output directory.')
 
@@ -38,7 +41,7 @@ parser.add_argument('--get_one', nargs=1, type= int,
 default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
 
 
-def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir):
+def ra_different(catdf, epsdf, realigndf, aln_type, score, cardinality, calc, ylim, outdir):
     '''Produce running average plots for df using 0.1 seqdist interval
     '''
 
@@ -57,6 +60,7 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir)
     cat_stds = [] #Save std deviation
     eps_avs = [] #Save average score
     eps_stds = [] #Save std deviation
+    realign_avs = []
 
 
     js = [] #Save dists
@@ -83,18 +87,27 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir)
         below_catdf =catdf[catdf['MLAAdist'+cardinality+aln_type]<j]
         below_catdf = below_catdf[below_catdf['MLAAdist'+cardinality+aln_type]>=j-step]
         cut_cat_scores = np.asarray(below_catdf[score+aln_type])
+
+        below_realigndf =realigndf[realigndf['MLAAdist']<j]
+        below_realigndf = below_realigndf[below_realigndf['MLAAdist']>=j-step]
+        cut_realign_scores = np.asarray(below_realigndf[score])
+
         if calc == 'average':
             catav= np.average(cut_cat_scores)
             epsav= np.average(cut_eps_scores)
+            realignav= np.average(cut_realign_scores)
         if calc == 'median':
             catav= np.median(cut_cat_scores)
             epsav= np.median(cut_eps_scores)
+            realignav= np.median(cut_realign_scores)
 
         cat_avs.append(catav)
         eps_avs.append(epsav)
+        realign_avs.append(realignav)
 
         cat_std = np.std(cut_cat_scores)
         eps_std = np.std(cut_eps_scores)
+
         cat_stds.append(cat_std)
         eps_stds.append(eps_std)
 
@@ -106,6 +119,7 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir)
     #Plot RA
     ax.plot(js, cat_avs, c = 'b', linewidth = 2, label = 'Broad Dataset')
     ax.plot(js, eps_avs, c = 'r', linewidth = 2, label = '2009')
+    ax.plot(js, realign_avs, c = 'purple', linewidth = 2, label = '2009 TMalign')
 
     ax.set_ylabel(score)
     ax.legend(markerscale=5,fancybox=True, framealpha=0.5)
@@ -134,6 +148,11 @@ def ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir)
     smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
     ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= 'b') #Plot gradients of gaussian kde
 
+    gradients = np.gradient(realign_avs)
+    ax.plot(js, gradients, linewidth = 1, c='purple', label = '2009 TMalign')
+    smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
+    ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= 'purple') #Plot gradients of gaussian kde
+
     ax.set_ylabel('gradient')
     #plt.ylim(grad_ylims[score])
     ax.set_xlim([0,6.1])
@@ -158,6 +177,7 @@ args = parser.parse_args()
 topdf = pd.read_csv(args.topdf[0])
 hgroupdf = pd.read_csv(args.hgroupdf[0])
 epsdf = pd.read_csv(args.epsdf[0])
+realigndf = pd.read_csv(args.realigndf[0])
 outdir = args.outdir[0]
 calc = args.calc[0]
 get_one = bool(args.get_one[0])
@@ -192,4 +212,4 @@ for score in ['RMSD']:
         except:
             print('Directory exists')
         ylim = ylims[score]
-        ra_different(catdf, epsdf, aln_type, score, cardinality, calc, ylim, outdir+score+aln_type+'/')
+        ra_different(catdf, epsdf, realigndf, aln_type, score, cardinality, calc, ylim, outdir+score+aln_type+'/')
