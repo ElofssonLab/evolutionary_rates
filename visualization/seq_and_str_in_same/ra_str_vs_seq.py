@@ -4,6 +4,7 @@
 
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 from collections import Counter
@@ -124,6 +125,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
         perc_points.append(len(below_df)/len(df))
         #Get % points within 0.05
         outside = np.where(cut_scores<av-0.05)[0].size+np.where(cut_scores>av+0.05)[0].size
+        if cut_scores.size ==0: #If no points in interval
+            continue
         perc_within_acc.append((cut_scores.size-outside)/cut_scores.size)
         #Get % points within std
         outside_std = np.where(cut_scores<av-std)[0].size+np.where(cut_scores>av+std)[0].size
@@ -138,18 +141,22 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     z = np.polyfit(js, avs, deg = 3)
     p = np.poly1d(z)
     #Plot RA
-    ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
-    #sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = 'Blues')
-    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = '95% Dataset')
-    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'royalblue', alpha = 1.0, label = 'Topology Dataset')
+    l1 = ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
+    #ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = '95% Dataset')
+    #ax.scatter(top_mldists, top_scores, s = 0.1, c = 'royalblue', alpha = 1.0, label = 'Topology Dataset')
+    sns.kdeplot(top_mldists, top_scores,  shade=True, shade_lowest = False, cmap = 'Blues')
+    sns.kdeplot(hgroup_mldists, hgroup_scores,  shade=True, shade_lowest = False, cmap = 'Greens')
     #plot stddev
     ax.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
-    ax.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
+    l2 = ax.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score')
     else:
         ax.set_ylabel(score)
-    ax.legend(markerscale=5,fancybox=True, framealpha=0.5)
+    #Custom legend
+    patch1 = mpatches.Patch(color='lightseagreen', label='95% dataset')
+    patch2 = mpatches.Patch(color='royalblue', label='Topology dataset')
+    ax.legend(handles=[patch1, patch2, l1[0], l2[0]],markerscale=5, frameon=False)
     ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
     ax.set_xlim([0,9.1])
@@ -168,8 +175,11 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     #Plot polynomial fit
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-    ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.8, label = '95% Dataset')
-    ax.scatter(top_mldists, top_scores, s = 0.1, c = 'royalblue', alpha = 1.0, label = 'Topology Dataset')
+    #ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.8, label = '95% Dataset')
+    #ax.scatter(top_mldists, top_scores, s = 0.1, c = 'royalblue', alpha = 1.0, label = 'Topology Dataset')
+    sns.kdeplot(top_mldists, top_scores,  shade=True, shade_lowest = False, cmap = 'Blues')
+    sns.kdeplot(hgroup_mldists, hgroup_scores,  shade=True, shade_lowest = False, cmap = 'Greens')
+
     ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
     ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'b')
     plt.title('Balanced Broad Dataset')
@@ -177,7 +187,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
         ax.set_ylabel('lDDT score')
     else:
         ax.set_ylabel(score)
-    ax.legend(markerscale=7, fancybox=True, framealpha=0.5)
+    ax.legend(markerscale=7, fancybox=True, frameon=False)
     ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
     ax.set_xlim([0,9.1])
@@ -222,7 +232,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.plot(js,np.round(np.array(perc_within_acc)*100,2), linewidth = 1, c= 'b', label = 'Within 0.05 lDDT')
     ax.plot(js,[68.27]*len(js),'--', linewidth = 1, c= 'lightseagreen')
     ax.set_ylabel('% of Pairs')
-    ax.legend()
+    ax.legend(frameon=False)
     ax.set_ylim([20,100])
     ax.set_yticks([20,30,40,50,60,70,80,90,100])
     ax.set_xlim([0,9.1])
@@ -245,7 +255,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
         ax.set_ylabel('lDDT score')
     else:
         ax.set_ylabel(score)
-    ax.legend()
+    ax.legend(frameon=False)
     ax.set_ylim([0,0.16])
     ax.set_yticks(np.arange(0,0.17,0.02))
     ax.set_xlim([0,9.1])
@@ -264,7 +274,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.plot(js,np.array(stds)/np.array(avs), linewidth = 1, c= 'g', label = 'Relative Standard Deviation')
     ax.plot(js,[0.05]*len(js),'--', linewidth = 1, c= 'b')
     ax.set_ylabel('Std/Mean')
-    ax.legend()
+    ax.legend(frameon=False)
     ax.set_ylim([0,0.24])
     ax.set_yticks(np.arange(0,0.25,0.02))
     ax.set_xlim([0,9.1])
@@ -290,7 +300,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
     ax.set_ylim(grad_ylims[score])
     ax.set_xlabel(xlabel)
-    ax.legend()
+    ax.legend(frameon=False)
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -349,7 +359,6 @@ if get_one == True:
 hgroupdf = hgroupdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 topdf = topdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 
-pdb.set_trace()
 cardinality = '_AA20'
 av_df = pd.DataFrame()
 for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD','DIFFSS', 'DIFF_ACC']:
