@@ -13,7 +13,7 @@ import pdb
 #custom imports
 sys.path.insert(1, '/home/pbryant/evolutionary_rates')
 from conversions import make_phylip
-from run_tmalign_treepuzzle_ind import run_puzzle
+from run_tmalign_treepuzzle_ind import run_puzzle, print_tsv
 
 #Arguments for argparse module:
 parser = argparse.ArgumentParser(description = '''A program that downloads pdb files for the old alignments
@@ -29,6 +29,7 @@ parser.add_argument('--TMalign', nargs=1, type= str, default=sys.stdin, help = '
 def run_TMalign(df, indir, outdir, TMalign):
 	'''Run TMalign on .pdb files
 	'''
+    measures = {} #Save RMSD to add with MLAA distance from tree-puzzle
 
     for i in range(len(df)):
         row = df.iloc[i]
@@ -44,7 +45,9 @@ def run_TMalign(df, indir, outdir, TMalign):
         #Write .phy file of alignment
         make_phylip(uids, tm_sequences[0], tm_sequences[1], outdir)
 
-ef parse_tm(tmalign_out):
+        return measures
+
+def parse_tm(tmalign_out):
 	'''A function that parses TMalign output.
 	'''
 
@@ -74,7 +77,20 @@ ef parse_tm(tmalign_out):
 
 
 	return(aligned_len, rmsd, tmscores, identity, chain_lens, sequences)
-    
+
 #####MAIN#####
 args = parser.parse_args()
 df = pd.read_csv(args.df[0])
+indir = args.indir[0]
+outdir = args.outdir[0]
+TMalign = args.TMalign[0]
+
+#Run TMalign
+measures = run_TMalign(df, indir, outdir, TMalign)
+print('Made alignments with TMalign')
+#Run puzzle
+run_puzzle(outdir, puzzle)
+print('Run tree-puzzle')
+
+measures = parse_puzzle(measures, outdir)
+print_tsv(measures, '2009_SCOP', outdir)
