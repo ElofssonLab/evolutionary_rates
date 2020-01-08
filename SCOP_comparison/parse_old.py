@@ -66,11 +66,14 @@ def parse(infile):
 def get_pdbs(uids):
     '''A script for getting pdb files
     '''
-
+    f = open('failed_ids.txt', 'a+')
     base='https://scop.berkeley.edu/downloads/pdbstyle/pdbstyle-1.75/'
     for uid in uids:
         if not os.path.isfile(uid+'.ent'):
-            outp = subprocess.check_output('wget '+base+uid[2:4]+'/'+uid+'.ent', shell=True)
+            try:
+                outp = subprocess.check_output('wget '+base+uid[2:4]+'/'+uid+'.ent', shell=True)
+            except:
+                f.write(uid+'\n')
 
 #####MAIN#####
 args = parser.parse_args()
