@@ -83,60 +83,59 @@ def parse_tm(tmalign_out):
         return(aligned_len, rmsd, tmscores, identity, chain_lens, sequences)
 
 def run_puzzle(outdir, puzzle):
-	'''Run tree-puzzle and retrieve output
-	'''
-	for name in glob.glob(outdir+"*.phy"): #Use all .phy files
-		uid_pairs = name.split('/')[-1].split('.')[0].split('_')
-		try:
-			p = subprocess.Popen([puzzle, name], stdin=subprocess.PIPE)
-			p.communicate(b'y\nn\n')[0]
-		except:
-			raise IOError(name)
+        '''Run tree-puzzle and retrieve output
+        '''
+        for name in glob.glob(outdir+"*.phy"): #Use all .phy files
+                try:
+                        p = subprocess.Popen([puzzle, name], stdin=subprocess.PIPE)
+                        p.communicate(b'y\nn\n')[0]
+                except:
+                        raise IOError(name)
 
 
-	return None
+        return None
 
 def parse_puzzle(measures, indir):
-	'''Parse output from tree-puzzle and write to dict
-	'''
-	keys = [*measures] #Make list of keys in dict
-	for key in keys:
-		uids = key.split('_')
-		rmsd, tmscore1, tmscore2 = measures[key] #Get rmsd
-		try:
-			dist_file = open(indir + key + '.phy.dist')
-		except:
-			uids = key.split('_')
-			dist_file = open(indir + uids[1] + '_' + uids[0] + '.phy.dist')
-			measures.pop(key)
-			#change key to match other file names
-			key = uids[1] + '_' + uids[0]
-		for line in dist_file:
-			line = line.rstrip()
-			line = line.split(" ") #split on double space
-			line = list(filter(None, line)) #Filter away empty strings
+        '''Parse output from tree-puzzle and write to dict
+        '''
+        keys = [*measures] #Make list of keys in dict
+        for key in keys:
+                rmsd, tmscore1, tmscore2 = measures[key] #Get rmsd
+                try:
+                        dist_file = open(indir + key + '.phy.dist')
+                except:
+                        uids = [key[0:7],key[8:]]
+                        dist_file = open(indir + uids[1] + '_' + uids[0] + '.phy.dist')
+                        measures.pop(key)
+                        #change key to match other file names
+                        key = uids[1] + '_' + uids[0]
+                for line in dist_file:
+                        line = line.rstrip()
+                        line = line.split(" ") #split on double space
+                        line = list(filter(None, line)) #Filter away empty strings
 
-			if len(line)>2:
-				seq_dist = line[-1] #Get ML evolutionary distance between sequences
-				measures[key] = [rmsd, tmscore1, tmscore2, seq_dist]
-				break
-		dist_file.close()
+                        if len(line)>2:
+                                seq_dist = line[-1] #Get ML evolutionary distance between sequences
+                                measures[key] = [rmsd, tmscore1, tmscore2, seq_dist]
+                                break
+                dist_file.close()
 
-	return measures
+        return measures
 
 def print_tsv(measures, hgroup, outdir):
-	'''Print measures in tsv to file
-	'''
-	with open(outdir+hgroup+'_str.tsv', 'w') as file:
-		file.write('uid1\tuid2\tMLAAdist\tRMSD\tTMscore_high\tTMscore_low\n')
-		for key in measures:
-			uids = key.split('_')
-			rmsd, tmscore1, tmscore2, seq_dist = measures[key]
-			high_score = max(float(tmscore1), float(tmscore2))
-			low_score = min(float(tmscore1), float(tmscore2))
-			file.write(uids[0]+'\t'+uids[1]+'\t'+seq_dist+'\t'+rmsd+'\t'+str(high_score)+'\t'+str(low_score)+'\n')
+        '''Print measures in tsv to file
+        '''
+        with open(outdir+hgroup+'_str.csv', 'w') as file:
+                file.write('uid1,uid2,MLAAdist,RMSD,TMscore_high,TMscore_low\n')
+                for key in measures:
+                    uid1 = key[0:7]
+                    uid2 = key[8:]
+                    rmsd, tmscore1, tmscore2, seq_dist = measures[key]
+                    high_score = max(float(tmscore1), float(tmscore2))
+                    low_score = min(float(tmscore1), float(tmscore2))
+                    file.write(uid1+','+uid2+','+seq_dist+','+rmsd+','+str(high_score)+','+str(low_score)+'\n')
 
-	return None
+        return None
 
 #####MAIN#####
 args = parser.parse_args()
@@ -155,4 +154,3 @@ print('Run tree-puzzle')
 
 measures = parse_puzzle(measures, outdir)
 print_tsv(measures, '2009_SCOP', outdir)
-pdb.set_trace()

@@ -182,7 +182,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
     ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'b')
-    plt.title('Balanced Broad Dataset')
+    plt.title('Broad Dataset')
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score')
     else:
@@ -289,12 +289,15 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.close()
 
     #Plot gradients
-    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    fig, ax = plt.subplots(figsize=(9/2.54,6/2.54))
     #ax.scatter(js, gradients,s=2)
     ax.plot(js, gradients, linewidth = 1)
     smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
     ax.plot(js, smoothed_grads, label = '1D Gaussian KDE',linewidth = 1, c= 'indigo') #Plot gradients of polyline
-    ax.set_ylabel('gradient')
+    if score == 'lddt_scores':
+        ax.set_ylabel('lDDT score gradient')
+    else:
+        ax.set_ylabel(score+' gradient')
     #plt.ylim(grad_ylims[score])
     ax.set_xlim([0,9.1])
     ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
@@ -337,7 +340,7 @@ calc = args.calc[0]
 get_one = bool(args.get_one[0])
 
 aln_types = ['_straln','_seqaln']
-ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1], 'TMscore': [0.2,1.0]}
+ylims = {'RMSD':[0,5], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1], 'TMscore': [0.2,1.0]}
 
 #set random seed
 np.random.seed(42)
