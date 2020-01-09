@@ -333,7 +333,7 @@ def ttest_features(df, catdf, score, aln_type):
     '''Perform t-tests for features - looking into differences btw groups
     '''
 
-    features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type]
+    features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type, 'CD']
 
     results = {}
     for feature in features:
@@ -490,12 +490,6 @@ def AA6_distribution(df, aln_type):
         df[key] = percentage_dict[key]
 
     return df, percentage_dict.keys()
-
-def percent_ss(df):
-    '''Calculate % H,L and S in aligned structures
-    '''
-
-    return None
 
 
 def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features,  perc_keys, outdir):
