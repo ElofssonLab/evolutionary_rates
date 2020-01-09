@@ -239,7 +239,8 @@ def anova(top_metrics_sig , features, aln_type, results_dir, colors):
     #Make violinplots
     titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix',
-    score+aln_type+'classes':'Class', score+aln_type+'_sizes':'Group size'}
+    score+aln_type+'classes':'Class', score+aln_type+'_sizes':'Group size', 'CD': 'CD'}
+    print(titles.keys())
     ylabels = {'RCO':'Average RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'%','D':'%','Y':'%','T':'%','C':'%', 'P':'%', '-':'%', 'L':'%', 'S':'%', 'H':'%'}
     matplotlib.rcParams.update({'font.size': 7})
@@ -250,7 +251,10 @@ def anova(top_metrics_sig , features, aln_type, results_dir, colors):
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_ylabel('Topology Average')
-        ax.set_title(titles[feature])
+        try:
+            ax.set_title(titles[feature])
+        except:
+            ax.set_title('Title')
         fig.tight_layout()
         fig.savefig(results_dir+'volin_'+feature+'_'+score+aln_type+'.png', format = 'png')
 
@@ -336,6 +340,9 @@ def ttest_features(df, catdf, score, aln_type):
         if feature == 'RCO':
             x = np.concatenate((np.array(df['RCO1']), np.array(df['RCO2'])))
             y = np.concatenate((np.array(catdf['RCO1']), np.array(catdf['RCO2'])))
+        elif feature == 'CD':
+            x = np.concatenate((np.array(df['CD1']), np.array(df['CD2'])))
+            y = np.concatenate((np.array(catdf['CD1']), np.array(catdf['CD2'])))
         elif feature == 'l':
             x = np.concatenate((np.array(df['l1'+aln_type]), np.array(df['l2'+aln_type]))) #the lengths for the sequence alignments represents the picked up consensus from hhsearch
             y = np.concatenate((np.array(catdf['l1'+aln_type]), np.array(catdf['l2'+aln_type])))
@@ -412,7 +419,6 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     sns.distplot(pos_sig[score+aln_type+'_sizes'],  label='+', hist = False, color = colors[0])
     sns.distplot(nonsig_df[score+aln_type+'_sizes'],  label='Non', hist = False, color = colors[1])
     sns.distplot(neg_sig[score+aln_type+'_sizes'], label='-', hist = False, color = colors[2])
-    plt.legend(frameon=False)
     plt.xscale("log")
     ax.set_ylim([0,0.02])
     ax.set_yticks(np.arange(0,0.025,0.005))
@@ -423,7 +429,7 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.legend(frameon=False)
+    plt.legend(frameon=False)
     fig.tight_layout()
     fig.savefig(results_dir+'sizes_'+score+aln_type+'.png', format = 'png')
     plt.close()
@@ -681,7 +687,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             #Save statistical assessment - this only has to be done for 1 score (but both alntypes) - will be the same in groups
             stat_results = {}
             features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type,'P', 'C', 'K', 'T', 'D', 'Y',
-            '-', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix
+            '-', 'L', 'S', 'H', 'CD'] #L,S,H = loop, sheet, helix
             for key in features:
                 stat_results[key] = np.zeros((555,4))
             catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies

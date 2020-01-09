@@ -49,14 +49,13 @@ def calculate_cd(df, indir, outdir):
                         cd_dict[uid] = CD
 
 
-
         #Get RCOs matching df
         CD1 = [] #Save RCOs
         CD2 = [] #Save RCOs
         for i in range(len(df)):
                 row = df.iloc[i]
-                CD1.append(rco_dict[row['uid1']])
-                CD2.append(rco_dict[row['uid2']])
+                CD1.append(cd_dict[row['uid1']])
+                CD2.append(cd_dict[row['uid2']])
 
         #Set new columns in df
         df['CD1'] = CD1
