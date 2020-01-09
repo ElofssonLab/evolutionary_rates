@@ -103,7 +103,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
     df = pd.concat([topdf, hgroupdf])
-    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54)) #set figsize
+    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54)) #set figsize
 
 
     #Sort df by x-value
@@ -141,14 +141,14 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     z = np.polyfit(js, avs, deg = 3)
     p = np.poly1d(z)
     #Plot RA
-    l1 = ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
+    l1 = ax.plot(js, avs, linewidth = 1, c = 'g', label = 'Running average')
     #ax.scatter(hgroup_mldists, hgroup_scores, s = 0.1, c = 'lightseagreen', alpha = 0.5, label = '95% Dataset')
     #ax.scatter(top_mldists, top_scores, s = 0.1, c = 'royalblue', alpha = 1.0, label = 'Topology Dataset')
     sns.kdeplot(top_mldists, top_scores,  shade=True, shade_lowest = False, cmap = 'Blues')
     sns.kdeplot(hgroup_mldists, hgroup_scores,  shade=True, shade_lowest = False, cmap = 'Greens')
     #plot stddev
-    ax.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
-    l2 = ax.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
+    #ax.plot(js, np.array(avs)+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
+    #l2 = ax.plot(js, np.array(avs)-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score')
     else:
@@ -156,7 +156,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #Custom legend
     patch1 = mpatches.Patch(color='lightseagreen', label='95% dataset')
     patch2 = mpatches.Patch(color='royalblue', label='Topology dataset')
-    ax.legend(handles=[patch1, patch2, l1[0], l2[0]],markerscale=5, frameon=False)
+    #ax.legend(handles=[patch1, patch2, l1[0]],markerscale=5, frameon=False)
     ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
     ax.set_xlim([0,9.1])
@@ -289,15 +289,12 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     plt.close()
 
     #Plot gradients
-    fig, ax = plt.subplots(figsize=(9/2.54,6/2.54))
+    fig, ax = plt.subplots(figsize=(4.5/2.54,3/2.54))
     #ax.scatter(js, gradients,s=2)
     ax.plot(js, gradients, linewidth = 1)
-    smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
-    ax.plot(js, smoothed_grads, label = '1D Gaussian KDE',linewidth = 1, c= 'indigo') #Plot gradients of polyline
-    if score == 'lddt_scores':
-        ax.set_ylabel('lDDT score gradient')
-    else:
-        ax.set_ylabel(score+' gradient')
+    smoothed_grads = ndimage.gaussian_filter1d(gradients, 2) #inclusion area of 2
+    ax.plot(js, smoothed_grads,linewidth = 1, c= 'indigo') #Plot gradients of polyline
+    ax.set_ylabel('Gradient')
     #plt.ylim(grad_ylims[score])
     ax.set_xlim([0,9.1])
     ax.set_xticks([0,1,2,3,4,5,6,7,8,9])

@@ -114,8 +114,8 @@ def ra_different(catdf, epsdf, realigndf, aln_type, score, cardinality, calc, yl
         js.append(np.round(j-step/2,2))
 
     #Scatter
-    ax.scatter(cat_mldists, cat_scores, c = 'cornflowerblue', s=0.1, linewidth = 2, label = 'Broad Dataset', alpha = 0.2)
-    ax.scatter(eps_mldists, eps_scores, c = 'lightcoral',  s=0.1, linewidth = 2, label = '2009', alpha = 0.5)
+    #ax.scatter(cat_mldists, cat_scores, c = 'cornflowerblue', s=0.1, linewidth = 2, label = 'Broad Dataset', alpha = 0.2)
+    #ax.scatter(eps_mldists, eps_scores, c = 'lightcoral',  s=0.1, linewidth = 2, label = '2009', alpha = 0.5)
     #Plot RA
     ax.plot(js, cat_avs, c = 'b', linewidth = 2, label = 'Broad Dataset')
     ax.plot(js, eps_avs, c = 'r', linewidth = 2, label = '2009')
