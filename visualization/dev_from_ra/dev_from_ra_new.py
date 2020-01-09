@@ -282,6 +282,7 @@ def anova(top_metrics_sig , features, aln_type, results_dir, colors):
     ax.spines['top'].set_visible(False)
     ax.set_ylabel('Percentage')
     ax.set_title('Class')
+    ax.legend(frameon=False)
     fig.tight_layout()
     fig.savefig(results_dir+'volin_class_'+score+aln_type+'.png', format = 'png')
 
@@ -402,7 +403,7 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         fig.tight_layout()
-        plt.legend(frameon=False)
+        ax.legend(frameon=False)
         fig.savefig(results_dir+key+'_'+score+aln_type+'.png', format = 'png')
         plt.close()
 
@@ -422,6 +423,7 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
+    ax.legend(frameon=False)
     fig.tight_layout()
     fig.savefig(results_dir+'sizes_'+score+aln_type+'.png', format = 'png')
     plt.close()
@@ -566,12 +568,11 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     non_within_std, non_js, non_avs = plot_partial(nonsig_df, nonsig_df_merged, avdf, score+aln_type+'_ra_non_sig.png', score, aln_type, cardinality, 'Non. set', outdir+'/'+score+aln_type+'/', colors[1])
     neg_within_std, neg_js, neg_avs = plot_partial(neg_sig, neg_sig_merged, avdf, score+aln_type+'_ra_neg_sig.png', score, aln_type, cardinality, 'Neg. set', outdir+'/'+score+aln_type+'/', colors[2])
 
-    pdb.set_trace()
     #kdeplot by sig
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-    sns.kdeplot(nonsig_df[score+aln_type+'_seqdists'], nonsig_df[score+aln_type+'_ra'], shade=False, shade_lowest = False, cmap = 'Greens')
-    sns.kdeplot(pos_js, pos_avs,  shade=False, shade_lowest = False, cmap = 'Purples')
-    sns.kdeplot(neg_js, neg_avs,  shade=False, shade_lowest = False, cmap = 'Blues')
+    sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type],nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, cmap = 'Greens')
+    sns.kdeplot(pos_sig_merged['MLAAdist'+aln_type],pos_sig_merged[score+aln_type],  shade=True, shade_lowest = False, cmap = 'Purples')
+    sns.kdeplot(neg_sig_merged['MLAAdist'+aln_type],neg_sig_merged[score+aln_type],  shade=True, shade_lowest = False, cmap = 'Blues')
     ax.plot(non_js, non_avs, color = colors[1],label = 'Non')
     ax.plot(pos_js, pos_avs, color = colors[0], label = '+')
     ax.plot(neg_js, neg_avs, color = colors[2], label = '-')
