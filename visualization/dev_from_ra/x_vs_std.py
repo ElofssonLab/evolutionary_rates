@@ -101,6 +101,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
     start = 0
     end = 6
     step = 0.1
+    std_df = pd.DataFrame() #save vals
     for j in np.arange(start+step,end+step,step):
         if np.round(j, 2) == end: #Make sure to get endpoints
             below_df = df[df['MLAAdist'+cardinality+aln_type]<=j]
@@ -118,9 +119,43 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
         #Deviation
         dev = cut_scores-tav
         std_away = dev/std
+        below_df[score+aln_type+'_std_away'] = std_away
+        std_df = pd.concat([std_df, below_df])
 
-    return np.average(avdevs), pvalue, statistic, js, avs
+    return std_df
 
+def plot_x_vs_std(std_df, features, score, aln_type, outdir):
+    '''Plot different features agains the std deviation for each pair
+    '''
+    #Make outdir
+    try:
+        os.mkdir(outdir)
+    except:
+        print('Directory '+outdir+' exists')
+
+    matplotlib.rcParams.update({'font.size': 7})
+    titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
+    'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix',
+    score+aln_type+'classes':'Class', score+aln_type+'_sizes':'Group size', 'CD': 'CD'}
+
+    for x in features:
+        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+        if x == 'RCO':
+            sns.kdeplot(std_df[x+'1'], std_df[score+aln_type+'_std_away'], label = x+'1',s=0.5)
+            #sns.kdeplot(std_df[x+'2'], std_df[score+aln_type+'_std_away'], label = x+'2',s=0.5)
+        elif x == 'l':
+            sns.kdeplot(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'], label = x+'1',s=0.5)
+            #sns.kdeplot(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'], label = x+'2',s=0.5)
+        else:
+            sns.kdeplot(std_df[x], std_df[score+aln_type+'_std_away'],s=0.5)
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_ylabel('Std from line')
+        ax.set_xlabel(x)
+        fig.tight_layout()
+        fig.savefig(outdir+x+'.png', format = 'png')
+        plt.close()
 
 #####MAIN#####
 args = parser.parse_args()
@@ -156,10 +191,6 @@ catdf = catdf.rename(columns={'C._x':'Class'})
 catdf['RCO1']=catdf['RCO1'].replace([1], 0)
 catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 
-
-#Save pvalues
-top_metrics = pd.DataFrame()
-top_metrics['Topology'] = topologies
 cardinality = '' #AA20
 
 for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
@@ -168,9 +199,9 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
 
         features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type,'P', 'C', 'K', 'T', 'D', 'Y',
-        '-', 'L', 'S', 'H', 'CD'] #L,S,H = loop, sheet, helix
+        '-', 'L', 'S', 'H', 'CD'] #L,S,H = loop, sheet, helix, contact density
 
         catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies
         catdf_s = parse_ss(catdf_s, aln_type) #Get % ss
-
-        std = dev_from_av(avdf, df, score, aln_type, cardinality, 6)
+        std_df = dev_from_av(avdf, catdf_s, score, aln_type, cardinality)
+        plot_x_vs_std(std_df, features, score, aln_type, outdir+score+aln_type+'/')
