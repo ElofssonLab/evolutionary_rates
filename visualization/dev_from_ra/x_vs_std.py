@@ -124,7 +124,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
 
     return std_df
 
-def plot_x_vs_std(std_df, features, score, aln_type, outdir):
+def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, outdir):
     '''Plot different features agains the std deviation for each pair
     '''
     #Make outdir
@@ -138,23 +138,34 @@ def plot_x_vs_std(std_df, features, score, aln_type, outdir):
     'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix',
     score+aln_type+'classes':'Class', score+aln_type+'_sizes':'Group size', 'CD': 'CD'}
 
-    for x in features:
-        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-        if x == 'RCO':
-            sns.kdeplot(std_df[x+'1'], std_df[score+aln_type+'_std_away'], label = x+'1',s=0.5)
-            #sns.kdeplot(std_df[x+'2'], std_df[score+aln_type+'_std_away'], label = x+'2',s=0.5)
-        elif x == 'l':
-            sns.kdeplot(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'], label = x+'1',s=0.5)
-            #sns.kdeplot(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'], label = x+'2',s=0.5)
-        else:
-            sns.kdeplot(std_df[x], std_df[score+aln_type+'_std_away'],s=0.5)
-
+    for x in single_features:
+        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        plt.scatter(std_df[x], std_df[score+aln_type+'_std_away'], label = x,s=0.5)
+        sns.kdeplot(std_df[x], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_ylabel('Std from line')
-        ax.set_xlabel(x)
+        ax.set_xlabel(titles[x])
         fig.tight_layout()
         fig.savefig(outdir+x+'.png', format = 'png')
+        plt.close()
+
+    for x in double_features:
+        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        if x == 'RCO' or x == 'CD':
+            plt.scatter(std_df[x+'1'], std_df[score+aln_type+'_std_away'], label = x+'1',s=0.3)
+            sns.kdeplot(std_df[x+'1'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
+        else:
+            plt.scatter(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'], label = x+'1',s=0.3)
+            sns.kdeplot(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
+        #sns.kdeplot(std_df[x+'2'], std_df[score+aln_type+'_std_away'], label = x+'2',s=0.5)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.legend(frameon=False)
+        ax.set_ylabel('Std from line')
+        ax.set_xlabel(titles[x])
+        fig.tight_layout()
+        fig.savefig(outdir+titles[x]+'.png', format = 'png')
         plt.close()
 
 #####MAIN#####
@@ -198,10 +209,9 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
 
-        features = ['RCO', 'aln_len'+aln_type, 'l', 'percent_aligned'+aln_type,'P', 'C', 'K', 'T', 'D', 'Y',
-        '-', 'L', 'S', 'H', 'CD'] #L,S,H = loop, sheet, helix, contact density
-
+        single_features = ['aln_len'+aln_type,  'percent_aligned'+aln_type]
+        double_features = ['RCO', 'l', 'P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H', 'CD'] #L,S,H = loop, sheet, helix, contact density
         catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies
         catdf_s = parse_ss(catdf_s, aln_type) #Get % ss
         std_df = dev_from_av(avdf, catdf_s, score, aln_type, cardinality)
-        plot_x_vs_std(std_df, features, score, aln_type, outdir+score+aln_type+'/')
+        plot_x_vs_std(std_df, single_features, double_features, score, aln_type, outdir+score+aln_type+'/')
