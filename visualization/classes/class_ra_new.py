@@ -113,8 +113,8 @@ def make_plots(results, cardinality, outdir, suffix):
         else:
             plt.ylabel(score)
         ax.set_ylim(ylim)
-        ax.set_xlim([0,9.1])
-        ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+        ax.set_xlim([0,6.1])
+        ax.set_xticks([0,1,2,3,4,5,6])
         # Hide the right and top spines
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -137,10 +137,10 @@ def make_plots(results, cardinality, outdir, suffix):
         ax.set_ylabel('lDDT score')
     else:
         plt.ylabel(score)
-    plt.title('Broad Dataset')
+    plt.title('Balanced Broad Dataset')
     ax.set_ylim(ylim)
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)

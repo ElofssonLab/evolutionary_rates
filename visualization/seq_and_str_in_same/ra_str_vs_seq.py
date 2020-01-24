@@ -159,8 +159,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #ax.legend(handles=[patch1, patch2, l1[0]],markerscale=5, frameon=False)
     ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -182,7 +182,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     ax.plot(js, avs, linewidth = 2, c = 'g', label = 'Running average')
     ax.plot(js,p(js), label = '3 dg polynomial fit',linewidth = 1, c= 'b')
-    plt.title('Broad Dataset')
+    plt.title('Balanced Broad Dataset')
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score')
     else:
@@ -190,8 +190,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.legend(markerscale=7, fancybox=True, frameon=False)
     ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -218,8 +218,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.hist(topdf['MLAAdist'+cardinality+aln_type], color = 'royalblue', density = True, alpha = 0.8, bins = 30)
     ax.hist(hgroupdf['MLAAdist'+cardinality+aln_type], color = 'lightseagreen', density = True, alpha = 0.5, bins = 30)
     ax.set_xlabel(xlabel)
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     ax.invert_yaxis()
     ax.axis('off')
     #fig.tight_layout()
@@ -235,8 +235,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.legend(frameon=False)
     ax.set_ylim([20,100])
     ax.set_yticks([20,30,40,50,60,70,80,90,100])
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_xlabel(xlabel)
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
@@ -258,8 +258,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.legend(frameon=False)
     ax.set_ylim([0,0.16])
     ax.set_yticks(np.arange(0,0.17,0.02))
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_xlabel(xlabel)
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
@@ -277,8 +277,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.legend(frameon=False)
     ax.set_ylim([0,0.24])
     ax.set_yticks(np.arange(0,0.25,0.02))
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_xlabel(xlabel)
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
@@ -296,8 +296,8 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.plot(js, smoothed_grads,linewidth = 1, c= 'indigo') #Plot gradients of polyline
     ax.set_ylabel('Gradient')
     #plt.ylim(grad_ylims[score])
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_ylim(grad_ylims[score])
     ax.set_xlabel(xlabel)
     ax.legend(frameon=False)

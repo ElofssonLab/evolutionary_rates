@@ -46,8 +46,8 @@ p = np.poly1d(z)
 ax.plot(avdf_one['ML  distance'],p(avdf_one['ML  distance']),linewidth = 1, c= 'rebeccapurple')
 
 #Layout
-ax.set_xlim([0,9.1])
-ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+ax.set_xlim([0,6.1])
+ax.set_xticks([0,1,2,3,4,5,6])
 ax.set_ylim([0.2,1])
 ax.set_yticks(np.arange(0.2,1.1,0.1))
 xlabel='ML AA20 distance'
