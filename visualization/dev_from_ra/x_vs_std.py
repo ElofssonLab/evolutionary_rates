@@ -148,28 +148,33 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_ylabel('Std from line')
-        ax.set_xlabel(titles[x])
         fig.tight_layout()
         fig.savefig(outname, format = 'png')
         plt.close()
 
+    #Swarm plot of classes
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    sns.catplot(data= std_df, y = score+aln_type+'_std_away', x = 'Class', kind="swarm", palette=['#1f77b4','#1f77b4','#1f77b4','#1f77b4'])
+    plot_format(ax, outdir+'class_swarm.png')
+    #Single
     for x in single_features:
-        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-        plt.scatter(std_df[x], std_df[score+aln_type+'_std_away'], label = x,s=0.5, color = '#1f77b4')
+        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        plt.scatter(std_df[x], std_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#1f77b4')
         sns.kdeplot(std_df[x], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
         #Plot outlier group
-        plt.scatter(outlier_df[x], outlier_df[score+aln_type+'_std_away'], label = x,s=0.5, color = '#e377c2')
+        plt.scatter(outlier_df[x], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
         plot_format(ax, outdir+x+'.png')
-
+    #Double
     for x in double_features:
-        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
+        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
         if x == 'RCO' or x == 'CD':
             plt.scatter(std_df[x+'1'], std_df[score+aln_type+'_std_away'], s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
             sns.kdeplot(std_df[x+'1'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
             #plt.scatter(std_df[x+'2'], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
             #sns.kdeplot(std_df[x+'2'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
             #Plot outlier group
-            plt.scatter(outlier_df[x+'1'], outlier_df[score+aln_type+'_std_away'], label = x,s=0.5, color = '#e377c2')
+            plt.scatter(outlier_df[x+'1'], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
+            ax.set_xlabel(titles[x])
             plot_format(ax, outdir+titles[x]+'.png')
         else:
             plt.scatter(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'] ,s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
@@ -177,7 +182,8 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
             #plt.scatter(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
             #sns.kdeplot(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
             #Plot outlier group
-            plt.scatter(outlier_df[x+'1'+aln_type], outlier_df[score+aln_type+'_std_away'], label = x,s=0.5, color = '#e377c2')
+            plt.scatter(outlier_df[x+'1'+aln_type], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
+            ax.set_xlabel(titles[x])
             plot_format(ax, outdir+titles[x]+'.png')
 
 
@@ -227,5 +233,4 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies
         catdf_s = parse_ss(catdf_s, aln_type) #Get % ss
         std_df = dev_from_av(avdf, catdf_s, score, aln_type, cardinality)
-        pdb.set_trace()
         plot_x_vs_std(std_df, single_features, double_features, score, aln_type, outdir+score+aln_type+'/')

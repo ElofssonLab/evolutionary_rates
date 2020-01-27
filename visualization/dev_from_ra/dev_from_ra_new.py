@@ -55,6 +55,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
     rco_extreme = []
     avs = [] #Save average score
     avdevs = [] #Save deviations
+    stds_away = []
     step = 0.1
 
 
@@ -86,6 +87,10 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
         tav = avdf[avdf['ML  distance']==x][score+aln_type].values[0] #total average in current interval
         avdevs.append(av-tav)
 
+        #number of stds away
+        std = avdf[avdf['ML  distance']==x][score+aln_type+'_std'].values[0]
+        std_away = (av-tav)/std
+        stds_away.append(std_away)
         #Plot deviation against RCO
         absolute_deviations.extend(np.absolute(cut_scores-tav))
         rco1 = [*below_df['RCO1']]
@@ -99,7 +104,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
     statistic, pvalue = stats.ttest_ind(avdevs, truevals, equal_var = False)
     #plt.plot(js, avs)
 
-    return np.average(avdevs), pvalue, statistic, js, avs
+    return np.average(avdevs), pvalue, statistic, js, avs, np.average(stds_away)
 
 def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality, title, results_dir, color):
     '''RA plots of partial dfs and the total RA
@@ -110,7 +115,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
     stds = np.array(avdf[score+aln_type+'_std']) #std dev for total ra
-    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
     matplotlib.rcParams.update({'font.size': 7})
     #Plot RA per topology
     #Percent within std
@@ -159,8 +164,8 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
     ax.legend(frameon=False)
     #ax.set_title(title)
-    ax.set_xlim([0,9.1])
-    ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_ylim(ylims[score])
     ax.set_xlabel('ML AA20 distance')
     if score == 'lddt_scores':
@@ -549,19 +554,19 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
 
     #Plot t-stat distribution
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-    ax.hist(top_metrics[score+aln_type+'_ra_tstat'], bins = 20, color = 'b')
+    ax.hist(top_metrics[score+aln_type+'_std_away'], bins = 20, color = '#1f77b4')
     ax.set_yscale('log')
     ax.set_ylabel('log count')
-    ax.set_xlabel('t-statistic')
+    ax.set_xlabel('Std from line')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
-    fig.savefig(outdir+score+aln_type+'/'+'tstat_distr_'+score+aln_type+'.png', format = 'png')
+    fig.savefig(outdir+score+aln_type+'/'+'std_away_'+score+aln_type+'.png', format = 'png')
     plt.close()
 
     #Plot all RAs per top group
     top_metrics_merged = pd.merge(top_metrics, catdf_s, left_on='Topology', right_on='group', how='left')
-    total_within_std, tot_js, tot_avs = plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', outdir+'/'+score+aln_type+'/', 'b')
+    total_within_std, tot_js, tot_avs = plot_partial(top_metrics,top_metrics_merged, avdf, score+aln_type+'_ra_per_top.png', score, aln_type, cardinality, 'All Topologies with 10', outdir+'/'+score+aln_type+'/', '#1f77b4')
 
     #Plot the RAs of the pos, non and neg sig groups
     pos_within_std, pos_js, pos_avs = plot_partial(pos_sig,pos_sig_merged, avdf, score+aln_type+'_ra_pos_sig.png', score, aln_type, cardinality, 'Pos. set', outdir+'/'+score+aln_type+'/', colors[0])
@@ -570,9 +575,9 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
 
     #kdeplot by sig
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-    sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type],nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, cmap = 'Greens')
-    sns.kdeplot(pos_sig_merged['MLAAdist'+aln_type],pos_sig_merged[score+aln_type],  shade=True, shade_lowest = False, cmap = 'Purples')
-    sns.kdeplot(neg_sig_merged['MLAAdist'+aln_type],neg_sig_merged[score+aln_type],  shade=True, shade_lowest = False, cmap = 'Blues')
+    #sns.kdeplot(nonsig_df_merged['MLAAdist'+aln_type],nonsig_df_merged[score+aln_type], shade=True, shade_lowest = False, cmap = 'Greens')
+    #sns.kdeplot(pos_sig_merged['MLAAdist'+aln_type],pos_sig_merged[score+aln_type],  shade=True, shade_lowest = False, cmap = 'Purples')
+    #sns.kdeplot(neg_sig_merged['MLAAdist'+aln_type],neg_sig_merged[score+aln_type],  shade=True, shade_lowest = False, cmap = 'Blues')
     ax.plot(non_js, non_avs, color = colors[1],label = 'Non')
     ax.plot(pos_js, pos_avs, color = colors[0], label = '+')
     ax.plot(neg_js, neg_avs, color = colors[2], label = '-')
@@ -687,10 +692,12 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
             catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies
             catdf_s = parse_ss(catdf_s, aln_type) #Get % ss
         avs_from_line = [] #save avs from line and pvals
+        std_from_line = []
         pvals = []
         tstats = []
         all_js = []
         all_avs = []
+        all_stds_away = []
         gradients = []
         toplens = []
         av_RCO = []
@@ -700,12 +707,13 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         for top in topologies:
             df = catdf_s[catdf_s['group']==top]
             toplens.append(len(df))
-            av_from_line, pvalue, statistic, js, avs = dev_from_av(avdf, df, score, aln_type, cardinality, 6)
+            av_from_line, pvalue, statistic, js, avs, std_away = dev_from_av(avdf, df, score, aln_type, cardinality, 6)
             avs_from_line.append(av_from_line)
             pvals.append(pvalue)
             tstats.append(statistic)
             all_js.append(js)
             all_avs.append(avs)
+            all_stds_away.append(std_away)
             gradients.append(np.gradient(avs))
             sizes.append(len(df))
             classes.append(df['Class'].values[0]) #append class
@@ -728,6 +736,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         top_metrics[score+aln_type+'_av_dev'] = avs_from_line
         top_metrics[score+aln_type+'_seqdists'] = all_js
         top_metrics[score+aln_type+'_ra'] = all_avs
+        top_metrics[score+aln_type+'_std_away'] = all_stds_away
         top_metrics[score+aln_type+'_gradients'] = gradients
         top_metrics[score+aln_type+'_sizes_av'] = sizes
         top_metrics[score+aln_type+'_classes_av'] = classes

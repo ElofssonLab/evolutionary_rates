@@ -22,7 +22,8 @@ def percent_HLS(ss_seq):
            }
 
         states = {'H':0, 'L':0, 'S':0}
-        counts = Counter(''.join(ss_seq.split(',')))
+        ss_seq = ''.join(ss_seq.split(','))
+        counts = Counter(ss_seq)
         for key in ss:
             states[ss[key]]+=counts[key]
 
