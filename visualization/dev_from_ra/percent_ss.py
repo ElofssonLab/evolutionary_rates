@@ -5,6 +5,7 @@
 import sys
 import numpy as np
 import pandas as pd
+import pdb
 from collections import Counter
 
 def percent_HLS(ss_seq):
@@ -21,7 +22,7 @@ def percent_HLS(ss_seq):
            }
 
         states = {'H':0, 'L':0, 'S':0}
-        counts = Counter(ss_seq)
+        counts = Counter(''.join(ss_seq.split(',')))
         for key in ss:
             states[ss[key]]+=counts[key]
 
