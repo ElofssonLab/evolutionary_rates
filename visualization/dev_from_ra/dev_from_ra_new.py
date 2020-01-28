@@ -125,7 +125,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     for i in range(len(partial_df)):
         top = topologies[i]
         if top == '1.20.5':
-            ax.plot(mldists[i],scores[i], alpha = 0.1, color = '#e377c2', linewidth =1)
+            ax.plot(mldists[i],scores[i], alpha = 1, color = '#e377c2', linewidth =1)
         else:
             ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
         #Get percentage within 1 std

@@ -117,9 +117,9 @@ def ra_different(catdf, epsdf, realigndf, aln_type, score, cardinality, calc, yl
     #ax.scatter(cat_mldists, cat_scores, c = 'cornflowerblue', s=0.1, linewidth = 2, label = 'Broad Dataset', alpha = 0.2)
     #ax.scatter(eps_mldists, eps_scores, c = 'lightcoral',  s=0.1, linewidth = 2, label = '2009', alpha = 0.5)
     #Plot RA
-    ax.plot(js, cat_avs, c = 'b', linewidth = 2, label = 'Broad Dataset')
-    ax.plot(js, eps_avs, c = 'r', linewidth = 2, label = '2009')
-    ax.plot(js, realign_avs, c = 'purple', linewidth = 2, label = '2009 TMalign')
+    ax.plot(js, cat_avs, c = '#1f77b4', linewidth = 2, label = 'Broad Dataset')
+    ax.plot(js, eps_avs, c = '#e377c2', linewidth = 2, label = '2009')
+    ax.plot(js, realign_avs, c = '#9467bd', linewidth = 2, label = '2009 TMalign')
 
     ax.set_ylabel(score)
     ax.legend(markerscale=5,fancybox=True, framealpha=0.5)
@@ -139,19 +139,19 @@ def ra_different(catdf, epsdf, realigndf, aln_type, score, cardinality, calc, yl
     #Plot gradients
     fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
     gradients = np.gradient(eps_avs)
-    ax.plot(js, gradients, linewidth = 1, c='r', label = '2009')
+    ax.plot(js, gradients, linewidth = 1, c='#e377c2', label = '2009')
     smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
-    ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= 'r') #Plot gradients of gaussian kde
+    ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= '#e377c2') #Plot gradients of gaussian kde
 
     gradients = np.gradient(cat_avs)
-    ax.plot(js, gradients, linewidth = 1, c='b', label = 'Broad Dataset')
+    ax.plot(js, gradients, linewidth = 1, c='#1f77b4', label = 'Broad Dataset')
     smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
-    ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= 'b') #Plot gradients of gaussian kde
+    ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= '#1f77b4') #Plot gradients of gaussian kde
 
     gradients = np.gradient(realign_avs)
-    ax.plot(js, gradients, linewidth = 1, c='purple', label = '2009 TMalign')
+    ax.plot(js, gradients, linewidth = 1, c='#9467bd', label = '2009 TMalign')
     smoothed_grads = ndimage.gaussian_filter1d(gradients, 2)
-    ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= 'purple') #Plot gradients of gaussian kde
+    ax.plot(js, smoothed_grads, '--', label = 'Gaussian KDE',linewidth = 2, c= '#9467bd') #Plot gradients of gaussian kde
 
     ax.set_ylabel('gradient')
     #plt.ylim(grad_ylims[score])
