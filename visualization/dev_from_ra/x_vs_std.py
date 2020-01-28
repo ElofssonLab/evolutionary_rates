@@ -11,16 +11,8 @@ import numpy as np
 import seaborn as sns
 import sys
 import argparse
-from scipy import stats
-import researchpy as rp
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
+from scipy.stats import pearsonr
 import time
-'''
-When using statsmodels in scientific publication, please consider using the following citation:
-Seabold, Skipper, and Josef Perktold. “Statsmodels: Econometric and statistical modeling with python.”
-Proceedings of the 9th Python in Science Conference. 2010.
-'''
 
 #Custom
 from percent_ss import parse_ss
@@ -133,6 +125,8 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
     except:
         print('Directory '+outdir+' exists')
 
+    #Save pearsonr
+    p_R = {}
     matplotlib.rcParams.update({'font.size': 7})
     titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix',
@@ -141,52 +135,76 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
     #Color in outlier group
     outlier_df = std_df[std_df['group']=='1.20.5']
 
-    def plot_format(ax, outname):
+    def plot_format(ax, outname, ylabel):
         '''Format plot layout
         '''
 
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.set_ylabel('Std from line')
+        ax.set_ylabel(ylabel)
         fig.tight_layout()
         fig.savefig(outname, format = 'png')
         plt.close()
 
-    #Swarm plot of classes
-    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-    sns.catplot(data= std_df, y = score+aln_type+'_std_away', x = 'Class', kind="swarm", palette=['#1f77b4','#1f77b4','#1f77b4','#1f77b4'])
-    plot_format(ax, outdir+'class_swarm.png')
     #Single
     for x in single_features:
-        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-        plt.scatter(std_df[x], std_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#1f77b4')
-        sns.kdeplot(std_df[x], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
-        #Plot outlier group
-        plt.scatter(outlier_df[x], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
-        plot_format(ax, outdir+x+'.png')
+        # fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        # plt.scatter(std_df[x], std_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#1f77b4')
+        # sns.kdeplot(std_df[x], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
+        # #Plot outlier group
+        # plt.scatter(outlier_df[x], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
+        # plot_format(ax, outdir+x+'.png', 'Std from line')
+        p_R[x] = pearsonr(std_df[x], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
+
     #Double
     for x in double_features:
         fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
         if x == 'RCO' or x == 'CD':
-            plt.scatter(std_df[x+'1'], std_df[score+aln_type+'_std_away'], s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
-            sns.kdeplot(std_df[x+'1'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
-            #plt.scatter(std_df[x+'2'], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
-            #sns.kdeplot(std_df[x+'2'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
-            #Plot outlier group
-            plt.scatter(outlier_df[x+'1'], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
-            ax.set_xlabel(titles[x])
-            plot_format(ax, outdir+titles[x]+'.png')
+            # plt.scatter(std_df[x+'1'], std_df[score+aln_type+'_std_away'], s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
+            # sns.kdeplot(std_df[x+'1'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
+            # #plt.scatter(std_df[x+'2'], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
+            # #sns.kdeplot(std_df[x+'2'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
+            # #Plot outlier group
+            # plt.scatter(outlier_df[x+'1'], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
+            # ax.set_xlabel(titles[x])
+            # plot_format(ax, outdir+titles[x]+'.png', 'Std from line')
+            p_R[x] = pearsonr(std_df[x+'1'], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
+
         else:
-            plt.scatter(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'] ,s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
-            sns.kdeplot(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
-            #plt.scatter(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
-            #sns.kdeplot(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
-            #Plot outlier group
-            plt.scatter(outlier_df[x+'1'+aln_type], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
-            ax.set_xlabel(titles[x])
-            plot_format(ax, outdir+titles[x]+'.png')
+            # plt.scatter(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'] ,s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
+            # sns.kdeplot(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
+            # #plt.scatter(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
+            # #sns.kdeplot(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
+            # #Plot outlier group
+            # plt.scatter(outlier_df[x+'1'+aln_type], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
+            # ax.set_xlabel(titles[x])
+            # plot_format(ax, outdir+titles[x]+'.png', 'Std from line')
+            p_R[x] = pearsonr(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
 
+    #Plot personr
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+
+    i = 0
+    all_features = ['aln_len'+aln_type, 'C', 'percent_aligned'+aln_type, 'RCO', 'l', 'P', 'T', 'K', 'Y', '-', 'CD', 'S', 'D', 'H', 'L']
+
+    for key in all_features:
+        plt.scatter(i, p_R[key], color = '#1f77b4', s = 5)
+        ax.annotate(titles[key], (i, p_R[key]+0.0028))
+        i+=0.028
+    ax.axis('square')
+    ax.set_yticks([-0.2,-0.1,0,0.1,0.2])
+    ax.set_ylim([-0.2,0.2])
+    plt.tick_params(
+    axis='x',          # changes apply to the x-axis
+    which='both',      # both major and minor ticks are affected
+    bottom=False,      # ticks along the bottom edge are off
+    top=False,         # ticks along the top edge are off
+    labelbottom=False) # labels along the bottom edge are off
+    ax.set_xlabel('Feature')
+    plot_format(ax, outdir+'pearsonr.png', 'Pearson R')
+
+    return None
 #####MAIN#####
 args = parser.parse_args()
 topdf = pd.read_csv(args.topdf[0])
