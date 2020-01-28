@@ -186,15 +186,15 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
 
     i = 0
-    all_features = ['aln_len'+aln_type, 'C', 'percent_aligned'+aln_type, 'RCO', 'l', 'P', 'T', 'K', 'Y', '-', 'CD', 'S', 'D', 'H', 'L']
+    all_features = ['C', 'percent_aligned'+aln_type, 'RCO', 'l', 'P', 'T', 'K',  'H', '-', 'CD', 'S', 'D', 'L', 'Y']
 
     for key in all_features:
         plt.scatter(i, p_R[key], color = '#1f77b4', s = 5)
-        ax.annotate(titles[key], (i, p_R[key]+0.0028))
+        ax.annotate(titles[key], (i, p_R[key]+0.005))
         i+=0.028
-    ax.axis('square')
-    ax.set_yticks([-0.2,-0.1,0,0.1,0.2])
-    ax.set_ylim([-0.2,0.2])
+
+    #ax.set_yticks([-0.2,-0.1,0,0.1,0.2])
+    #ax.set_ylim([-0.25,0.25])
     plt.tick_params(
     axis='x',          # changes apply to the x-axis
     which='both',      # both major and minor ticks are affected
@@ -202,6 +202,7 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
     top=False,         # ticks along the top edge are off
     labelbottom=False) # labels along the bottom edge are off
     ax.set_xlabel('Feature')
+    ax.axis('square')
     plot_format(ax, outdir+'pearsonr.png', 'Pearson R')
 
     return None

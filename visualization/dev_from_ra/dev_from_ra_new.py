@@ -109,6 +109,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality, max_seqdist):
 def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardinality, title, results_dir, color):
     '''RA plots of partial dfs and the total RA
     '''
+
     topologies = [*partial_df['Topology']]
     ylims = {'RMSD':[0,4], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1], 'TMscore': [0.2,1.0]}
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025], 'DIFFC':[-0.04, 0.04], 'TMscore':[-0.025, 0.025]}
@@ -123,7 +124,10 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     percent_within_std['seqdist'] = np.round(percent_within_std['seqdist'], 2)
     for i in range(len(partial_df)):
         top = topologies[i]
-        ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
+        if top == '1.20.5':
+            ax.plot(mldists[i],scores[i], alpha = 0.1, color = '#e377c2', linewidth =1)
+        else:
+            ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
         #Get percentage within 1 std
         for j in range(len(mldists[i])):
             sel = avdf[avdf['ML  distance']==mldists[i][j]]
@@ -157,8 +161,9 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
         total_top_ra.append(np.average(cut_scores))
         total_top_js.append(np.round(j-step/2,2))
 
-    ax.plot(total_top_js, total_top_ra, color = color, linewidth = 1.5, label = 'Topology', alpha = 0.7)
-    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 1.5, label = 'Broad dataset')
+
+    ax.plot(total_top_js, total_top_ra, color = color, linewidth = 1.5, label = 'Fold', alpha = 0.7)
+    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 1.5, label = 'Total')
     #plot stddev
     ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
     ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
