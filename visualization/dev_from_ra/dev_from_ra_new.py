@@ -116,7 +116,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
     stds = np.array(avdf[score+aln_type+'_std']) #std dev for total ra
-    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
+    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
     matplotlib.rcParams.update({'font.size': 7})
     #Plot RA per topology
     #Percent within std
@@ -125,7 +125,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     for i in range(len(partial_df)):
         top = topologies[i]
         if top == '1.20.5':
-            ax.plot(mldists[i],scores[i], alpha = 1, color = '#e377c2', linewidth =1)
+            ax.plot(mldists[i],scores[i], alpha = 1, color = 'maroon', linewidth =1)
         else:
             ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
         #Get percentage within 1 std
@@ -636,29 +636,42 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
 
     return None
 
-def find_sim(top_metrics, catdf_s, aln_type):
+def find_sim(top_metrics, catdf_s, aln_type, outdir):
     '''Find similar folds in terms of ra from different classes
     '''
-
-    colors = {1: 'royalblue', 2: 'k', 3: 'green', 4: 'violet'}
+    matplotlib.rcParams.update({'font.size': 7})
+    colors = {1: 'dodgerblue', 2: 'slateblue', 3: 'darkslateblue', 4: 'violet'}
     class_counts = {1: 0, 2: 0, 3: 0, 4: 0}
     sel = top_metrics[top_metrics[score+aln_type+'_av_dev']<=0.01]
     sel = sel[sel[score+aln_type+'_av_dev']>=-0.01]
     sel = sel.reset_index()
 
-    sel_tops = ['3.90.1280', '2.10.25', '1.10.260', '4.10.470']
+    sel_tops = ['1.10.260',  '2.10.25', '3.90.1280']#, '4.10.470']
     # for i in range(len(sel)):
     #     row = sel.iloc[i]
     #     C = int(row['Topology'][0])
     #     class_counts[C]+=1
     #     if class_counts[C] < 6:
     #         plt.plot(row['lddt_scores_straln_seqdists'], row['lddt_scores_straln_ra'], label = row['Topology'])
-    #
-    # for top in sel_tops:
-    #     row = sel[sel['Topology']==top]
-    #     C = int(top[0])
-    #     plt.plot(row['lddt_scores_straln_seqdists'].values[0], row['lddt_scores_straln_ra'].values[0], color = colors[C], label = top)
-    # plt.legend()
+
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    for top in sel_tops:
+        row = sel[sel['Topology']==top]
+        C = int(top[0])
+        ax.plot(row['lddt_scores_straln_seqdists'].values[0], row['lddt_scores_straln_ra'].values[0], color = colors[C], label = top)
+    ax.set_ylim([0.2,1])
+    ax.set_yticks([0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
+    ax.set_xlabel('ML AA20 distance')
+    ax.set_ylabel('lDDT score')
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.legend(markerscale=7, frameon=False)
+    fig.tight_layout()
+    fig.savefig(outdir+'find_sim.png', format = 'png')
+    plt.close()
     # plt.show()
 
     #Get most representative
@@ -671,6 +684,8 @@ def find_sim(top_metrics, catdf_s, aln_type):
             below_df = below_df[below_df['MLAAdist'+aln_type]>=i]
             uids = [*sel['uid1']]+[*sel['uid2']] #Get all uids
             max = 0
+            counts = Counter(uids)
+
             for key in counts:
                 if key in sel_ids:
                     continue
@@ -678,8 +693,8 @@ def find_sim(top_metrics, catdf_s, aln_type):
                     if counts[key] > max:
                         max = counts[key]
                         max_id = key
-
-            print(str(i)+','+str(max_id)+','+str(max)+'\n')
+            sel_ids.append(max_id)
+            print(str(i)+','+str(max_id)+','+str(counts[max_id]))
     return None
 
 #####MAIN#####
@@ -796,8 +811,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
-        find_sim(top_metrics, catdf_s, aln_type)
-        pdb.set_trace()
+        find_sim(top_metrics, catdf_s, aln_type,  outdir+'sel_structures/')
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, perc_keys, outdir)
 
 
