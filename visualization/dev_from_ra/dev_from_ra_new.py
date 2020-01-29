@@ -636,6 +636,52 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
 
     return None
 
+def find_sim(top_metrics, catdf_s, aln_type):
+    '''Find similar folds in terms of ra from different classes
+    '''
+
+    colors = {1: 'royalblue', 2: 'k', 3: 'green', 4: 'violet'}
+    class_counts = {1: 0, 2: 0, 3: 0, 4: 0}
+    sel = top_metrics[top_metrics[score+aln_type+'_av_dev']<=0.01]
+    sel = sel[sel[score+aln_type+'_av_dev']>=-0.01]
+    sel = sel.reset_index()
+
+    sel_tops = ['3.90.1280', '2.10.25', '1.10.260', '4.10.470']
+    # for i in range(len(sel)):
+    #     row = sel.iloc[i]
+    #     C = int(row['Topology'][0])
+    #     class_counts[C]+=1
+    #     if class_counts[C] < 6:
+    #         plt.plot(row['lddt_scores_straln_seqdists'], row['lddt_scores_straln_ra'], label = row['Topology'])
+    #
+    # for top in sel_tops:
+    #     row = sel[sel['Topology']==top]
+    #     C = int(top[0])
+    #     plt.plot(row['lddt_scores_straln_seqdists'].values[0], row['lddt_scores_straln_ra'].values[0], color = colors[C], label = top)
+    # plt.legend()
+    # plt.show()
+
+    #Get most representative
+    for top in sel_tops:
+        sel = catdf_s[catdf_s['group']==top]
+        print(top)
+        sel_ids = []
+        for i in range(0,5):
+            below_df = sel[sel['MLAAdist'+aln_type]<i+1]
+            below_df = below_df[below_df['MLAAdist'+aln_type]>=i]
+            uids = [*sel['uid1']]+[*sel['uid2']] #Get all uids
+            max = 0
+            for key in counts:
+                if key in sel_ids:
+                    continue
+                else:
+                    if counts[key] > max:
+                        max = counts[key]
+                        max_id = key
+
+            print(str(i)+','+str(max_id)+','+str(max)+'\n')
+    return None
+
 #####MAIN#####
 args = parser.parse_args()
 topdf = pd.read_csv(args.topdf[0])
@@ -750,6 +796,8 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
+        find_sim(top_metrics, catdf_s, aln_type)
+        pdb.set_trace()
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, perc_keys, outdir)
 
 

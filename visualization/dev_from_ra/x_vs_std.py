@@ -250,7 +250,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
 
         single_features = ['aln_len'+aln_type,  'percent_aligned'+aln_type]
-        double_features = ['RCO', 'l', 'P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H', 'CD'] #L,S,H = loop, sheet, helix, contact density
+        double_features = ['CD', 'RCO', 'l', 'P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix, contact density
         catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies
         catdf_s = parse_ss(catdf_s, aln_type) #Get % ss
         std_df = dev_from_av(avdf, catdf_s, score, aln_type, cardinality)

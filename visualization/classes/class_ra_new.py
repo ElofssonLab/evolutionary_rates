@@ -51,7 +51,9 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
         cardinality = ''
     avs = [] #Save average score
     js = [] #Save dists
+    stds = [] #Save stds
     perc_points = []
+    num_points = 0
     step = 0.1
     top_mldists = np.asarray(topdf['MLAAdist'+cardinality+aln_type])
     top_scores = np.asarray(topdf[score+aln_type])
@@ -69,6 +71,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     mldists = np.append(top_mldists, hgroup_mldists)
     scores = np.append(top_scores, hgroup_scores)
 
+
     for j in np.arange(min(mldists)+step,max(mldists)+step,step):
         below_df = df[df['MLAAdist'+cardinality+aln_type]<j]
         below_df = below_df[below_df['MLAAdist'+cardinality+aln_type]>=j-step]
@@ -79,13 +82,13 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
             av= np.median(cut_scores)
         avs.append(av)
         js.append(np.round(j-step/2,2))
+        stds.append(np.std(cut_scores))
         perc_points.append(len(below_df)/len(df)*100)
-
+        num_points += len(below_df[below_df['MLAAdist'+cardinality+aln_type]<=6])
     #Include derivatives
     gradients = np.gradient(avs)
 
-
-    return js, avs, perc_points, mldists, scores, gradients
+    return js, avs, stds, perc_points, num_points, mldists, scores, gradients
 
 def make_plots(results, cardinality, outdir, suffix):
     '''Make the plots'''
@@ -98,13 +101,15 @@ def make_plots(results, cardinality, outdir, suffix):
 
     for i in [1.,2.,3.,4.]:
         fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-        js, avs, perc_points, mldists, scores, gradients = results[i]
+        js, avs, stds, perc_points, num_points, mldists, scores, gradients = results[i]
 
         #ax.scatter3D(mldists, [i]*len(mldists),scores, c = colors[i], s = 0.05)
 
         sns.kdeplot(mldists, scores,  shade=True, shade_lowest = False, cmap = cmaps[i])
         #Plot RA
         ax.plot(js, avs, linewidth = 2, c = colors[i], label = 'Running average')
+        ax.plot(js, np.array(avs)+np.array(stds), '--', linewidth = 1,  c = colors[i])
+        ax.plot(js,np.array(avs)-np.array(stds), '--', linewidth = 1, c = colors[i], label = 'Standard deviation')
         #plt.scatter(mldists, scores, s = 0.05, c = colors[i], alpha = 0.7)
         plt.title(classes[i])
         ax.set_xlabel(xlabel)
@@ -118,7 +123,7 @@ def make_plots(results, cardinality, outdir, suffix):
         # Hide the right and top spines
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.legend(markerscale=7, fancybox=True, framealpha=0.5)
+        ax.legend(markerscale=7, frameon=False)
         fig.tight_layout()
         fig.savefig(outdir+'class_'+str(i)+'_running_'+suffix, format = 'svg')
         fig.savefig(outdir+'class_'+str(i)+'_running_'+suffix+'.png', format = 'png')
@@ -129,22 +134,24 @@ def make_plots(results, cardinality, outdir, suffix):
     #Plot all together
     fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
     for i in [1.,2.,3.,4.]:
-        js, avs, perc_points, mldists, scores, gradients = results[i]
+        js, avs, stds, perc_points, num_points, mldists, scores, gradients = results[i]
+        print(i, num_points)
         #Plot RA
         ax.plot(js, avs, linewidth = 2, c = colors[i], label = classes[i])
+
     ax.set_xlabel(xlabel)
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score')
     else:
         plt.ylabel(score)
-    plt.title('Balanced Broad Dataset')
+    plt.title('All Classes')
     ax.set_ylim(ylim)
     ax.set_xlim([0,6.1])
     ax.set_xticks([0,1,2,3,4,5,6])
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.legend(markerscale=7, fancybox=True, framealpha=0.5)
+    ax.legend(markerscale=7, frameon=False)
     fig.tight_layout()
     fig.savefig(outdir+'all_classes_running_'+suffix, format = 'svg')
     fig.savefig(outdir+'all_classes_running_'+suffix+'.png', format = 'png')
@@ -207,8 +214,8 @@ for score in ['lddt_scores']:#['RMSD','DIFFSS', 'DIFF_ACC', 'lddt_scores']:
         for C in [1.,2.,3.,4.]: #Plot per class
             df1 = topdf[topdf['C._x']==C]
             df2 = hgroupdf[hgroupdf['C._x']==C]
-            js, avs, perc_points, mldists, scores, gradients = ra_different(df1, df2, aln_type, score, cardinality, calc, ylim, outdir)
-            results[C] = [js, avs, perc_points, mldists, scores, gradients]
+            js, avs, stds, perc_points, num_points, mldists, scores, gradients = ra_different(df1, df2, aln_type, score, cardinality, calc, ylim, outdir)
+            results[C] = [js, avs, stds, perc_points, num_points, mldists, scores, gradients]
             try:
              avdf[C] = avs
             except:
