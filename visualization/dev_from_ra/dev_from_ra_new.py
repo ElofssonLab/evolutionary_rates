@@ -211,7 +211,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     ax.set_xlim([0,9.1])
     ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
     ax.set_ylim(grad_ylims[score])
-    ax.set_xlabel('ML AA20 distance')
+    ax.set_xlabel('AA20 ED')
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score gradients')
     else:
@@ -592,7 +592,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
         ax.set_ylabel('lDDT score')
     else:
         ax.set_ylabel(score)
-    ax.set_xlabel('ML AA20 distance')
+    ax.set_xlabel('AA20 ED')
     ax.set_xlim([0,9.1])
     ax.set_xticks([0,1,2,3,4,5,6,7,8,9])
     # Hide the right and top spines
@@ -613,7 +613,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     ax.set_ylabel('%')
     ax.set_title('Within 1 Std')
     ax.set_xticks(np.arange(0,9.1,1))
-    ax.set_xlabel('ML AA20 distance')
+    ax.set_xlabel('AA20 ED')
     ax.set_ylim([60,100])
     ax.set_yticks([60,70,80,90,100])
     # Hide the right and top spines
@@ -663,7 +663,7 @@ def find_sim(top_metrics, catdf_s, aln_type, outdir):
     ax.set_yticks([0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
     ax.set_xlim([0,6.1])
     ax.set_xticks([0,1,2,3,4,5,6])
-    ax.set_xlabel('ML AA20 distance')
+    ax.set_xlabel('AA20 ED')
     ax.set_ylabel('lDDT score')
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
