@@ -42,7 +42,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     #Double column = 183 mm, maxfont = 8
     matplotlib.rcParams.update({'font.size': 7})
     suffix = calc+'_'+score+aln_type
-    xlabel = 'ML '+cardinality[1:]+' distance'
+    xlabel = cardinality[1:]+' ED'
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025], 'DIFFC':[-0.04, 0.04], 'TMscore':[-0.025, 0.025]}
 
 
@@ -224,7 +224,7 @@ if get_one == True:
 hgroupdf = hgroupdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 topdf = topdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 
-cardinalities = ['_AA3', '_AA6', '_AA20', '_AA2']
+cardinalities = ['_AA20', '_AA3', '_AA6', '_AA2']
 for cardinality in cardinalities:
     print(cardinality)
     av_df = pd.DataFrame()

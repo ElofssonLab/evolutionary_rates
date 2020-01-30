@@ -172,7 +172,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     ax.set_xlim([0,6.1])
     ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_ylim(ylims[score])
-    ax.set_xlabel('ML AA20 distance')
+    ax.set_xlabel('AA20 ED')
     if score == 'lddt_scores':
         ax.set_ylabel('lDDT score')
     else:
