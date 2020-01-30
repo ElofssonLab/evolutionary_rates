@@ -152,7 +152,7 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
         plt.scatter(std_df[x], std_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#1f77b4')
         sns.kdeplot(std_df[x], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
         #Plot outlier group
-        plt.scatter(outlier_df[x], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
+        plt.scatter(outlier_df[x], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = 'maroon')
         ax.set_xlabel(titles[x])
         plot_format(ax, outdir+x+'.png', 'Std from line')
         p_R[x] = pearsonr(std_df[x], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
@@ -161,12 +161,12 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
     for x in double_features:
         fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
         if x == 'RCO' or x == 'CD':
-            plt.scatter(std_df[x+'1'], std_df[score+aln_type+'_std_away'], s=0.3, color = 'maroon', label = 'Domain 1', alpha = 0.2)
+            plt.scatter(std_df[x+'1'], std_df[score+aln_type+'_std_away'], s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
             sns.kdeplot(std_df[x+'1'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
             #plt.scatter(std_df[x+'2'], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
             #sns.kdeplot(std_df[x+'2'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
             #Plot outlier group
-            plt.scatter(outlier_df[x+'1'], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
+            plt.scatter(outlier_df[x+'1'], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = 'maroon')
             ax.set_xlabel(titles[x])
             plot_format(ax, outdir+titles[x]+'.png', 'Std from line')
             p_R[x] = pearsonr(std_df[x+'1'], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
@@ -177,7 +177,7 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
             #plt.scatter(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
             #sns.kdeplot(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
             #Plot outlier group
-            plt.scatter(outlier_df[x+'1'+aln_type], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#e377c2')
+            plt.scatter(outlier_df[x+'1'+aln_type], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = 'maroon')
             ax.set_xlabel(titles[x])
             plot_format(ax, outdir+titles[x]+'.png', 'Std from line')
             p_R[x] = pearsonr(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)

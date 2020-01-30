@@ -359,14 +359,15 @@ if get_one == True:
 hgroupdf = hgroupdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 topdf = topdf.rename(columns={'TMscore':'TMscore_seqaln', 'TMscore_high':'TMscore_straln'})
 
-cardinality = '_AA20'
-av_df = pd.DataFrame()
-for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD','DIFFSS', 'DIFF_ACC']:
-    for aln_type in aln_types:
-        try:
-            os.mkdir(outdir+score+aln_type)
-        except:
-            print('Directory exists')
-        ylim = ylims[score]
-        av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir+score+aln_type+'/', av_df)
-av_df.to_csv(outdir+'av_df.csv')
+cardinalities = ['_AA20', '_AA2', '_AA3', '_AA6']
+for cardinality in cardinalities:
+    av_df = pd.DataFrame()
+    for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD','DIFFSS', 'DIFF_ACC']:
+        for aln_type in aln_types:
+            try:
+                os.mkdir(outdir+cardinality[1:]+'/'+score+aln_type)
+            except:
+                print('Directory exists')
+            ylim = ylims[score]
+            av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir+cardinality[1:]+'/'+score+aln_type+'/', av_df)
+    av_df.to_csv(outdir+cardinality[1:]+'/'+'av_df.csv')
