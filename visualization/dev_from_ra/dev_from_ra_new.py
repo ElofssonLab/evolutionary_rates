@@ -646,17 +646,44 @@ def find_sim(top_metrics, catdf_s, aln_type, outdir):
     sel = sel[sel[score+aln_type+'_av_dev']>=-0.01]
     sel = sel.reset_index()
 
-    sel_tops = ['1.10.260',  '2.10.25', '3.90.1280']#, '4.10.470']
-    # for i in range(len(sel)):
-    #     row = sel.iloc[i]
-    #     C = int(row['Topology'][0])
-    #     class_counts[C]+=1
-    #     if class_counts[C] < 6:
-    #         plt.plot(row['lddt_scores_straln_seqdists'], row['lddt_scores_straln_ra'], label = row['Topology'])
+    def check_interval(dists):
+        '''Chack how many intervals of 1 the uid maps to
+        '''
 
-    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        mapped_i = 0
+        for i in range(0,5):
+            for d in dists:
+                if d >= i and d < i+1:
+                    mapped_i += 1
+                    break
+
+        return mapped_i
+
+    #Get most representative
+    sel_tops = []
+    for top in sel['Topology']:
+        sel = catdf_s[catdf_s['group']==top]
+        uids = [*sel['uid1']]+[*sel['uid2']]
+        counts = Counter(uids)
+        uid_dict = {}
+        for key in counts:
+            dists = []
+            dists.extend([*sel[sel['uid1']==key]['MLAAdist'+aln_type]])
+            dists.extend([*sel[sel['uid2']==key]['MLAAdist'+aln_type]])
+            dists.sort()
+            mapped_i = check_interval(dists)
+            uid_dict[key] = mapped_i
+        counts = Counter(uid_dict)
+        uid,count = counts.most_common()[0]
+        if count == 5:
+            print(count,top,uid)
+            sel_tops.append(top)
+
+    #sel_tops = ['1.10.260',  '2.70.98', '3.30.450']#, '4.10.470']
+
+    fig, ax = plt.subplots(figsize=(10,10))
     for top in sel_tops:
-        row = sel[sel['Topology']==top]
+        row = top_metrics[top_metrics['Topology']==top]
         C = int(top[0])
         ax.plot(row['lddt_scores_straln_seqdists'].values[0], row['lddt_scores_straln_ra'].values[0], color = colors[C], label = top)
     ax.set_ylim([0.2,1])
@@ -670,31 +697,12 @@ def find_sim(top_metrics, catdf_s, aln_type, outdir):
     ax.spines['top'].set_visible(False)
     ax.legend(markerscale=7, frameon=False)
     fig.tight_layout()
+    plt.show()
     fig.savefig(outdir+'find_sim.png', format = 'png')
     plt.close()
-    # plt.show()
 
-    #Get most representative
-    for top in sel_tops:
-        sel = catdf_s[catdf_s['group']==top]
-        print(top)
-        sel_ids = []
-        for i in range(0,5):
-            below_df = sel[sel['MLAAdist'+aln_type]<i+1]
-            below_df = below_df[below_df['MLAAdist'+aln_type]>=i]
-            uids = [*sel['uid1']]+[*sel['uid2']] #Get all uids
-            max = 0
-            counts = Counter(uids)
 
-            for key in counts:
-                if key in sel_ids:
-                    continue
-                else:
-                    if counts[key] > max:
-                        max = counts[key]
-                        max_id = key
-            sel_ids.append(max_id)
-            print(str(i)+','+str(max_id)+','+str(counts[max_id]))
+
     return None
 
 #####MAIN#####
