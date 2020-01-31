@@ -116,18 +116,15 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     mldists = [*partial_df[score+aln_type+'_seqdists']]
     scores = [*partial_df[score+aln_type+'_ra']]
     stds = np.array(avdf[score+aln_type+'_std']) #std dev for total ra
-    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
-    matplotlib.rcParams.update({'font.size': 7})
+    fig, ax = plt.subplots(figsize=(25/2.54,25/2.54))
+    matplotlib.rcParams.update({'font.size': 20})
     #Plot RA per topology
     #Percent within std
     percent_within_std = pd.DataFrame(list(zip(np.arange(0.05,6,0.1), np.zeros(60),  np.zeros(60))),columns = ['seqdist', 'within','total'])
     percent_within_std['seqdist'] = np.round(percent_within_std['seqdist'], 2)
     for i in range(len(partial_df)):
         top = topologies[i]
-        if top == '1.20.5':
-            ax.plot(mldists[i],scores[i], alpha = 1, color = 'maroon', linewidth =1)
-        else:
-            ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
+        ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
         #Get percentage within 1 std
         for j in range(len(mldists[i])):
             sel = avdf[avdf['ML  distance']==mldists[i][j]]
@@ -161,12 +158,12 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
         total_top_ra.append(np.average(cut_scores))
         total_top_js.append(np.round(j-step/2,2))
 
-
-    ax.plot(total_top_js, total_top_ra, color = color, linewidth = 1.5, label = 'Fold', alpha = 0.7)
-    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 1.5, label = 'Total')
+    matplotlib.rcParams.update({'font.size': 20})
+    ax.plot(total_top_js, total_top_ra, color = color, linewidth = 3, label = 'Fold', alpha = 0.7)
+    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 3, label = 'Total')
     #plot stddev
-    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+np.array(stds), '--', c = 'g', linewidth = 1) #positive stds
-    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-np.array(stds), '--', c = 'g', linewidth = 1, label = 'Standard deviation') #negative stds
+    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+np.array(stds), '--', c = 'g', linewidth = 2) #positive stds
+    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-np.array(stds), '--', c = 'g', linewidth = 2, label = 'Standard deviation') #negative stds
     ax.legend(frameon=False)
     #ax.set_title(title)
     ax.set_xlim([0,6.1])
@@ -253,7 +250,7 @@ def anova(top_metrics_sig , features, aln_type, results_dir, colors):
     print(titles.keys())
     ylabels = {'RCO':'Average RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'%','D':'%','Y':'%','T':'%','C':'%', 'P':'%', '-':'%', 'L':'%', 'S':'%', 'H':'%'}
-    matplotlib.rcParams.update({'font.size': 7})
+    matplotlib.rcParams.update({'font.size': 20})
     for feature in features:
         fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
         sns.violinplot(data = top_metrics_sig, x = 'Significance', y = feature+'_av', palette=colors, order=['+','Non', '-'])
@@ -383,7 +380,7 @@ def percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, results_dir, aln_t
     '''Calculate % sig in each set for different features
     Divide into pos, neg and non-deviating
     '''
-    matplotlib.rcParams.update({'font.size': 7})
+    matplotlib.rcParams.update({'font.size': 20})
     total = len(pos_sig)+ len(nonsig_df) + len(neg_sig)
     x = np.arange(3)
     w = 1/4 #width of bar
@@ -513,7 +510,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     except:
         print('Dir '+outdir+score+aln_type+'/'+' exists')
     #Plot size against average deviation
-    matplotlib.rcParams.update({'font.size': 7})
+    matplotlib.rcParams.update({'font.size': 20})
     fig, ax = plt.subplots(figsize=(12/2.54,6/2.54))
     ax.scatter(top_metrics['lddt_scores_straln_sizes_av'],top_metrics['lddt_scores_straln_av_dev'],s=0.5)
     ax.set_ylim([-0.2,0.2])
@@ -558,7 +555,7 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     #percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type,  perc_keys, colors)
 
     #Plot t-stat distribution
-    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
     ax.hist(top_metrics[score+aln_type+'_std_away'], bins = 20, color = '#1f77b4')
     ax.set_yscale('log')
     ax.set_ylabel('log count')
@@ -639,9 +636,8 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
 def find_sim(top_metrics, catdf_s, aln_type, outdir):
     '''Find similar folds in terms of ra from different classes
     '''
-    matplotlib.rcParams.update({'font.size': 7})
-    colors = {1: 'dodgerblue', 2: 'slateblue', 3: 'darkslateblue', 4: 'violet'}
-    class_counts = {1: 0, 2: 0, 3: 0, 4: 0}
+    matplotlib.rcParams.update({'font.size': 20})
+    colors = {1: 'dodgerblue', 2: 'mediumseagreen', 3: 'darksalmon', 4: 'violet'}
     sel = top_metrics[top_metrics[score+aln_type+'_av_dev']<=0.01]
     sel = sel[sel[score+aln_type+'_av_dev']>=-0.01]
     sel = sel.reset_index()
@@ -651,16 +647,19 @@ def find_sim(top_metrics, catdf_s, aln_type, outdir):
         '''
 
         mapped_i = 0
+        sel_dists = []
         for i in range(0,5):
             for d in dists:
                 if d >= i and d < i+1:
                     mapped_i += 1
+                    sel_dists.append(d)
                     break
 
-        return mapped_i
+        return mapped_i, sel_dists
 
     #Get most representative
     sel_tops = []
+    dists_per_uid = {}
     for top in sel['Topology']:
         sel = catdf_s[catdf_s['group']==top]
         uids = [*sel['uid1']]+[*sel['uid2']]
@@ -671,21 +670,38 @@ def find_sim(top_metrics, catdf_s, aln_type, outdir):
             dists.extend([*sel[sel['uid1']==key]['MLAAdist'+aln_type]])
             dists.extend([*sel[sel['uid2']==key]['MLAAdist'+aln_type]])
             dists.sort()
-            mapped_i = check_interval(dists)
+            mapped_i, sel_dists = check_interval(dists)
             uid_dict[key] = mapped_i
+            dists_per_uid[key] = sel_dists
         counts = Counter(uid_dict)
         uid,count = counts.most_common()[0]
         if count == 5:
             print(count,top,uid)
             sel_tops.append(top)
 
-    #sel_tops = ['1.10.260',  '2.70.98', '3.30.450']#, '4.10.470']
 
-    fig, ax = plt.subplots(figsize=(10,10))
+
+
+    #Print uids for each interval of the manually selected top uids
+    sel_uids = ['1au7A01', '1ygaA00','1ztuA02']
+    for key in sel_uids:
+        dists = dists_per_uid[key]
+        #Get dists for uid
+        sel = catdf_s[catdf_s['uid1']==key]
+        sel = pd.concat([sel, catdf_s[catdf_s['uid2']==key]])
+        for d in dists:
+            uid1 = sel[sel['MLAAdist'+aln_type]==d]['uid1'].values[0]
+            uid2 = sel[sel['MLAAdist'+aln_type]==d]['uid2'].values[0]
+            print(d,uid1,uid2)
+
+    #Manually selected tops
+    sel_tops = ['1.10.260',  '2.70.98', '3.30.450']#, '4.10.470']
+    #Running average
+    fig, ax = plt.subplots(figsize=(20/2.54,20/2.54))
     for top in sel_tops:
         row = top_metrics[top_metrics['Topology']==top]
         C = int(top[0])
-        ax.plot(row['lddt_scores_straln_seqdists'].values[0], row['lddt_scores_straln_ra'].values[0], color = colors[C], label = top)
+        ax.plot(row['lddt_scores_straln_seqdists'].values[0], row['lddt_scores_straln_ra'].values[0], linewidth=3, color = colors[C], label = top)
     ax.set_ylim([0.2,1])
     ax.set_yticks([0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
     ax.set_xlim([0,6.1])
@@ -700,6 +716,8 @@ def find_sim(top_metrics, catdf_s, aln_type, outdir):
     plt.show()
     fig.savefig(outdir+'find_sim.png', format = 'png')
     plt.close()
+
+
 
 
 

@@ -117,9 +117,10 @@ def ra_different(catdf, epsdf, realigndf, aln_type, score, cardinality, calc, yl
     #ax.scatter(cat_mldists, cat_scores, c = 'cornflowerblue', s=0.1, linewidth = 2, label = 'Broad Dataset', alpha = 0.2)
     #ax.scatter(eps_mldists, eps_scores, c = 'lightcoral',  s=0.1, linewidth = 2, label = '2009', alpha = 0.5)
     #Plot RA
-    ax.plot(js, cat_avs, c = 'darkgreen', linewidth = 2, label = 'Broad Dataset')
-    ax.plot(js, eps_avs, c = 'cornflowerblue', linewidth = 2, label = '2009')
-    ax.plot(js, realign_avs, c = 'lightseagreen', linewidth = 2, label = '2009 TMalign')
+    ax.plot(js, cat_avs, c = 'darkgreen', linewidth = 2, label = 'Current dataset')
+    ax.plot(js, realign_avs, c = 'lightseagreen', linewidth = 2, label = 'Previous full')
+    ax.plot(js, eps_avs, c = 'cornflowerblue', linewidth = 2, label = 'Previous core')
+
 
     ax.set_ylabel(score)
     ax.legend(markerscale=5,fancybox=True, framealpha=0.5)
