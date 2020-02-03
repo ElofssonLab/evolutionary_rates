@@ -124,7 +124,7 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
     percent_within_std['seqdist'] = np.round(percent_within_std['seqdist'], 2)
     for i in range(len(partial_df)):
         top = topologies[i]
-        ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
+        #ax.plot(mldists[i],scores[i], alpha = 0.1, color = color, linewidth =1)
         #Get percentage within 1 std
         for j in range(len(mldists[i])):
             sel = avdf[avdf['ML  distance']==mldists[i][j]]
@@ -159,8 +159,8 @@ def plot_partial(partial_df, partial_merged, avdf, name, score, aln_type, cardin
         total_top_js.append(np.round(j-step/2,2))
 
     matplotlib.rcParams.update({'font.size': 20})
-    ax.plot(total_top_js, total_top_ra, color = color, linewidth = 3, label = 'Fold', alpha = 0.7)
-    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'g', linewidth = 3, label = 'Total')
+    sns.kdeplot(total_top_js, total_top_ra,shade=True, shade_lowest = False, cmap = 'Blues', label = 'Fold')
+    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkgreen', linewidth = 3, label = 'Total')
     #plot stddev
     ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+np.array(stds), '--', c = 'g', linewidth = 2) #positive stds
     ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-np.array(stds), '--', c = 'g', linewidth = 2, label = 'Standard deviation') #negative stds
@@ -554,16 +554,19 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     #Calculate percentages of sig for each feature in each set
     #percent_sig_in_set(pos_sig, nonsig_df, neg_sig, features, outdir+score+aln_type+'/', aln_type,  perc_keys, colors)
 
-    #Plot t-stat distribution
+    #Plot standard distribution
+    plt.close()
     fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
-    ax.hist(top_metrics[score+aln_type+'_std_away'], bins = 20, color = '#1f77b4')
-    ax.set_yscale('log')
-    ax.set_ylabel('log count')
+    sns.distplot(top_metrics[score+aln_type+'_std_away'], hist = True)
+    #ax.set_yscale('log')
+    ax.set_ylabel('Density')
     ax.set_xlabel('Std from line')
+    ax.set_xticks([-3,-2,-1,0,1,2,3])
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
     fig.savefig(outdir+score+aln_type+'/'+'std_away_'+score+aln_type+'.png', format = 'png')
+    plt.show()
     plt.close()
 
     #Plot all RAs per top group
@@ -713,7 +716,6 @@ def find_sim(top_metrics, catdf_s, aln_type, outdir):
     ax.spines['top'].set_visible(False)
     ax.legend(markerscale=7, frameon=False)
     fig.tight_layout()
-    plt.show()
     fig.savefig(outdir+'find_sim.png', format = 'png')
     plt.close()
 
@@ -837,7 +839,8 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #sel = top_metrics[top_metrics['lddt_scores_straln_sizes']<500]
         #plt.scatter(sel['lddt_scores_straln_sizes'], sel['lddt_scores_straln_av_dev'], s= 5)
         #Make plots
-        find_sim(top_metrics, catdf_s, aln_type,  outdir+'sel_structures/')
+        if score+aln_type == 'lddt_scores_straln':
+            find_sim(top_metrics, catdf_s, aln_type,  outdir+'sel_structures/')
         three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, features, perc_keys, outdir)
 
 

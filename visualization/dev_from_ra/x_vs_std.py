@@ -127,13 +127,16 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
 
     #Save pearsonr
     p_R = {}
-    matplotlib.rcParams.update({'font.size': 7})
+    matplotlib.rcParams.update({'font.size': 20})
     titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix',
     score+aln_type+'classes':'Class', score+aln_type+'_sizes':'Group size', 'CD': 'Contact Density'}
 
-    #Color in outlier group
-    outlier_df = std_df[std_df['group']=='1.20.5']
+    #Color in outliers
+    pos_odf = std_df[std_df[score+aln_type]>0.9]
+    pos_odf = pos_odf[pos_odf['MLAAdist'+aln_type]>2]
+    neg_odf = std_df[std_df[score+aln_type]<0.45]
+    neg_odf = neg_odf[neg_odf['MLAAdist'+aln_type]<2]
 
     def plot_format(ax, outname, ylabel):
         '''Format plot layout
@@ -148,28 +151,30 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
 
     #Single
     for x in single_features:
-        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
         plt.scatter(std_df[x], std_df[score+aln_type+'_std_away'], label = x,s=0.3, color = '#1f77b4')
-        sns.kdeplot(std_df[x], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
+        #sns.kdeplot(std_df[x], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
         #Plot outlier group
-        plt.scatter(outlier_df[x], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = 'maroon')
+        plt.scatter(pos_odf[x], pos_odf[score+aln_type+'_std_away'], label = x,s=0.3, color = 'maroon')
+        plt.scatter(neg_odf[x], neg_odf[score+aln_type+'_std_away'], label = x,s=0.3, color = 'darkslategrey')
         ax.set_xlabel(titles[x])
         plot_format(ax, outdir+x+'.png', 'Std from line')
-        p_R[x] = pearsonr(std_df[x], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
+        p_R[titles[x]] = pearsonr(std_df[x], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
     #Double
     for x in double_features:
-        fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+        fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
         if x == 'RCO' or x == 'CD':
             plt.scatter(std_df[x+'1'], std_df[score+aln_type+'_std_away'], s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
             sns.kdeplot(std_df[x+'1'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Blues')
             #plt.scatter(std_df[x+'2'], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
             #sns.kdeplot(std_df[x+'2'], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
             #Plot outlier group
-            plt.scatter(outlier_df[x+'1'], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = 'maroon')
+            plt.scatter(pos_odf[x+'1'], pos_odf[score+aln_type+'_std_away'], label = x,s=0.3, color = 'maroon')
+            plt.scatter(neg_odf[x+'1'], neg_odf[score+aln_type+'_std_away'], label = x,s=0.3, color = 'darkslategrey')
             ax.set_xlabel(titles[x])
             plot_format(ax, outdir+titles[x]+'.png', 'Std from line')
-            p_R[x] = pearsonr(std_df[x+'1'], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
+            p_R[titles[x]] = pearsonr(std_df[x+'1'], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
         else:
             plt.scatter(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'] ,s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
@@ -177,34 +182,21 @@ def plot_x_vs_std(std_df, single_features, double_features, score, aln_type, out
             #plt.scatter(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
             #sns.kdeplot(std_df[x+'2'+aln_type], std_df[score+aln_type+'_std_away'], shade = False, cmap = 'Greens')
             #Plot outlier group
-            plt.scatter(outlier_df[x+'1'+aln_type], outlier_df[score+aln_type+'_std_away'], label = x,s=0.3, color = 'maroon')
+            plt.scatter(pos_odf[x+'1'+aln_type], pos_odf[score+aln_type+'_std_away'], label = x,s=0.3, color = 'maroon')
+            plt.scatter(neg_odf[x+'1'+aln_type], neg_odf[score+aln_type+'_std_away'], label = x,s=0.3, color = 'darkslategrey')
             ax.set_xlabel(titles[x])
             plot_format(ax, outdir+titles[x]+'.png', 'Std from line')
-            p_R[x] = pearsonr(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
+            p_R[titles[x]] = pearsonr(std_df[x+'1'+aln_type], std_df[score+aln_type+'_std_away'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
 
     #Plot personr
-    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
-
-    i = 0
-    all_features = ['C', 'percent_aligned'+aln_type, 'RCO', 'l', 'P', 'T', 'K',  'H', '-', 'CD', 'S', 'D', 'L', 'Y']
-
-    for key in all_features:
-        plt.scatter(i, p_R[key], color = '#1f77b4', s = 5)
-        ax.annotate(titles[key], (i, p_R[key]+0.005))
-        i+=0.029
-
-    #ax.set_yticks([-0.2,-0.1,0,0.1,0.2])
-    #ax.set_ylim([-0.25,0.25])
-    ax.axis('square')
-    plt.tick_params(
-    axis='x',          # changes apply to the x-axis
-    which='both',      # both major and minor ticks are affected
-    bottom=False,      # ticks along the bottom edge are off
-    top=False,         # ticks along the top edge are off
-    labelbottom=False) # labels along the bottom edge are off
-    ax.set_xlabel('Feature')
-
+    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+    pearsondf = pd.DataFrame()
+    pearsondf['Feature'] = [*p_R.keys()]
+    pearsondf['Pearson R'] = [*p_R.values()]
+    pearsondf=pearsondf.sort_values(by='Pearson R',ascending=True)
+    sns.barplot(x="Pearson R", y="Feature", data=pearsondf)
+    ax.set_xticks([-0.2,0,0.2])
     plot_format(ax, outdir+'pearsonr.png', 'Pearson R')
 
     return None
@@ -249,7 +241,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
 
-        single_features = ['aln_len'+aln_type,  'percent_aligned'+aln_type]
+        single_features = ['percent_aligned'+aln_type]
         double_features = ['CD', 'RCO', 'l', 'P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix, contact density
         catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies
         catdf_s = parse_ss(catdf_s, aln_type) #Get % ss
