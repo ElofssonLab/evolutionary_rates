@@ -60,7 +60,7 @@ def make_kde(x,y, xlabel, ylabel, outname):
     '''Makes a kdeplot and saves it
     '''
     fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
-    g = sns.kdeplot(x,y, shade = True, kind = 'kde', color = 'b')
+    sns.kdeplot(x,y, shade = True, kind = 'kde', cmap = 'Blues')
     print(pearsonr(x,y))
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
