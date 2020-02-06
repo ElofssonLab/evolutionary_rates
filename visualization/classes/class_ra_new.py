@@ -40,7 +40,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
 
     suffix = calc+'_'+score+cardinality+aln_type+'_'+'.svg'
     colors = {'_seqaln': 'k', '_straln': 'r'}
-    xlabel = 'ML '+cardinality[1:]+' distance'
+    xlabel = cardinality[1:]+' ED'
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
     plt.rc('axes', titlesize=10) #set title and label text sizes
 
@@ -96,7 +96,7 @@ def make_plots(results, cardinality, outdir, suffix):
     classes = {1.:'Mainly Alpha', 2.: 'Mainly Beta', 3.: 'Alpha Beta', 4.: 'Few SS'}
     colors = {1.: 'cornflowerblue', 2.: 'dimgray', 3.: 'mediumseagreen', 4.: 'darkorchid'}
     cmaps = {1.: 'Blues', 2.: 'Greys', 3.: 'Greens', 4.: 'Purples'}
-    xlabel = 'ML '+cardinality[1:]+' distance'
+    xlabel = cardinality[1:]+' ED'
     grad_ylims = {'RMSD':[-0.1,0.1], 'lddt_scores':[-0.025, 0.025], 'DIFFSS':[-0.025, 0.025], 'DIFF_ACC':[-0.025, 0.025]}
 
     for i in [1.,2.,3.,4.]:

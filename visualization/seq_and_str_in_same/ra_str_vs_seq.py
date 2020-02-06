@@ -35,7 +35,7 @@ default=sys.stdin, help = 'either median or average.')
 parser.add_argument('--get_one', nargs=1, type= int,
 default=sys.stdin, help = 'Get one pair from each H-group (1) or all (0).')
 
-def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir, av_df):
+def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, ytick, outdir, av_df):
     '''Produce running average plots for df using 100 steps with an equal amount of points in each
     '''
 
@@ -122,6 +122,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     patch2 = mpatches.Patch(color='royalblue', label='Topology dataset')
     #ax.legend(handles=[patch1, patch2, l1[0]],markerscale=5, frameon=False)
     ax.set_ylim(ylim)
+    ax.set_yticks(ytick)
     ax.set_xlabel(xlabel)
     ax.set_xlim([0,6.1])
     ax.set_xticks([0,1,2,3,4,5,6])
@@ -176,7 +177,7 @@ def ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outd
     ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_ylim(grad_ylims[score])
     ax.set_xlabel(xlabel)
-    ax.legend(frameon=False)
+    #ax.legend(frameon=False)
     # Hide the right and top spines
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -203,6 +204,7 @@ get_one = bool(args.get_one[0])
 
 aln_types = ['_straln','_seqaln']
 ylims = {'RMSD':[0,5], 'DIFFSS':[0, 0.6], 'DIFF_ACC':[0,0.6], 'lddt_scores': [0.2,1.0], 'DIFFC':[0,1], 'TMscore': [0.2,1.0]}
+yticks = {'RMSD':[0,2,4], 'DIFFSS':[0, 0.5], 'DIFF_ACC':[0,0.5], 'lddt_scores': [0.2,0.5,1.0], 'DIFFC':[0,0.5,1], 'TMscore': [0.2,0.5,1.0]}
 
 #set random seed
 np.random.seed(42)
@@ -235,5 +237,6 @@ for cardinality in cardinalities:
             except:
                 print('Directory exists')
             ylim = ylims[score]
-            av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, outdir+cardinality[1:]+'/'+score+aln_type+'/', av_df)
+            ytick = yticks[score]
+            av_df = ra_different(topdf, hgroupdf, aln_type, score, cardinality, calc, ylim, ytick, outdir+cardinality[1:]+'/'+score+aln_type+'/', av_df)
     av_df.to_csv(outdir+cardinality[1:]+'/'+'av_df.csv')

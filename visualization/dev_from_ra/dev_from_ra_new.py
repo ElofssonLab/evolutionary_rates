@@ -566,7 +566,6 @@ def three_sets_comparison(catdf_s, top_metrics, score, aln_type, cardinality, fe
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
     fig.savefig(outdir+score+aln_type+'/'+'std_away_'+score+aln_type+'.png', format = 'png')
-    plt.show()
     plt.close()
 
     #Plot all RAs per top group
@@ -703,10 +702,12 @@ def find_sim(top_metrics, catdf_s, aln_type, outdir):
     fig, ax = plt.subplots(figsize=(20/2.54,20/2.54))
     for top in sel_tops:
         row = top_metrics[top_metrics['Topology']==top]
+        sel = catdf_s[catdf_s['group']==top]
         C = int(top[0])
-        ax.plot(row['lddt_scores_straln_seqdists'].values[0], row['lddt_scores_straln_ra'].values[0], linewidth=3, color = colors[C], label = top)
+        ax.plot(row['lddt_scores_straln_seqdists'].values[0], row['lddt_scores_straln_ra'].values[0], linewidth=3, color = colors[C], label = top) #Plot ra
+        ax.scatter(sel['MLAAdist_straln'], sel['lddt_scores_straln'], s = 8, alpha = 0.5, color = colors[C]) #Plot points
     ax.set_ylim([0.2,1])
-    ax.set_yticks([0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+    ax.set_yticks(np.arange(0.2,1.1,0.1))
     ax.set_xlim([0,6.1])
     ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_xlabel('AA20 ED')
@@ -776,6 +777,7 @@ for score in ['lddt_scores', 'TMscore', 'DIFFC', 'RMSD', 'DIFFSS', 'DIFF_ACC']:
 
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
+        pdb.set_trace()
         if score == 'lddt_scores':
             #Save statistical assessment - this only has to be done for 1 score (but both alntypes) - will be the same in groups
             stat_results = {}
