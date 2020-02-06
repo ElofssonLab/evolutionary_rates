@@ -6,15 +6,12 @@ import argparse
 import sys
 import numpy as np
 import pandas as pd
+import seaborn as sns
+from scipy.stats import pearsonr
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from collections import Counter
-
-from sklearn.linear_model import LinearRegression
-
-from model_inputs import split_on_h_group
+from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
 import pdb
 
@@ -25,7 +22,7 @@ parser = argparse.ArgumentParser(description = '''A random RandomForestClassifie
 parser.add_argument('--dataframe', nargs=1, type= str,
                   default=sys.stdin, help = 'Path to dataframe in .csv.')
 
-parser.add_argument('--out_dir', nargs=1, type= str,
+parser.add_argument('--outdir', nargs=1, type= str,
                   default=sys.stdin, help = 'Path to output directory. Include /in end')
 
 
@@ -36,13 +33,12 @@ def create_features(df):
     '''Get features
     '''
 
-    single_features = ['percent_aligned'+aln_type]
     double_features = ['CD', 'RCO', 'l', 'P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix, contact density
 
     #Get features
     X = []
-    X.append('MLAAdist_straln')
-    X.append(np.array('percent_aligned_straln'))
+    X.append(np.array(df['MLAAdist_straln']))
+    X.append(np.array(df['percent_aligned_straln']))
     for x in double_features:
         if x == 'RCO' or x == 'CD':
             for i in ['1', '2']:
@@ -51,6 +47,8 @@ def create_features(df):
             for i in ['1', '2']:
                 X.append(np.array(df[x+i+'_straln']))
     X = np.array(X) #Convert to np array
+    X=X.T #Transpose
+
 
 
     #Get deviation
@@ -58,24 +56,38 @@ def create_features(df):
 
     return(X, y)
 
+def make_kde(x,y, xlabel, ylabel, outname):
+    '''Makes a kdeplot and saves it
+    '''
+    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+    g = sns.kdeplot(x,y, shade = True, kind = 'kde', color = 'b')
+    print(pearsonr(x,y))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(outname, format = 'png')
+    plt.close()
+
 #MAIN
 args = parser.parse_args()
 df = pd.read_csv(args.dataframe[0])
-out_dir = args.out_dir[0]
+outdir = args.outdir[0]
 #Assign data and labels
 X,y = create_features(df)
 
-
+#Make train and test set
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 #RandomForestClassifier
 rfreg = RandomForestRegressor(n_estimators=100, bootstrap = True, max_features = 'sqrt')
 # Fit on training data
-clf.fit(X_train, y_train)
 rfreg.fit(X_train, y_train)
 #predict
-clf_predictions = clf.predict(X_valid)
-rfreg_predictions = rfreg.predict(X_valid)
+rfreg_predictions = rfreg.predict(X_test)
 #Average error
-average_error = np.average(np.absolute(clf_predictions-y_valid))
-print(average_error)
-average_error = np.average(np.absolute(rfreg_predictions-y_valid))
-print(average_error)
+error = rfreg_predictions-y_test
+print(np.average(np.absolute(error)))
+#Plot ED against error
+make_kde(X_test[:,0], error, 'ED', 'Error (lDDT score)', outdir+'ed_vs_error.png')
+make_kde(rfreg_predictions,y_test, 'Pred. dev.', 'True dev.', outdir+'pred_vs_true.png')

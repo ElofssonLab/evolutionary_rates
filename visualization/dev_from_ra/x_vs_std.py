@@ -194,21 +194,19 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
                 plt.scatter(pos_odf[x+i], pos_odf[score+aln_type+'_dev'], label = x,s=1, color = 'maroon')
                 plt.scatter(neg_odf[x+i], neg_odf[score+aln_type+'_dev'], label = x,s=1, color = 'k')
                 ax.set_xlabel(titles[x])
-                plot_format(fig, ax, outdir+titles[x]+'.png', 'Deviation from line')
-                p_R[titles[x]] = pearsonr(std_df[x+i], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
+                plot_format(fig, ax, outdir+titles[x]+i+'.png', 'Deviation from line')
+                p_R[titles[x+i]] = pearsonr(std_df[x+i], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
         else:
             for i in ['1', '2']:
                 plt.scatter(std_df[x+i+aln_type], std_df[score+aln_type+'_dev'] ,s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
                 sns.kdeplot(std_df[x+i+aln_type], std_df[score+aln_type+'_dev'], shade = False, cmap = 'Blues')
-                #plt.scatter(std_df[x+'2'+aln_type], std_df[score+aln_type+'_dev'] ,s=0.3, color = 'g', label = 'Domain 2', alpha = 0.2)
-                #sns.kdeplot(std_df[x+'2'+aln_type], std_df[score+aln_type+'_dev'], shade = False, cmap = 'Greens')
                 #Plot outlier group
                 plt.scatter(pos_odf[x+i+aln_type], pos_odf[score+aln_type+'_dev'], label = x,s=1, color = 'maroon')
                 plt.scatter(neg_odf[x+i+aln_type], neg_odf[score+aln_type+'_dev'], label = x,s=1, color = 'k')
                 ax.set_xlabel(titles[x])
-                plot_format(fig, ax, outdir+titles[x]+'.png', 'Deviation from line')
-                p_R[titles[x]] = pearsonr(std_df[x+i+aln_type], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
+                plot_format(fig, ax, outdir+titles[x]+i+'.png', 'Deviation from line')
+                p_R[titles[x+i]] = pearsonr(std_df[x+i+aln_type], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
 
     #Plot personr
