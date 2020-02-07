@@ -106,13 +106,15 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
         #Get total average in interval
         x = np.round(j-step/2, 2)
         tav = avdf[avdf['ML  distance']==x][score+aln_type].values[0] #total average in current interval
-        #Get std in interval
-        std = avdf[avdf['ML  distance']==x][score+aln_type+'_std'].values[0]
+
         #Deviation
         dev = cut_scores-tav
         below_df[score+aln_type+'_dev'] = dev
         std_df = pd.concat([std_df, below_df])
 
+    all_devs = np.absolute(np.array(std_df[score+aln_type+'_dev']))
+    n_within = np.where(all_devs<0.05)[0].size
+    print('Fraction of points within 0.05 lddt fromtotal ra:', str(n_within)+'/'+str(len(std_df)),n_within/len(std_df))
     return std_df
 
 def plot_format(fig, ax, outname, ylabel):
@@ -195,7 +197,7 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
                 plt.scatter(neg_odf[x+i], neg_odf[score+aln_type+'_dev'], label = x,s=1, color = 'k')
                 ax.set_xlabel(titles[x])
                 plot_format(fig, ax, outdir+titles[x]+i+'.png', 'Deviation from line')
-                p_R[titles[x+i]] = pearsonr(std_df[x+i], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
+                p_R[titles[x]+i] = pearsonr(std_df[x+i], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
         else:
             for i in ['1', '2']:
@@ -206,7 +208,7 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
                 plt.scatter(neg_odf[x+i+aln_type], neg_odf[score+aln_type+'_dev'], label = x,s=1, color = 'k')
                 ax.set_xlabel(titles[x])
                 plot_format(fig, ax, outdir+titles[x]+i+'.png', 'Deviation from line')
-                p_R[titles[x+i]] = pearsonr(std_df[x+i+aln_type], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
+                p_R[titles[x]+i] = pearsonr(std_df[x+i+aln_type], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
 
     #Plot personr
@@ -283,7 +285,7 @@ for score in ['lddt_scores']:
         #select below 6 using seq or str
         catdf_s = catdf[catdf['MLAAdist'+aln_type]<=6]
         print('Fraction of points under ED 6: '+str(len(catdf_s))+'/'+str(len(catdf)),len(catdf_s)/len(catdf))
-        catdf_s = get_over_10(catdf_s)
+        #catdf_s = get_over_10(catdf_s)
 
         single_features = ['percent_aligned'+aln_type]
         double_features = ['CD', 'RCO', 'l', 'P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix, contact density
