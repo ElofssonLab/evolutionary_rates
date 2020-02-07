@@ -139,7 +139,8 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
     matplotlib.rcParams.update({'font.size': 20})
     #Plot all pairs
     fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
-    sns.kdeplot(std_df['MLAAdist'+aln_type], std_df[score+aln_type], shade = True, cmap = 'Blues', label = 'Fold')
+    ax.scatter(std_df['MLAAdist'+aln_type], std_df[score+aln_type], s= 0.5, c='cornflowerblue', label = 'Fold' ) #All points
+    sns.kdeplot(std_df['MLAAdist'+aln_type], std_df[score+aln_type], shade = False, cmap = 'Blues')
     ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkgreen', linewidth = 3, label = 'Running average')
     #plot stddev
     ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+0.05, '--', c = 'g', linewidth = 2) #positive stds

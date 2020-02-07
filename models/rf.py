@@ -96,6 +96,7 @@ def parameter_optimization(param_grid, pipe, X, y):
                 file.write("%0.3f (+/-%0.03f) for %r"
                       % ( mean, std * 2, params) + '\n')
 
+        return clf.best_estimator_
 
 def plot_predictions(clf, X, y, all_features):
     '''Predict and plot
@@ -165,4 +166,5 @@ param_grid = {'classify__n_estimators': [10, 50, 100, 500],
 #RandomForestRegressor
 rfreg = RandomForestRegressor()
 pipe = Pipeline(steps=[('classify', rfreg)])
-parameter_optimization(param_grid, pipe, X, y)
+best_clf = parameter_optimization(param_grid, pipe, X, y)
+plot_predictions(best_clf, X, y, all_features)
