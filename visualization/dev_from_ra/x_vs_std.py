@@ -139,21 +139,38 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
     matplotlib.rcParams.update({'font.size': 20})
     #Plot all pairs
     fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
-    ax.scatter(std_df['MLAAdist'+aln_type], std_df[score+aln_type], s= 0.5, c='cornflowerblue', label = 'Fold' ) #All points
+    ax.scatter(std_df['MLAAdist'+aln_type], std_df[score+aln_type], s= 0.5, c='cornflowerblue', label = 'Pair' ) #All points
     sns.kdeplot(std_df['MLAAdist'+aln_type], std_df[score+aln_type], shade = False, cmap = 'Blues')
-    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkgreen', linewidth = 3, label = 'Running average')
-    #plot stddev
-    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+0.05, '--', c = 'g', linewidth = 2) #positive stds
-    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-0.05, '--', c = 'g', linewidth = 2, label = '+/- intercept') #negative stds
+    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkblue', linewidth = 3, label = 'Running average')
+    #plot intercept
+    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+0.05, '--', c = 'darkblue', linewidth = 2) #positive stds
+    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-0.05, '--', c = 'darkblue', linewidth = 2, label = '+/- (1-intercept)') #negative stds
     ax.set_xlim([0,6.1])
     ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_xlabel('AA20 ED')
-    ax.legend(frameon=False)
+    ax.legend(frameon=False, markerscale = 10)
     if score == 'lddt_scores':
         ylabel = 'lDDT score'
     else:
         ylabel = score
     plot_format(fig, ax, outdir+'all_pairs.png', ylabel)
+
+    #Plot sequence and structure
+    #Plot all pairs
+    if score+aln_type == 'lddt_scores_straln':
+        fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
+        ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkblue', linewidth = 3, label = 'Structure RA')
+        sns.kdeplot(std_df['MLAAdist'+aln_type], std_df[score+aln_type], shade = False, cmap = 'Blues')
+        ax.plot(avdf['ML  distance'], avdf[score+'_seqaln'], color = 'darkgreen', linewidth = 3, label = 'Sequence RA')
+        sns.kdeplot(std_df['MLAAdist_seqaln'], std_df[score+'_seqaln'], shade = False, cmap = 'Greens')
+        ax.set_xlim([0,6.1])
+        ax.set_xticks([0,1,2,3,4,5,6])
+        ax.set_ylim([0.2,1])
+        ax.set_xlabel('AA20 ED')
+        ax.legend(frameon=False)
+        plot_format(fig, ax, outdir+'seq_vs_str.png', ylabel)
+        print(score,pearsonr(std_df[score+'_seqaln'], std_df[score+aln_type]))
+        print('ED',pearsonr(std_df['MLAAdist_seqaln'], std_df['MLAAdist_straln']))
 
     #Plot hist of distances
     fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))

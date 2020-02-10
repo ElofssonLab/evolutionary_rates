@@ -4,12 +4,13 @@
 
 import argparse
 import sys
+import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy.stats import pearsonr
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
@@ -37,10 +38,12 @@ def create_features(df):
     '''Get features
     '''
 
+    nicer_names = {'CD':'Contact density', 'RCO':'RCO', 'l':'Length', 'P':'PG', 'C':'CVMLIA',
+    'K':'KR','D':'DE','Y':'YWFH','T':'TSQN', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix'}
     double_features = ['CD', 'RCO', 'l', 'P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix, contact density
 
     #Get features
-    all_features = ['MLAAdist_straln', 'percent_aligned_straln']
+    all_features = ['AA20 ED', '% Aligned']
     X = []
     X.append(np.array(df['MLAAdist_straln']))
     X.append(np.array(df['percent_aligned_straln']))
@@ -48,11 +51,11 @@ def create_features(df):
         if x == 'RCO' or x == 'CD':
             for i in ['1', '2']:
                 X.append(np.array(df[x+i]))
-                all_features.append(x+i)
+                all_features.append(nicer_names[x]+i)
         else:
             for i in ['1', '2']:
                 X.append(np.array(df[x+i+'_straln']))
-                all_features.append(x+i+'_straln')
+                all_features.append(nicer_names[x]+' '+i)
     X = np.array(X) #Convert to np array
     X=X.T #Transpose
 
@@ -103,25 +106,61 @@ def parameter_optimization(param_grid, pipe, X, y):
 def plot_predictions(X, y, all_features):
     '''Predict and plot
     '''
-    matplotlib.rcParams.update({'font.size': 7})
-    #Make train and test set
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    #Fit
-    #'classify__min_samples_split': 2, 'classify__n_estimators': 500, 'classify__verbose': 0} -0.033 +/- 0.11
-    rfreg = RandomForestRegressor(n_estimators=500,
-                        	    verbose=0,
-                                max_depth= None,
-                                min_samples_split=2)
+    matplotlib.rcParams.update({'font.size': 20})
+    if os.path.exists('pred.csv'):
+        pred_df = pd.read_csv('pred.csv')
+        imp_df = pd.read_csv('feature_imp.csv')
+    else:
+        #No previous predictions
+        #Clf
+        #'classify__min_samples_split': 2, 'classify__n_estimators': 500, 'classify__verbose': 0} -0.033 +/- 0.11
+        rfreg = RandomForestRegressor(n_estimators=500,
+                                    verbose=5,
+                                    max_depth= None,
+                                    min_samples_split=2)
+        #Make train and test set
+        cv = KFold(n_splits=5, random_state=42, shuffle=True)
+        #Save feature importances
+        importances = []
+        imp_df = pd.DataFrame()
+        imp_df['Feature'] = all_features
+        for i, (train_index, test_index) in enumerate(cv.split(X)):
+            #Fit
+            X_train, X_test = X[train_index], X[test_index]
+            y_train, y_test = y[train_index], y[test_index]
+            rfreg.fit(X_train,y_train)
+            #Feature importance
+            importances.append(rfreg.feature_importances_)
 
-    rfreg.fit(X_train,y_train)
 
-    #Feature importance
-    importances = rfreg.feature_importances_
-    imp_df = pd.DataFrame()
-    imp_df['Feature'] = all_features
-    imp_df['Importance'] = [*importances]
-    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+        importances = np.array(importances) #Convert to array
+        av_imp = []
+        std_imp = []
+        for i in range(28):
+            av_imp.append(np.average(importances[:,i]))
+            std_imp.append(np.std(importances[:,i]))
+
+        #Calculate average
+        imp_df['Importance'] = av_imp
+        imp_df['std'] = std_imp
+        imp_df = imp_df.sort_values(['Importance'], ascending = False).reset_index(drop=True)
+        #Save
+        imp_df.to_csv('feature_imp.csv')
+        #predict
+        rfreg_predictions = rfreg.predict(X_test)
+        #Prediction df
+        pred_df = pd.DataFrame()
+        pred_df['pred'] = rfreg_predictions
+        pred_df['true'] = y_test
+        pred_df.to_csv('pred.csv')
+        #Average error
+        error = rfreg_predictions-y_test
+        print(np.average(np.absolute(error)))
+
+    #Plot
+    fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
     sns.barplot(y="Feature", x="Importance", data=imp_df)
+    plt.errorbar(imp_df["Importance"],np.arange(0,28), yerr=None, xerr=imp_df['std'], fmt='.')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
@@ -129,30 +168,28 @@ def plot_predictions(X, y, all_features):
     plt.close()
 
 
-    #predict
-    rfreg_predictions = rfreg.predict(X_test)
-    #Average error
-    error = rfreg_predictions-y_test
-    print(np.average(np.absolute(error)))
+
     #Plot ED against error
-    make_kde(X_test[:,0], error, 'AA20 ED', 'Error (lDDT score)', [0,6],[-0.1,0.1], outdir+'ed_vs_error.png', False)
-    make_kde(rfreg_predictions,y_test, 'Pred. dev. (lDDT score)', 'True dev. (lDDT score)',[-0.1,0.1], [-0.1,0.1], outdir+'pred_vs_true.png', True)
+    #make_kde(X_test[:,0], error, 'AA20 ED', 'Error (lDDT score)', [0,6],[-0.1,0.1], np.arange(0,6), np.arange(-0.1,0.11, 0.05), outdir+'ed_vs_error.png', False)
+    make_kde(pred_df['pred'],pred_df['true'], 'Pred. dev. (lDDT score)', 'True dev. (lDDT score)',[-0.1,0.1], [-0.1,0.1], np.arange(-0.1,0.11, 0.05), np.arange(-0.1,0.11, 0.05), outdir+'pred_vs_true.png', True)
 
 
-def make_kde(x,y, xlabel, ylabel, xlim, ylim, outname, get_R):
+def make_kde(x,y, xlabel, ylabel, xlim, ylim, xticks, yticks, outname, get_R):
     '''Makes a kdeplot and saves it
     '''
-    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+    fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
     sns.kdeplot(x,y, shade = True, kind = 'kde', cmap = 'Blues')
-    if get_r == True:
+    if get_R == True:
         print(outname,pearsonr(x,y)[0])
         ax.plot(xlim,ylim, 'darkblue')
-        plt.annotate(str(pearsonr(x,y)[0]), (-0.5,0.5))
+        plt.annotate('Pearson R: '+str(np.round(pearsonr(x,y)[0],2)), (-0.05,0.05))
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_xlim(xlim)
+    ax.set_xticks(xticks)
     ax.set_ylim(ylim)
+    ax.set_yticks(yticks)
 
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -179,7 +216,6 @@ param_grid = {'classify__n_estimators': [750,1000],
 rfreg = RandomForestRegressor()
 pipe = Pipeline(steps=[('classify', rfreg)])
 if optimize == True:
-    pdb.set_trace()
     best_clf = parameter_optimization(param_grid, pipe, X, y)
 else:
     plot_predictions(X, y, all_features)
