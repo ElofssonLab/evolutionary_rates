@@ -28,7 +28,8 @@ parser.add_argument('--dataframe', nargs=1, type= str,
 parser.add_argument('--outdir', nargs=1, type= str,
                   default=sys.stdin, help = 'Path to output directory. Include /in end')
 
-
+parser.add_argument('--optimize', nargs=1, type= int,
+                  default=sys.stdin, help = 'If optimization is to be performed or not (Bool).')
 
 #FUNCTIONS
 
@@ -72,7 +73,7 @@ def parameter_optimization(param_grid, pipe, X, y):
 
     #Optimize parameters
     for score in scores:
-        with open(outdir+'opt.txt', 'w') as file:
+        with open(outdir+'opt.txt', 'a+') as file:
             file.write("# Tuning hyper-parameters \n")
 
             #Grid search and cross validate
@@ -98,13 +99,24 @@ def parameter_optimization(param_grid, pipe, X, y):
 
         return clf.best_estimator_
 
-def plot_predictions(clf, X, y, all_features):
+
+def plot_predictions(X, y, all_features):
     '''Predict and plot
     '''
+    matplotlib.rcParams.update({'font.size': 7})
     #Make train and test set
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    #Fit
+    #'classify__min_samples_split': 2, 'classify__n_estimators': 500, 'classify__verbose': 0} -0.033 +/- 0.11
+    rfreg = RandomForestRegressor(n_estimators=500,
+                        	    verbose=0,
+                                max_depth= None,
+                                min_samples_split=2)
+
+    rfreg.fit(X_train,y_train)
+
     #Feature importance
-    importances = clf.feature_importances_
+    importances = rfreg.feature_importances_
     imp_df = pd.DataFrame()
     imp_df['Feature'] = all_features
     imp_df['Importance'] = [*importances]
@@ -152,19 +164,22 @@ def make_kde(x,y, xlabel, ylabel, xlim, ylim, outname, get_R):
 args = parser.parse_args()
 df = pd.read_csv(args.dataframe[0])
 outdir = args.outdir[0]
-matplotlib.rcParams.update({'font.size': 7})
+optimize = bool(args.optimize[0])
+
 #Assign data and labels
 X, y, all_features = create_features(df)
 
 #Grid search and cross validate
-param_grid = {'classify__n_estimators': [10, 50, 100, 500],
-	      'classify__verbose': [0,5],
-        'classify__max_depth': [None, 5,15],
-        'classify__min_samples_split': [2,10]}
+param_grid = {'classify__n_estimators': [750,1000],
+        'classify__max_depth': [None],
+        'classify__min_samples_split': [2]}
 
 
 #RandomForestRegressor
 rfreg = RandomForestRegressor()
 pipe = Pipeline(steps=[('classify', rfreg)])
-best_clf = parameter_optimization(param_grid, pipe, X, y)
-plot_predictions(best_clf, X, y, all_features)
+if optimize == True:
+    pdb.set_trace()
+    best_clf = parameter_optimization(param_grid, pipe, X, y)
+else:
+    plot_predictions(X, y, all_features)
