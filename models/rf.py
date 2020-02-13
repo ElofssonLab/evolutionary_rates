@@ -30,18 +30,26 @@ parser.add_argument('--outdir', nargs=1, type= str,
                   default=sys.stdin, help = 'Path to output directory. Include /in end')
 
 parser.add_argument('--optimize', nargs=1, type= int,
-                  default=sys.stdin, help = 'If optimization is to be performed or not (Bool).')
+                  default=sys.stdin, help = 'If optimization (1) is to be performed or not (0) (Bool).')
+
+parser.add_argument('--get_all', nargs=1, type= int,
+                  default=sys.stdin, help = 'If all features (1) or only sequence features (0) are to be used (Bool).')
 
 #FUNCTIONS
 
-def create_features(df):
+def create_features(df, get_all):
     '''Get features
     '''
 
     nicer_names = {'CD':'Contact density', 'RCO':'RCO', 'l':'Length', 'P':'PG', 'C':'CVMLIA',
     'K':'KR','D':'DE','Y':'YWFH','T':'TSQN', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix'}
-    double_features = ['CD', 'RCO', 'l', 'P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix, contact density
 
+    sequence_features = ['l', 'P', 'C', 'K', 'T', 'D', 'Y', '-']
+    structure_features = ['CD', 'RCO', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix, contact density
+    if get_all == True:
+        double_features = sequence_features+structure_features
+    else:
+        double_features = sequence_features
     #Get features
     all_features = ['AA20 ED', '% Aligned']
     X = []
@@ -202,9 +210,10 @@ args = parser.parse_args()
 df = pd.read_csv(args.dataframe[0])
 outdir = args.outdir[0]
 optimize = bool(args.optimize[0])
+get_all = bool(args.get_all[0])
 
 #Assign data and labels
-X, y, all_features = create_features(df)
+X, y, all_features = create_features(df, get_all)
 
 #Grid search and cross validate
 param_grid = {'classify__n_estimators': [750,1000],

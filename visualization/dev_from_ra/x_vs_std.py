@@ -136,15 +136,15 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
         os.mkdir(outdir)
     except:
         print('Directory '+outdir+' exists')
-    matplotlib.rcParams.update({'font.size': 20})
+    matplotlib.rcParams.update({'font.size': 7})
     #Plot all pairs
-    fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
-    ax.scatter(std_df['MLAAdist'+aln_type], std_df[score+aln_type], s= 0.5, c='cornflowerblue', label = 'Pair' ) #All points
+    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+    ax.scatter(std_df['MLAAdist'+aln_type], std_df[score+aln_type], s= 0.3, c='cornflowerblue', label = 'Pair' ) #All points
     sns.kdeplot(std_df['MLAAdist'+aln_type], std_df[score+aln_type], shade = False, cmap = 'Blues')
-    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkblue', linewidth = 3, label = 'Running average')
+    ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkblue', linewidth = 2, label = 'Running average')
     #plot intercept
-    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+0.05, '--', c = 'darkblue', linewidth = 2) #positive stds
-    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-0.05, '--', c = 'darkblue', linewidth = 2, label = '+/- (1-intercept)') #negative stds
+    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])+0.05, '--', c = 'darkblue', linewidth = 1) #positive stds
+    ax.plot(avdf['ML  distance'], np.array(avdf[score+aln_type])-0.05, '--', c = 'darkblue', linewidth = 1, label = '+/- (1-intercept)') #negative stds
     ax.set_xlim([0,6.1])
     ax.set_xticks([0,1,2,3,4,5,6])
     ax.set_xlabel('AA20 ED')
@@ -156,12 +156,11 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
     plot_format(fig, ax, outdir+'all_pairs.png', ylabel)
 
     #Plot sequence and structure
-    #Plot all pairs
     if score+aln_type == 'lddt_scores_straln':
-        fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
-        ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkblue', linewidth = 3, label = 'Structure RA')
+        fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+        ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkblue', linewidth = 2, label = 'Structure RA')
         sns.kdeplot(std_df['MLAAdist'+aln_type], std_df[score+aln_type], shade = False, cmap = 'Blues')
-        ax.plot(avdf['ML  distance'], avdf[score+'_seqaln'], color = 'darkgreen', linewidth = 3, label = 'Sequence RA')
+        ax.plot(avdf['ML  distance'], avdf[score+'_seqaln'], color = 'darkgreen', linewidth = 2, label = 'Sequence RA')
         sns.kdeplot(std_df['MLAAdist_seqaln'], std_df[score+'_seqaln'], shade = False, cmap = 'Greens')
         ax.set_xlim([0,6.1])
         ax.set_xticks([0,1,2,3,4,5,6])
@@ -173,7 +172,7 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
         print('ED',pearsonr(std_df['MLAAdist_seqaln'], std_df['MLAAdist_straln']))
 
     #Plot hist of distances
-    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+    fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
     sns.distplot(std_df[score+aln_type+'_dev'], hist = True)
     ax.set_xlabel('Deviation from line')
     plot_format(fig, ax, outdir+'all_pairs_hist.png', 'Density')
@@ -182,7 +181,7 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
     p_R = {}
     titles = {'RCO':'RCO', 'aln_len'+aln_type:'Aligned length', 'l':'Length', 'percent_aligned'+aln_type:'% Aligned',
     'K':'KR','D':'DE','Y':'YWFH','T':'TSQN','C':'CVMLIA', 'P':'PG', '-':'Gap', 'L':'Loop', 'S':'Sheet', 'H':'Helix',
-    score+aln_type+'classes':'Class', score+aln_type+'_sizes':'Group size', 'CD': 'Contact Density'}
+    score+aln_type+'classes':'Class', score+aln_type+'_sizes':'Group size', 'CD': 'Contact Density', 'MLAAdist'+aln_type: 'AA20 ED'}
 
     #Color in outliers
     pos_odf = std_df[std_df[score+aln_type]>0.9]
@@ -194,27 +193,27 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
     counts = Counter(neg_odf['group'])
 
     for x in single_features:
-        fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
         plt.scatter(std_df[x], std_df[score+aln_type+'_dev'], label = x,s=0.3, color = '#1f77b4')
         sns.kdeplot(std_df[x], std_df[score+aln_type+'_dev'], shade = False, cmap = 'Blues')
         #Plot outlier group
-        plt.scatter(pos_odf[x], pos_odf[score+aln_type+'_dev'], label = x,s=1, color = 'maroon')
-        plt.scatter(neg_odf[x], neg_odf[score+aln_type+'_dev'], label = x,s=1, color = 'k')
+        plt.scatter(pos_odf[x], pos_odf[score+aln_type+'_dev'], label = x,s=0.3, color = 'maroon')
+        plt.scatter(neg_odf[x], neg_odf[score+aln_type+'_dev'], label = x,s=0.3, color = 'k')
         ax.set_xlabel(titles[x])
         plot_format(fig, ax, outdir+x+'.png', 'Deviation from line')
         p_R[titles[x]] = pearsonr(std_df[x], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
     #Double
     for x in double_features:
-        fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+        fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
         if x == 'RCO' or x == 'CD':
             for i in ['1', '2']:
                 plt.scatter(std_df[x+i], std_df[score+aln_type+'_dev'], s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
                 sns.kdeplot(std_df[x+i], std_df[score+aln_type+'_dev'], shade = False, cmap = 'Blues')
-                plt.scatter(pos_odf[x+i], pos_odf[score+aln_type+'_dev'], label = x,s=1, color = 'maroon')
-                plt.scatter(neg_odf[x+i], neg_odf[score+aln_type+'_dev'], label = x,s=1, color = 'k')
-                ax.set_xlabel(titles[x])
-                plot_format(fig, ax, outdir+titles[x]+i+'.png', 'Deviation from line')
+                plt.scatter(pos_odf[x+i], pos_odf[score+aln_type+'_dev'], label = x,s=0.3, color = 'maroon')
+                plt.scatter(neg_odf[x+i], neg_odf[score+aln_type+'_dev'], label = x,s=0.3, color = 'k')
+                ax.set_xlabel(titles[x]+i)
+                plot_format(fig, ax, outdir+x+i+'.png', 'Deviation from line')
                 p_R[titles[x]+i] = pearsonr(std_df[x+i], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
         else:
@@ -222,22 +221,22 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
                 plt.scatter(std_df[x+i+aln_type], std_df[score+aln_type+'_dev'] ,s=0.3, color = '#1f77b4', label = 'Domain 1', alpha = 0.2)
                 sns.kdeplot(std_df[x+i+aln_type], std_df[score+aln_type+'_dev'], shade = False, cmap = 'Blues')
                 #Plot outlier group
-                plt.scatter(pos_odf[x+i+aln_type], pos_odf[score+aln_type+'_dev'], label = x,s=1, color = 'maroon')
-                plt.scatter(neg_odf[x+i+aln_type], neg_odf[score+aln_type+'_dev'], label = x,s=1, color = 'k')
-                ax.set_xlabel(titles[x])
+                plt.scatter(pos_odf[x+i+aln_type], pos_odf[score+aln_type+'_dev'], label = x,s=0.3, color = 'maroon')
+                plt.scatter(neg_odf[x+i+aln_type], neg_odf[score+aln_type+'_dev'], label = x,s=0.3, color = 'k')
+                ax.set_xlabel(titles[x]+i)
                 plot_format(fig, ax, outdir+titles[x]+i+'.png', 'Deviation from line')
                 p_R[titles[x]+i] = pearsonr(std_df[x+i+aln_type], std_df[score+aln_type+'_dev'])[0] #returns (Pearson’s correlation coefficient, 2-tailed p-value)
 
 
     #Plot personr
-    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
     pearsondf = pd.DataFrame()
     pearsondf['Feature'] = [*p_R.keys()]
     pearsondf['Pearson R'] = [*p_R.values()]
     pearsondf=pearsondf.sort_values(by='Pearson R',ascending=True)
     sns.barplot(x="Pearson R", y="Feature", data=pearsondf)
     ax.set_xticks([-0.2,0,0.2])
-    plot_format(fig, ax, outdir+'pearsonr.png', 'Pearson R')
+    plot_format(fig, ax, outdir+'pearsonr.png', 'Feature')
 
     return None
 
@@ -305,7 +304,7 @@ for score in ['lddt_scores']:
         print('Fraction of points under ED 6: '+str(len(catdf_s))+'/'+str(len(catdf)),len(catdf_s)/len(catdf))
         #catdf_s = get_over_10(catdf_s)
 
-        single_features = ['percent_aligned'+aln_type]
+        single_features = ['percent_aligned'+aln_type, 'MLAAdist'+aln_type]
         double_features = ['CD', 'RCO', 'l', 'P', 'C', 'K', 'T', 'D', 'Y', '-', 'L', 'S', 'H'] #L,S,H = loop, sheet, helix, contact density
         catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies
         catdf_s = parse_ss(catdf_s, aln_type) #Get % ss
