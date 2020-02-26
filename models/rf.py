@@ -119,7 +119,7 @@ def parameter_optimization(param_grid, pipe, X, y):
 def plot_predictions(X, y, z_true, z_av, all_features):
     '''Predict and plot
     '''
-    matplotlib.rcParams.update({'font.size': 20})
+    matplotlib.rcParams.update({'font.size': 7})
     #Store metrics
     error = []
     error_av = []
@@ -192,17 +192,20 @@ def plot_predictions(X, y, z_true, z_av, all_features):
             df = pd.read_csv('pred'+str(i)+'.csv')
             rfreg_predictions = df['pred']
             y_test = df['true']
+            lDDT_true = df['lDDT_true']
+            lDDT_av = df['lDDT_av']
             error.append(np.average(np.absolute(rfreg_predictions-y_test)))
-            R.append(pearsonr(rfreg_predictions,y_test)[0])
+            R_dev.append(pearsonr(rfreg_predictions,y_test)[0])
+            R_lDDT.append(pearsonr(lDDT_true,lDDT_av+rfreg_predictions)[0])
 
     print('Error of model:',np.round(np.average(error),3),'+/-', np.round(np.std(error),5))
-    print('Error to RA:',np.round(np.average(error_av),3),'+/-', np.round(np.std(error_av),5))
+    #print('Error to RA:',np.round(np.average(error_av),3),'+/-', np.round(np.std(error_av),5))
     print('R_dev:',np.round(np.average(R_dev),3),'+/-', np.round(np.std(R_dev),3))
     print('R_lDDT:',np.round(np.average(R_lDDT),3),'+/-', np.round(np.std(R_lDDT),3))
-    print('R_av:',np.round(np.average(R_av),3),'+/-', np.round(np.std(R_av),3))
+    #print('R_av:',np.round(np.average(R_av),3),'+/-', np.round(np.std(R_av),3))
 
     #Plot
-    fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
+    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
     sns.barplot(y="Feature", x="Importance", data=imp_df)
     plt.errorbar(imp_df["Importance"],np.arange(0,len(all_features)), yerr=None, xerr=imp_df['std'], fmt='.')
     ax.spines['right'].set_visible(False)
@@ -214,19 +217,20 @@ def plot_predictions(X, y, z_true, z_av, all_features):
 
 
     #Plot ED against error
-    make_kde(pred_df['ED'], np.array(pred_df['pred']-pred_df['true']), 'AA20 ED', 'Error (lDDT score)', [0,6],[-0.1,0.1], np.arange(0,6), np.arange(-0.1,0.11, 0.05), outdir+'ed_vs_error.png', False)
-    make_kde(pred_df['pred'],pred_df['true'], 'Pred. dev. (lDDT score)', 'True dev. (lDDT score)',[-0.1,0.1], [-0.1,0.1], np.arange(-0.1,0.11, 0.05), np.arange(-0.1,0.11, 0.05), outdir+'pred_vs_true.png', True)
+    make_kde(pred_df['ED'], np.array(pred_df['pred']-pred_df['true']), 'AA20 ED', 'Error (lDDT score)', [0,6],[-0.1,0.1], np.arange(0,6), np.arange(-0.1,0.11, 0.05), outdir+'ed_vs_error.png', False, 0, (0,0))
+    make_kde(pred_df['pred'],pred_df['true'], 'Pred. dev. (lDDT score)', 'True dev. (lDDT score)',[-0.1,0.1], [-0.1,0.1], np.arange(-0.1,0.11, 0.05), np.arange(-0.1,0.11, 0.05), outdir+'pred_vs_true_dev.png', True, 0.72, (-0.08,0.05))
+    make_kde(pred_df['lDDT_av']+pred_df['pred'], pred_df['lDDT_true'], 'Pred. lDDT score', 'True lDDT score',[0.2,1], [0.2,1], np.arange(0.2,1.1, 0.1), np.arange(0.2,1.1, 0.1), outdir+'pred_vs_true_lddt.png', True, 0.92, (0.25,0.7))
 
 
-def make_kde(x,y, xlabel, ylabel, xlim, ylim, xticks, yticks, outname, get_R):
+def make_kde(x,y, xlabel, ylabel, xlim, ylim, xticks, yticks, outname, get_R, R, cords):
     '''Makes a kdeplot and saves it
     '''
-    fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
-    sns.kdeplot(x,y, shade = True, kind = 'kde', cmap = 'Blues')
+    fig, ax = plt.subplots(figsize=(6/2.54,6/2.54))
+    sns.kdeplot(x,y, shade = True, shade_lowest = False, kind = 'kde', cmap = 'Blues')
     if get_R == True:
         print(outname,pearsonr(x,y)[0])
         ax.plot(xlim,ylim, 'darkblue')
-        plt.annotate('Pearson R: 0.72', (-0.08,0.05))
+        plt.annotate('Pearson R: '+str(R), cords)
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
