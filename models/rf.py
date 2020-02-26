@@ -220,6 +220,7 @@ def plot_predictions(X, y, z_true, z_av, all_features):
     make_kde(pred_df['ED'], np.array(pred_df['pred']-pred_df['true']), 'AA20 ED', 'Error (lDDT score)', [0,6],[-0.1,0.1], np.arange(0,6), np.arange(-0.1,0.11, 0.05), outdir+'ed_vs_error.png', False, 0, (0,0))
     make_kde(pred_df['pred'],pred_df['true'], 'Pred. dev. (lDDT score)', 'True dev. (lDDT score)',[-0.1,0.1], [-0.1,0.1], np.arange(-0.1,0.11, 0.05), np.arange(-0.1,0.11, 0.05), outdir+'pred_vs_true_dev.png', True, 0.72, (-0.08,0.05))
     make_kde(pred_df['lDDT_av']+pred_df['pred'], pred_df['lDDT_true'], 'Pred. lDDT score', 'True lDDT score',[0.2,1], [0.2,1], np.arange(0.2,1.1, 0.1), np.arange(0.2,1.1, 0.1), outdir+'pred_vs_true_lddt.png', True, 0.92, (0.25,0.7))
+    make_kde(pred_df['lDDT_av'], pred_df['lDDT_true'], 'Average lDDT score', 'True lDDT score',[0.2,1], [0.2,1], np.arange(0.2,1.1, 0.1), np.arange(0.2,1.1, 0.1), outdir+'av_vs_true_lddt.png', True, 0.84, (0.25,0.7))
 
 
 def make_kde(x,y, xlabel, ylabel, xlim, ylim, xticks, yticks, outname, get_R, R, cords):
