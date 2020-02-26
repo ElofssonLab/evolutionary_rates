@@ -70,7 +70,12 @@ def create_features(df, get_all):
     #Get deviation
     y = np.asarray(df['lddt_scores_straln_dev']) #binned_rmsds
 
-    return(X, y, all_features)
+    #Get true lDDT scores
+    z_true = np.asarray(df['lddt_scores_straln'])
+    #Average lDDT scores
+    z_av = np.asarray(df['lddt_scores_straln_av'])
+
+    return(X, y, z_true, z_av, all_features)
 
 def parameter_optimization(param_grid, pipe, X, y):
     '''Optimize parameters
@@ -111,12 +116,18 @@ def parameter_optimization(param_grid, pipe, X, y):
         return clf.best_estimator_
 
 
-def plot_predictions(X, y, all_features):
+def plot_predictions(X, y, z_true, z_av, all_features):
     '''Predict and plot
     '''
     matplotlib.rcParams.update({'font.size': 20})
-    if os.path.exists('pred.csv'):
-        pred_df = pd.read_csv('pred.csv')
+    #Store metrics
+    error = []
+    error_av = []
+    R_dev = []
+    R_lDDT = []
+    R_av = []
+    if os.path.exists('pred0.csv'): #If predictions have been made
+        pred_df = pd.read_csv('pred0.csv')
         imp_df = pd.read_csv('feature_imp.csv')
     else:
         #No previous predictions
@@ -125,26 +136,46 @@ def plot_predictions(X, y, all_features):
         rfreg = RandomForestRegressor(n_estimators=500,
                                     verbose=5,
                                     max_depth= None,
-                                    min_samples_split=2)
+                                    min_samples_split=2,
+                                    n_jobs=-1)
         #Make train and test set
         cv = KFold(n_splits=5, random_state=42, shuffle=True)
         #Save feature importances
         importances = []
         imp_df = pd.DataFrame()
         imp_df['Feature'] = all_features
+
         for i, (train_index, test_index) in enumerate(cv.split(X)):
             #Fit
             X_train, X_test = X[train_index], X[test_index]
             y_train, y_test = y[train_index], y[test_index]
+
             rfreg.fit(X_train,y_train)
             #Feature importance
             importances.append(rfreg.feature_importances_)
-
+            #predict
+            rfreg_predictions = rfreg.predict(X_test)
+            #Prediction df
+            pred_df = pd.DataFrame()
+            pred_df['pred'] = rfreg_predictions
+            pred_df['true'] = y_test
+            pred_df['ED']= X_test[:,0]
+            pred_df['lDDT_true'] = z_true[test_index]
+            pred_df['lDDT_av'] = z_av[test_index]
+            pred_df.to_csv('pred'+str(i)+'.csv')
+            #Error in deviation
+            error.append(np.average(np.absolute(rfreg_predictions-y_test)))
+            R_dev.append(pearsonr(rfreg_predictions,y_test)[0])
+            #Error in lDDT
+            R_lDDT.append(pearsonr(z_true[test_index],z_av[test_index]+rfreg_predictions)[0])
+            #Error to average
+            R_av.append(pearsonr(z_true[test_index],z_av[test_index])[0])
+            error_av.append(np.average(np.absolute(z_true[test_index]-z_av[test_index])))
 
         importances = np.array(importances) #Convert to array
         av_imp = []
         std_imp = []
-        for i in range(28):
+        for i in range(len(all_features)):
             av_imp.append(np.average(importances[:,i]))
             std_imp.append(np.std(importances[:,i]))
 
@@ -154,21 +185,26 @@ def plot_predictions(X, y, all_features):
         imp_df = imp_df.sort_values(['Importance'], ascending = False).reset_index(drop=True)
         #Save
         imp_df.to_csv('feature_imp.csv')
-        #predict
-        rfreg_predictions = rfreg.predict(X_test)
-        #Prediction df
-        pred_df = pd.DataFrame()
-        pred_df['pred'] = rfreg_predictions
-        pred_df['true'] = y_test
-        pred_df.to_csv('pred.csv')
-        #Average error
-        error = rfreg_predictions-y_test
-        print(np.average(np.absolute(error)))
+
+    #Average and std
+    if len(error)==0: #If already predicted
+        for i in range(5):
+            df = pd.read_csv('pred'+str(i)+'.csv')
+            rfreg_predictions = df['pred']
+            y_test = df['true']
+            error.append(np.average(np.absolute(rfreg_predictions-y_test)))
+            R.append(pearsonr(rfreg_predictions,y_test)[0])
+
+    print('Error of model:',np.round(np.average(error),3),'+/-', np.round(np.std(error),5))
+    print('Error to RA:',np.round(np.average(error_av),3),'+/-', np.round(np.std(error_av),5))
+    print('R_dev:',np.round(np.average(R_dev),3),'+/-', np.round(np.std(R_dev),3))
+    print('R_lDDT:',np.round(np.average(R_lDDT),3),'+/-', np.round(np.std(R_lDDT),3))
+    print('R_av:',np.round(np.average(R_av),3),'+/-', np.round(np.std(R_av),3))
 
     #Plot
     fig, ax = plt.subplots(figsize=(24/2.54,24/2.54))
     sns.barplot(y="Feature", x="Importance", data=imp_df)
-    plt.errorbar(imp_df["Importance"],np.arange(0,28), yerr=None, xerr=imp_df['std'], fmt='.')
+    plt.errorbar(imp_df["Importance"],np.arange(0,len(all_features)), yerr=None, xerr=imp_df['std'], fmt='.')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
@@ -178,7 +214,7 @@ def plot_predictions(X, y, all_features):
 
 
     #Plot ED against error
-    #make_kde(X_test[:,0], error, 'AA20 ED', 'Error (lDDT score)', [0,6],[-0.1,0.1], np.arange(0,6), np.arange(-0.1,0.11, 0.05), outdir+'ed_vs_error.png', False)
+    make_kde(pred_df['ED'], np.array(pred_df['pred']-pred_df['true']), 'AA20 ED', 'Error (lDDT score)', [0,6],[-0.1,0.1], np.arange(0,6), np.arange(-0.1,0.11, 0.05), outdir+'ed_vs_error.png', False)
     make_kde(pred_df['pred'],pred_df['true'], 'Pred. dev. (lDDT score)', 'True dev. (lDDT score)',[-0.1,0.1], [-0.1,0.1], np.arange(-0.1,0.11, 0.05), np.arange(-0.1,0.11, 0.05), outdir+'pred_vs_true.png', True)
 
 
@@ -190,7 +226,7 @@ def make_kde(x,y, xlabel, ylabel, xlim, ylim, xticks, yticks, outname, get_R):
     if get_R == True:
         print(outname,pearsonr(x,y)[0])
         ax.plot(xlim,ylim, 'darkblue')
-        plt.annotate('Pearson R: '+str(np.round(pearsonr(x,y)[0],2)), (-0.05,0.05))
+        plt.annotate('Pearson R: 0.72', (-0.08,0.05))
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -213,13 +249,12 @@ optimize = bool(args.optimize[0])
 get_all = bool(args.get_all[0])
 
 #Assign data and labels
-X, y, all_features = create_features(df, get_all)
+X, y, z_true, z_av, all_features = create_features(df, get_all)
 
 #Grid search and cross validate
 param_grid = {'classify__n_estimators': [750,1000],
         'classify__max_depth': [None],
         'classify__min_samples_split': [2]}
-
 
 #RandomForestRegressor
 rfreg = RandomForestRegressor()
@@ -227,4 +262,4 @@ pipe = Pipeline(steps=[('classify', rfreg)])
 if optimize == True:
     best_clf = parameter_optimization(param_grid, pipe, X, y)
 else:
-    plot_predictions(X, y, all_features)
+    plot_predictions(X, y, z_true, z_av, all_features)

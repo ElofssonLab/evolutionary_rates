@@ -109,6 +109,7 @@ def dev_from_av(avdf, df, score, aln_type, cardinality):
 
         #Deviation
         dev = cut_scores-tav
+        below_df[score+aln_type+'_av'] = [tav]*len(dev)
         below_df[score+aln_type+'_dev'] = dev
         std_df = pd.concat([std_df, below_df])
 
@@ -138,7 +139,7 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
         print('Directory '+outdir+' exists')
     matplotlib.rcParams.update({'font.size': 7})
     #Plot all pairs
-    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
     ax.scatter(std_df['MLAAdist'+aln_type], std_df[score+aln_type], s= 0.3, c='cornflowerblue', label = 'Pair' ) #All points
     sns.kdeplot(std_df['MLAAdist'+aln_type], std_df[score+aln_type], shade = False, cmap = 'Blues')
     ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkblue', linewidth = 2, label = 'Running average')
@@ -157,7 +158,7 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
 
     #Plot sequence and structure
     if score+aln_type == 'lddt_scores_straln':
-        fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
+        fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
         ax.plot(avdf['ML  distance'], avdf[score+aln_type], color = 'darkblue', linewidth = 2, label = 'Structure RA')
         sns.kdeplot(std_df['MLAAdist'+aln_type], std_df[score+aln_type], shade = False, cmap = 'Blues')
         ax.plot(avdf['ML  distance'], avdf[score+'_seqaln'], color = 'darkgreen', linewidth = 2, label = 'Sequence RA')
@@ -194,7 +195,7 @@ def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_typ
 
     for x in single_features:
         fig, ax = plt.subplots(figsize=(4.5/2.54,4.5/2.54))
-        plt.scatter(std_df[x], std_df[score+aln_type+'_dev'], label = x,s=0.3, color = '#1f77b4')
+        plt.scatter(std_df[x], std_df[score+aln_type+'_dev'], label = x,s=0.3, color = '#1f77b4', alpha = 0.2)
         sns.kdeplot(std_df[x], std_df[score+aln_type+'_dev'], shade = False, cmap = 'Blues')
         #Plot outlier group
         plt.scatter(pos_odf[x], pos_odf[score+aln_type+'_dev'], label = x,s=0.3, color = 'maroon')
@@ -309,5 +310,6 @@ for score in ['lddt_scores']:
         catdf_s, perc_keys = AA6_distribution(catdf_s, aln_type) #Get AA6 frequencies
         catdf_s = parse_ss(catdf_s, aln_type) #Get % ss
         std_df = dev_from_av(avdf, catdf_s, score, aln_type, cardinality)
+        pdb.set_trace()
         std_df.to_csv('top10df.csv')
         plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_type, outdir+score+aln_type+'/')
