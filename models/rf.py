@@ -8,13 +8,15 @@ import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, spearmanr
+from scipy.cluster import hierarchy
 
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
+from sklearn.inspection import permutation_importance
 import matplotlib.pyplot as plt
 import matplotlib
 import pdb
@@ -115,10 +117,31 @@ def parameter_optimization(param_grid, pipe, X, y):
 
         return clf.best_estimator_
 
+def plot_feature_corr(X, all_features):
+    '''Calculate spearman corr btw features and visualize
+    '''
+
+    fig, ax = plt.subplots(figsize=(18/2.54, 18/2.54))
+    corr = spearmanr(X).correlation
+    corr_linkage = hierarchy.ward(corr)
+    dendro = hierarchy.dendrogram(corr_linkage, labels=all_features, ax=ax,
+                                  leaf_rotation=90)
+    dendro_idx = np.arange(0, len(dendro['ivl']))
+
+    ax.imshow(corr[dendro['leaves'], :][:, dendro['leaves']])
+    ax.set_xticks(dendro_idx)
+    ax.set_yticks(dendro_idx)
+    ax.set_xticklabels(dendro['ivl'], rotation='vertical')
+    ax.set_yticklabels(dendro['ivl'])
+    fig.tight_layout()
+    fig.savefig('corr_vis.png', format='png')
+
+
 
 def plot_predictions(X, y, z_true, z_av, all_features):
     '''Predict and plot
     '''
+
     matplotlib.rcParams.update({'font.size': 7})
     #Store metrics
     error = []
@@ -134,16 +157,17 @@ def plot_predictions(X, y, z_true, z_av, all_features):
         #Clf
         #'classify__min_samples_split': 2, 'classify__n_estimators': 500, 'classify__verbose': 0} -0.033 +/- 0.11
         rfreg = RandomForestRegressor(n_estimators=500,
-                                    verbose=5,
+                                    verbose=2,
                                     max_depth= None,
                                     min_samples_split=2,
                                     n_jobs=-1)
         #Make train and test set
         cv = KFold(n_splits=5, random_state=42, shuffle=True)
         #Save feature importances
-        importances = []
-        imp_df = pd.DataFrame()
-        imp_df['Feature'] = all_features
+        mdi_importances = pd.DataFrame()
+        permutation_importances = pd.DataFrame()
+        mdi_importances['Feature'] = all_features
+        permutation_importances['Feature'] = all_features
 
         for i, (train_index, test_index) in enumerate(cv.split(X)):
             #Fit
@@ -152,7 +176,10 @@ def plot_predictions(X, y, z_true, z_av, all_features):
 
             rfreg.fit(X_train,y_train)
             #Feature importance
-            importances.append(rfreg.feature_importances_)
+            mdi_importances['Importance'+str(i)] = rfreg.feature_importances_
+            perm = permutation_importance(rfreg, X_train, y_train, n_repeats=5,random_state=42)
+            permutation_importances['Importance'+str(i)] = perm.importances_mean
+
             #predict
             rfreg_predictions = rfreg.predict(X_test)
             #Prediction df
@@ -172,19 +199,9 @@ def plot_predictions(X, y, z_true, z_av, all_features):
             R_av.append(pearsonr(z_true[test_index],z_av[test_index])[0])
             error_av.append(np.average(np.absolute(z_true[test_index]-z_av[test_index])))
 
-        importances = np.array(importances) #Convert to array
-        av_imp = []
-        std_imp = []
-        for i in range(len(all_features)):
-            av_imp.append(np.average(importances[:,i]))
-            std_imp.append(np.std(importances[:,i]))
-
-        #Calculate average
-        imp_df['Importance'] = av_imp
-        imp_df['std'] = std_imp
-        imp_df = imp_df.sort_values(['Importance'], ascending = False).reset_index(drop=True)
         #Save
-        imp_df.to_csv('feature_imp.csv')
+        permutation_importances.to_csv('permutation_importances.csv')
+        mdi_importances.to_csv('mdi_importances.csv')
 
     #Average and std
     if len(error)==0: #If already predicted
@@ -204,15 +221,9 @@ def plot_predictions(X, y, z_true, z_av, all_features):
     print('R_lDDT:',np.round(np.average(R_lDDT),3),'+/-', np.round(np.std(R_lDDT),3))
     #print('R_av:',np.round(np.average(R_av),3),'+/-', np.round(np.std(R_av),3))
 
-    #Plot
-    fig, ax = plt.subplots(figsize=(12/2.54,12/2.54))
-    sns.barplot(y="Feature", x="Importance", data=imp_df)
-    plt.errorbar(imp_df["Importance"],np.arange(0,len(all_features)), yerr=None, xerr=imp_df['std'], fmt='.')
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    fig.tight_layout()
-    fig.savefig(outdir+'feature_importances.png', format = 'png')
-    plt.close()
+    #Plot feature importances
+    plot_feature_imp(permutation_importances, 'permutation_importances.png')
+    plot_feature_imp(mdi_importances, 'mdi_importances.png')
 
 
 
@@ -222,6 +233,18 @@ def plot_predictions(X, y, z_true, z_av, all_features):
     make_kde(pred_df['lDDT_av']+pred_df['pred'], pred_df['lDDT_true'], 'Pred. lDDT score', 'True lDDT score',[0.2,1], [0.2,1], np.arange(0.2,1.1, 0.1), np.arange(0.2,1.1, 0.1), outdir+'pred_vs_true_lddt.png', True, 0.92, (0.25,0.7))
     make_kde(pred_df['lDDT_av'], pred_df['lDDT_true'], 'Average lDDT score', 'True lDDT score',[0.2,1], [0.2,1], np.arange(0.2,1.1, 0.1), np.arange(0.2,1.1, 0.1), outdir+'av_vs_true_lddt.png', True, 0.84, (0.25,0.7))
 
+def plot_feature_imp(feature_df, outname):
+    #Plot feature importances
+    stds = feature_df.std(axis=1)
+    feature_df['Average'] = feature_df.mean(axis=1)
+    feature_df['std'] = stds
+    feature_df = feature_df.sort_values(['Average'], ascending = False).reset_index(drop=True)
+    fig, ax = plt.subplots(figsize=(18/2.54,18/2.54))
+    sns.barplot(data=feature_df, x="Average", y="Feature")
+    plt.errorbar(feature_df['Average'],np.arange(0,len(feature_df)), yerr=None, xerr=feature_df['std'], fmt='.')
+    fig.tight_layout()
+    fig.savefig(outname)
+    plt.close()
 
 def make_kde(x,y, xlabel, ylabel, xlim, ylim, xticks, yticks, outname, get_R, R, cords):
     '''Makes a kdeplot and saves it
@@ -267,4 +290,6 @@ pipe = Pipeline(steps=[('classify', rfreg)])
 if optimize == True:
     best_clf = parameter_optimization(param_grid, pipe, X, y)
 else:
+    #Analyze correlating features
+    #plot_feature_corr(X,all_features)
     plot_predictions(X, y, z_true, z_av, all_features)
