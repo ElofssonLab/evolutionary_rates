@@ -151,7 +151,9 @@ def plot_predictions(X, y, z_true, z_av, all_features):
     R_av = []
     if os.path.exists('pred0.csv'): #If predictions have been made
         pred_df = pd.read_csv('pred0.csv')
-        imp_df = pd.read_csv('feature_imp.csv')
+        mdi_importances = pd.read_csv('mdi_importances.csv')
+        permutation_importances_train = pd.read_csv('permutation_importances_train.csv')
+        permutation_importances_test = pd.read_csv('permutation_importances_test.csv')
     else:
         #No previous predictions
         #Clf
@@ -165,10 +167,11 @@ def plot_predictions(X, y, z_true, z_av, all_features):
         cv = KFold(n_splits=5, random_state=42, shuffle=True)
         #Save feature importances
         mdi_importances = pd.DataFrame()
-        permutation_importances = pd.DataFrame()
+        permutation_importances_train = pd.DataFrame()
+        permutation_importances_test = pd.DataFrame()
         mdi_importances['Feature'] = all_features
-        permutation_importances['Feature'] = all_features
-
+        permutation_importances_train['Feature'] = all_features
+        permutation_importances_test['Feature'] = all_features
         for i, (train_index, test_index) in enumerate(cv.split(X)):
             #Fit
             X_train, X_test = X[train_index], X[test_index]
@@ -178,7 +181,9 @@ def plot_predictions(X, y, z_true, z_av, all_features):
             #Feature importance
             mdi_importances['Importance'+str(i)] = rfreg.feature_importances_
             perm = permutation_importance(rfreg, X_train, y_train, n_repeats=5,random_state=42)
-            permutation_importances['Importance'+str(i)] = perm.importances_mean
+            permutation_importances_train['Importance'+str(i)] = perm.importances_mean
+            perm = permutation_importance(rfreg, X_test, y_test, n_repeats=5,random_state=42)
+            permutation_importances_test['Importance'+str(i)] = perm.importances_mean
 
             #predict
             rfreg_predictions = rfreg.predict(X_test)
@@ -200,8 +205,9 @@ def plot_predictions(X, y, z_true, z_av, all_features):
             error_av.append(np.average(np.absolute(z_true[test_index]-z_av[test_index])))
 
         #Save
-        permutation_importances.to_csv('permutation_importances.csv')
         mdi_importances.to_csv('mdi_importances.csv')
+        permutation_importances_train.to_csv('permutation_importances_train.csv')
+        permutation_importances_test.to_csv('permutation_importances_test.csv')
 
     #Average and std
     if len(error)==0: #If already predicted
@@ -222,9 +228,9 @@ def plot_predictions(X, y, z_true, z_av, all_features):
     #print('R_av:',np.round(np.average(R_av),3),'+/-', np.round(np.std(R_av),3))
 
     #Plot feature importances
-    plot_feature_imp(permutation_importances, 'permutation_importances.png')
     plot_feature_imp(mdi_importances, 'mdi_importances.png')
-
+    plot_feature_imp(permutation_importances_train, 'permutation_importances_train.png')
+    plot_feature_imp(permutation_importances_test, 'permutation_importances_test.png')
 
 
     #Plot ED against error
@@ -235,13 +241,17 @@ def plot_predictions(X, y, z_true, z_av, all_features):
 
 def plot_feature_imp(feature_df, outname):
     #Plot feature importances
+    feature_df = feature_df.drop(['Unnamed: 0'], axis = 1)
     stds = feature_df.std(axis=1)
     feature_df['Average'] = feature_df.mean(axis=1)
+    print(feature_df['Average'])
     feature_df['std'] = stds
     feature_df = feature_df.sort_values(['Average'], ascending = False).reset_index(drop=True)
-    fig, ax = plt.subplots(figsize=(18/2.54,18/2.54))
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
     sns.barplot(data=feature_df, x="Average", y="Feature")
     plt.errorbar(feature_df['Average'],np.arange(0,len(feature_df)), yerr=None, xerr=feature_df['std'], fmt='.')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
     fig.tight_layout()
     fig.savefig(outname)
     plt.close()
