@@ -126,7 +126,7 @@ def plot_format(fig, ax, outname, ylabel):
     ax.spines['top'].set_visible(False)
     ax.set_ylabel(ylabel)
     fig.tight_layout()
-    fig.savefig(outname, format = 'png')
+    fig.savefig(outname, format = 'png', dpi = 300)
     plt.close()
 
 def plot_x_vs_std(std_df, avdf, single_features, double_features, score, aln_type, outdir):

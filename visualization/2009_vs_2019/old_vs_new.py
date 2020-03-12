@@ -4,7 +4,7 @@
 
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
+import PIL
 import pandas as pd
 from collections import Counter
 import numpy as np

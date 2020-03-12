@@ -134,7 +134,7 @@ def plot_feature_corr(X, all_features):
     ax.set_xticklabels(dendro['ivl'], rotation='vertical')
     ax.set_yticklabels(dendro['ivl'])
     fig.tight_layout()
-    fig.savefig('corr_vis.png', format='png')
+    fig.savefig('corr_vis.png', format='png', dpi=300)
 
 
 
@@ -253,7 +253,7 @@ def plot_feature_imp(feature_df, outname):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
-    fig.savefig(outname)
+    fig.savefig(outname, format='png', dpi=300)
     plt.close()
 
 def make_kde(x,y, xlabel, ylabel, xlim, ylim, xticks, yticks, outname, get_R, R, cords):
@@ -276,7 +276,7 @@ def make_kde(x,y, xlabel, ylabel, xlim, ylim, xticks, yticks, outname, get_R, R,
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     fig.tight_layout()
-    fig.savefig(outname, format = 'png')
+    fig.savefig(outname, format = 'png', dpi=300)
     plt.close()
 
 #MAIN
