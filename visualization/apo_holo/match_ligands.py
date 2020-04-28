@@ -9,6 +9,9 @@ import glob
 import pandas as pd
 import numpy as np
 from collections import Counter
+import matplotlib.pyplot as plt
+import matplotlib
+import seaborn as sns
 import pdb
 
 
@@ -22,7 +25,7 @@ parser.add_argument('--topdf', nargs=1, type= str, default=sys.stdin, help = 'pa
 
 parser.add_argument('--hgroupdf', nargs=1, type= str, default=sys.stdin, help = 'path to df.')
 
-parser.add_argument('--av_df', nargs=1, type= str, default=sys.stdin, help = 'Path to df with running averages.')
+parser.add_argument('--avdf', nargs=1, type= str, default=sys.stdin, help = 'Path to df with running averages.')
 
 parser.add_argument('--outdir', nargs=1, type= str, default=sys.stdin, help = 'Path to outdir.')
 
@@ -53,8 +56,8 @@ def match_ligands(catdf, ligands_per_pdb):
             lig1 = ligands_per_pdb[row['uid1'][:4]]
             lig2 = ligands_per_pdb[row['uid2'][:4]]
         except:
-            same_ligand.append('NA')
-            max_shared_ligands_in_pair.append('NA')
+            same_ligand.append(0)#One of the structures does not have any ligands
+            max_shared_ligands_in_pair.append(0)
             continue
         #Check if they share
         num_shared = 0
@@ -70,13 +73,73 @@ def match_ligands(catdf, ligands_per_pdb):
     catdf['max_shared_ligands_in_pair']=max_shared_ligands_in_pair
     return catdf
 
+def compare_ligand_effect(catdf, avdf):
+    '''Compare the effects of having shared bound ligands or not
+    '''
 
+    share_ligands = catdf[catdf['shared_ligands']>=1]
+    diff_ligands = catdf[catdf['shared_ligands']==0]    
+
+    #Calculate RA for the pairs with shared and different ligands
+    start = 0
+    end = 6
+    step = 0.1
+    cardinality = ''
+    score = 'lddt_scores'
+    aln_type = '_straln'
+    #Save averages
+    share_av = []
+    diff_av = []
+    for j in np.arange(start+step,end+step,step):
+        if np.round(j, 2) == end: #Make sure to get endpoints
+            below_share= share_ligands[share_ligands['MLAAdist'+cardinality+aln_type]<=j]
+            below_diff= diff_ligands[diff_ligands['MLAAdist'+cardinality+aln_type]<=j]
+        else:
+            below_share= share_ligands[share_ligands['MLAAdist'+cardinality+aln_type]<j]
+            below_diff= diff_ligands[diff_ligands['MLAAdist'+cardinality+aln_type]<j]
+
+        below_share = below_share[below_share['MLAAdist'+cardinality+aln_type]>=j-step]
+        below_diff = below_diff[below_diff['MLAAdist'+cardinality+aln_type]>=j-step]
+
+        cut_share = np.asarray(below_share[score+aln_type])
+        cut_diff = np.asarray(below_diff[score+aln_type])
+        #Get averages in interval
+        share_av.append(np.average(cut_share))
+        diff_av.append(np.average(cut_diff))
+   
+    #plot
+    fig, ax = plt.subplots(figsize=(9/2.54,9/2.54))
+    x = avdf['ML  distance'].loc[0:59]
+    #Plot total av
+    ax.plot(x, avdf[score+aln_type].loc[0:59], color = 'darkblue', linewidth = 1, label = 'All ligands')
+    #Plot share av
+    ax.plot(x, share_av, color = 'g', linewidth = 1, label = 'Shared ligands')
+    sns.kdeplot(share_ligands['MLAAdist'+aln_type], share_ligands[score+aln_type], shade = False, cmap = 'Greens')
+    #Plot diff av
+    sns.kdeplot(diff_ligands['MLAAdist'+aln_type], diff_ligands[score+aln_type], shade = False, cmap = 'Blues')
+    ax.plot(x, diff_av, color = 'cornflowerblue', linewidth = 1, label = 'Different ligands')
+    #Format plot
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_xlabel('AA20 ED')
+    ax.set_ylabel('lDDT score')
+    ax.set_xlim([0,6.1])
+    ax.set_xticks([0,1,2,3,4,5,6])
+    ax.set_ylim([0.2,1])
+    fig.legend()
+    fig.tight_layout()
+    fig.savefig(outdir+'apo_holo.png', format = 'png', dpi = 300)
+    plt.close()
+
+
+
+    pdb.set_trace()
 #####MAIN#####
 args = parser.parse_args()
 ligands_per_pdb = parse_ligands(args.ligands_per_pdb[0])
 topdf = pd.read_csv(args.topdf[0])
 hgroupdf = pd.read_csv(args.hgroupdf[0])
-av_df = pd.read_csv(args.av_df[0])
+avdf = pd.read_csv(args.avdf[0])
 outdir = args.outdir[0]
 
 cardinality = '_AA20'
@@ -107,3 +170,5 @@ catdf['RCO2']=catdf['RCO2'].replace([1], 0)
 
 #Match ligands in each pair
 catdf = match_ligands(catdf, ligands_per_pdb)
+#Compare apo and holo forms
+compare_ligand_effect(catdf, avdf)
