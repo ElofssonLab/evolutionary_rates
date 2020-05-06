@@ -9,6 +9,7 @@ import glob
 import pandas as pd
 import numpy as np
 from collections import Counter
+from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 import matplotlib
 import seaborn as sns
@@ -132,7 +133,10 @@ def compare_ligand_effect(catdf, avdf):
     plt.close()
 
 
-
+    #Pearson r
+    print(pearsonr(share_av, diff_av))
+    print(pearsonr(share_av, np.array(avdf[score+aln_type].loc[0:59])))
+    print(pearsonr(diff_av, np.array(avdf[score+aln_type].loc[0:59])))
     pdb.set_trace()
 #####MAIN#####
 args = parser.parse_args()
